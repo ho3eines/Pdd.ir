@@ -36,8 +36,11 @@ builder.Services.AddCors(options =>
                 "http://localhost:5000",
                 "http://localhost:5001",
                 "https://localhost:7001",
+                "https://localhost:7125",
+                "http://localhost:5183",
                 "http://pdd.ir",
                 "https://pdd.ir")
+            .SetIsOriginAllowed(_ => true)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
