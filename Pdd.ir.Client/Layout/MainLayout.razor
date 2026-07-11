@@ -1,47 +1,60 @@
 @inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject AuthService Auth
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <div class="page">
-    <div class="sidebar" id="sidebar">
-        <NavMenu OnToggleSidebar="ToggleSidebar" />
-    </div>
-
-    <main>
-        <div class="top-row px-3 d-flex align-items-center justify-content-between">
-            <button class="btn btn-sm btn-outline-secondary d-md-none" @onclick="ToggleSidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <div class="d-flex align-items-center gap-3">
-                <div class="connection-status">
-                    <span class="connection-dot @(_isConnected ? "connected" : "disconnected")"></span>
-                    <span>@(_isConnected ? "WS" : "API")</span>
-                </div>
-                <div class="theme-toggle" @onclick="ToggleTheme" title="تغییر تم">
-                    <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
-                </div>
-                @if (Auth.IsAuthenticated)
-                {
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-secondary" style="font-size:0.85rem;">@Auth.FullName</span>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="Logout">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </div>
-                }
-            </div>
+    @if (_isLandingPage)
+    {
+        <!-- Landing page: no sidebar, top navbar only -->
+        <main style="margin-right: 0;">
+            @Body
+        </main>
+    }
+    else
+    {
+        <!-- Admin pages: sidebar + topbar -->
+        <div class="sidebar" id="sidebar">
+            <NavMenu OnToggleSidebar="ToggleSidebar" />
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+        <main>
+            <div class="top-row px-3 d-flex align-items-center justify-content-between">
+                <button class="btn btn-sm btn-outline-secondary d-md-none" @onclick="ToggleSidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="connection-status">
+                        <span class="connection-dot @(_isConnected ? "connected" : "disconnected")"></span>
+                        <span>@(_isConnected ? "WS" : "API")</span>
+                    </div>
+                    <div class="theme-toggle" @onclick="ToggleTheme" title="تغییر تم">
+                        <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
+                    </div>
+                    @if (Auth.IsAuthenticated)
+                    {
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-secondary" style="font-size:0.85rem;">@Auth.FullName</span>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="Logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }
 </div>
 
 @code {
     private bool _isDark = true;
     private bool _isConnected;
+    private bool _isLandingPage;
 
     [Inject] private ConnectionService Connection { get; set; } = default!;
 
@@ -49,6 +62,9 @@
     {
         Auth.OnAuthStateChanged += StateHasChanged;
         Connection.OnConnectionChanged += OnConnectionChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+
+        _isLandingPage = IsLandingPage(Navigation.Uri);
 
         try
         {
@@ -56,6 +72,19 @@
             _isDark = theme != "light";
         }
         catch { }
+    }
+
+    private bool IsLandingPage(string uri)
+    {
+        var path = new Uri(uri).AbsolutePath.ToLower();
+        var landingPaths = new[] { "/", "/products", "/blog", "/portfolio", "/about", "/contact" };
+        return landingPaths.Any(p => path == p || path == p + "/");
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _isLandingPage = IsLandingPage(e.Location);
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnConnectionChanged(bool connected)
@@ -93,5 +122,6 @@
     {
         Auth.OnAuthStateChanged -= StateHasChanged;
         Connection.OnConnectionChanged -= OnConnectionChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 }

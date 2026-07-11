@@ -1,0 +1,110 @@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<section id="architecture" class="architecture-section" style="min-height: 300vh;">
+    <div id="archPin" class="architecture-pin">
+        <!-- LEFT: Diagram -->
+        <div class="architecture-diagram">
+            <div class="architecture-bg-grid">
+                <svg width="400" height="400" viewBox="0 0 400 400" fill="none" stroke="#fff" stroke-width="0.5">
+                    <circle cx="200" cy="200" r="180" />
+                    <circle cx="200" cy="200" r="120" />
+                    <circle cx="200" cy="200" r="60" />
+                    <line x1="200" y1="20" x2="200" y2="380" />
+                    <line x1="20" y1="200" x2="380" y2="200" />
+                </svg>
+            </div>
+            <div class="architecture-nodes">
+                <div class="arch-node" id="nodeHIS">
+                    HIS
+                    <span class="node-label">پرونده‌ها</span>
+                </div>
+                <div class="arch-line" id="line1">
+                    <div class="line-pulse"></div>
+                </div>
+                <div class="arch-node" id="nodeRIS">
+                    RIS
+                    <span class="node-label">تصویربرداری</span>
+                </div>
+                <div class="arch-line" id="line2">
+                    <div class="line-pulse"></div>
+                </div>
+                <div class="arch-node" id="nodeMIS">
+                    MIS
+                    <span class="node-label">مالی</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Storytelling -->
+        <div class="architecture-content">
+            <div id="archStep1" class="arch-step">
+                <div class="arch-step-eyebrow">معماری سیستم</div>
+                <h2 class="arch-step-title">یکپارچه‌سازی کامل</h2>
+                <p class="arch-step-text">
+                    از پذیرش بیمار و پرونده‌های بالینی در <strong>سیستم HIS</strong> — هر نقطه داده در منبع ثبت می‌شود بدون هیچ‌گونه تکرار.
+                </p>
+            </div>
+
+            <div id="archStep2" class="arch-step">
+                <div class="arch-step-eyebrow">استریمینگ بلادرنگ</div>
+                <h2 class="arch-step-title">جریان داده یکپارچه</h2>
+                <p class="arch-step-text">
+                    به استریمینگ خودکار بلادرنگ داده‌ها مستقیماً به <strong>هسته تصویربرداری RIS</strong> — حذف انتقالات دستی و تضمین یکپارچگی داده‌ها.
+                </p>
+            </div>
+
+            <div id="archStep3" class="arch-step">
+                <div class="arch-step-eyebrow">هوش مالی</div>
+                <h2 class="arch-step-title">
+                    <span id="typingText" class="neon-gradient-text"></span><span class="typing-cursor"></span>
+                </h2>
+                <p class="arch-step-text">
+                    کل معماری متصل روشن می‌شود — ارائه عملیات مالی فوری و بی‌نقص در سطح سازمانی.
+                </p>
+            </div>
+        </div>
+
+        <!-- Mobile nodes -->
+        <div class="architecture-mobile-nodes">
+            <div class="arch-node mobile-node" id="nodeHISm">HIS</div>
+            <div class="arch-line mobile-line" id="line1m"><div class="line-pulse"></div></div>
+            <div class="arch-node mobile-node" id="nodeRISm">RIS</div>
+            <div class="arch-line mobile-line" id="line2m"><div class="line-pulse"></div></div>
+            <div class="arch-node mobile-node" id="nodeMISm">MIS</div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private DotNetObjectReference<ArchitectureStorytelling>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("initArchitectureScroll", _dotNetRef);
+            }
+            catch { }
+        }
+    }
+
+    [JSInvokable]
+    public Task OnStepComplete(int step)
+    {
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+        try
+        {
+            await JS.InvokeVoidAsync("disposeArchitectureScroll");
+        }
+        catch { }
+    }
+}

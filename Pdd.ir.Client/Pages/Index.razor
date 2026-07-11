@@ -2,22 +2,22 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>Pdd.ir | شرکت نرم‌افزاری</PageTitle>
+<PageTitle>شرکت مهندسی طراح داده پیشرو | نرم‌افزارهای درمانی</PageTitle>
 
 <!-- Hero Section -->
 <section class="hero-section" style="position:relative;overflow:hidden;">
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%, rgba(13,110,253,0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,176,32,0.1) 0%, transparent 50%);pointer-events:none;"></div>
     <div class="hero-content position-relative" style="z-index:2;">
         <h1 class="hero-title">
-            <span class="gradient-text-animated" style="font-size:3.5rem;">Pdd.ir</span>
+            <span class="gradient-text-animated" style="font-size:3.5rem;">طراح داده پیشرو</span>
         </h1>
-        <p class="hero-subtitle">شرکت نرم‌افزاری پیشرو در توسعه راهکارهای سازمانی</p>
+        <p class="hero-subtitle">شرکت مهندسی طراح داده پیشرو — ارائه‌کننده نرم‌افزارهای درمانی</p>
         <p class="hero-desc">
-            ما با بیش از ۱۰ سال تجربه، نرم‌افزارهای مدرن و کارآمد برای بیمارستان‌ها و سازمان‌های مالی توسعه می‌دهیم.
+            از سال ۱۳۸۳ با بیش از ۱۱۰ مرکز درمانی در سراسر ایران، نرم‌افزارهای درمانی با قابلیت بالا و کاربری آسان تولید و پشتیبانی می‌کنیم.
         </p>
         <div class="hero-actions">
-            <a href="/products" class="btn btn-primary btn-lg glow-hover">مشاهده محصولات</a>
-            <a href="/contact" class="btn btn-outline-light btn-lg">تماس با ما</a>
+            <a href="#products" class="btn btn-primary btn-lg glow-hover">مشاهده محصولات</a>
+            <a href="#contact" class="btn btn-outline-light btn-lg">تماس با ما</a>
         </div>
     </div>
     <div class="hero-visual position-relative" style="z-index:2;">
@@ -27,11 +27,11 @@
         </div>
         <div class="floating-card card-2 parallax-card glass-card" style="animation-delay:0.5s;">
             <i class="bi bi-calculator"></i>
-            <span>مالی</span>
+            <span>MIS</span>
         </div>
         <div class="floating-card card-3 parallax-card glass-card" style="animation-delay:1s;">
             <i class="bi bi-graph-up"></i>
-            <span>گزارش</span>
+            <span>LIS</span>
         </div>
     </div>
 </section>
@@ -40,7 +40,7 @@
 <section class="section" id="products">
     <div class="container">
         <AnimatedSection AnimationType="fade-up">
-            <h2 class="section-title">محصولات ما</h2>
+            <h2 class="section-title">محصولات شرکت</h2>
         </AnimatedSection>
         <div class="row g-4">
             @if (_products == null)
@@ -74,11 +74,26 @@
     </div>
 </section>
 
+<!-- Parallax Showcase -->
+<section class="section section-alt">
+    <div class="container">
+        <AnimatedSection AnimationType="fade-up">
+            <h2 class="section-title">فناوری پیشرفته</h2>
+            <p class="text-center text-muted mb-5">با استفاده از جدیدترین تکنولوژی‌های روز دنیا</p>
+        </AnimatedSection>
+    </div>
+</section>
+
+<ParallaxScrolling />
+
+<!-- Architecture Storytelling -->
+<ArchitectureStorytelling />
+
 <!-- Features Section -->
 <section class="section section-alt">
     <div class="container">
         <AnimatedSection AnimationType="fade-up">
-            <h2 class="section-title">چرا Pdd.ir؟</h2>
+            <h2 class="section-title">چرا طراح داده پیشرو؟</h2>
         </AnimatedSection>
         <div class="row g-4">
             <div class="col-12 col-sm-6 col-lg-3">
@@ -129,7 +144,7 @@
                 <AnimatedSection AnimationType="fade-up">
                     <div class="stat-card">
                         <i class="bi bi-calendar-check"></i>
-                        <div class="stat-number" data-count="10">۰</div>
+                        <div class="stat-number" data-count="22">۰</div>
                         <div class="stat-label">سال تجربه</div>
                     </div>
                 </AnimatedSection>
@@ -137,18 +152,18 @@
             <div class="col-6 col-md-3">
                 <AnimatedSection AnimationType="fade-up">
                     <div class="stat-card">
-                        <i class="bi bi-check-circle"></i>
-                        <div class="stat-number" data-count="50">۰</div>
-                        <div class="stat-label">پروژه موفق</div>
+                        <i class="bi bi-hospital"></i>
+                        <div class="stat-number" data-count="110">۰</div>
+                        <div class="stat-label">مرکز درمانی</div>
                     </div>
                 </AnimatedSection>
             </div>
             <div class="col-6 col-md-3">
                 <AnimatedSection AnimationType="fade-up">
                     <div class="stat-card">
-                        <i class="bi bi-people"></i>
-                        <div class="stat-number" data-count="30">۰</div>
-                        <div class="stat-label">مشتری راضی</div>
+                        <i class="bi bi-puzzle"></i>
+                        <div class="stat-number" data-count="27">۰</div>
+                        <div class="stat-label">زیرسیستم</div>
                     </div>
                 </AnimatedSection>
             </div>
@@ -171,50 +186,13 @@
         <AnimatedSection AnimationType="fade-up">
             <h2>آماده شروع هستید؟</h2>
             <p class="mb-4">با ما تماس بگیرید و مشاوره رایگان دریافت کنید</p>
-            <a href="/contact" class="btn btn-light btn-lg glow-hover">تماس با ما</a>
+            <a href="#contact" class="btn btn-light btn-lg glow-hover">تماس با ما</a>
         </AnimatedSection>
     </div>
 </section>
 
-<!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-12 col-md-4">
-                <div class="footer-brand gradient-text">Pdd.ir</div>
-                <p class="text-secondary">شرکت نرم‌افزاری پیشرو در توسعه راهکارهای سازمانی</p>
-            </div>
-            <div class="col-6 col-md-2">
-                <h6 class="text-white mb-3">لینک‌ها</h6>
-                <ul class="footer-links">
-                    <li><a href="/">خانه</a></li>
-                    <li><a href="/products">محصولات</a></li>
-                    <li><a href="/blog">بلاگ</a></li>
-                    <li><a href="/portfolio">نمونه کارها</a></li>
-                </ul>
-            </div>
-            <div class="col-6 col-md-3">
-                <h6 class="text-white mb-3">تماس با ما</h6>
-                <ul class="footer-links">
-                    <li><i class="bi bi-telephone me-2"></i>۰۲۱-۱۲۳۴۵۶۷۸</li>
-                    <li><i class="bi bi-envelope me-2"></i>info@pdd.ir</li>
-                    <li><i class="bi bi-geo-alt me-2"></i>تهران، خیابان ولیعصر</li>
-                </ul>
-            </div>
-            <div class="col-12 col-md-3">
-                <h6 class="text-white mb-3">شبکه‌های اجتماعی</h6>
-                <div class="d-flex gap-3">
-                    <a href="#" class="text-secondary fs-5"><i class="bi bi-instagram"></i></a>
-                    <a href="#" class="text-secondary fs-5"><i class="bi bi-linkedin"></i></a>
-                    <a href="#" class="text-secondary fs-5"><i class="bi bi-telegram"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            © ۲۰۲۶ Pdd.ir — تمامی حقوق محفوظ است
-        </div>
-    </div>
-</footer>
+<!-- Corporate Footer -->
+<CorporateFooter />
 
 @code {
     private List<ProductDto>? _products;
@@ -241,6 +219,7 @@
                 await JS.InvokeVoidAsync("initHeroAnimation");
                 await JS.InvokeVoidAsync("initMouseParallax");
                 await JS.InvokeVoidAsync("initTiltEffect");
+                await JS.InvokeVoidAsync("initProductCardGlow");
                 await Task.Delay(500);
                 await JS.InvokeVoidAsync("initScrollAnimations");
                 await JS.InvokeVoidAsync("initCounters");

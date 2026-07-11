@@ -1,0 +1,45 @@
+<div class="product-card-item glass-card reveal-card" @ref="_cardRef" data-glow>
+    <div class="product-card-glow" data-glow></div>
+    <div class="product-card-icon @IconColorClass">
+        @((MarkupString)IconSvg)
+    </div>
+    <h3 class="product-card-title">@Title</h3>
+    <p class="product-card-desc">@Description</p>
+    <span class="product-card-tag @TagColorClass">@Tag</span>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public string Tag { get; set; } = "";
+    [Parameter] public string IconColor { get; set; } = "blue";
+
+    private ElementReference _cardRef;
+
+    private string IconColorClass => IconColor switch
+    {
+        "blue" => "icon-blue",
+        "pink" => "icon-pink",
+        "purple" => "icon-purple",
+        "cyan" => "icon-cyan",
+        _ => "icon-blue"
+    };
+
+    private string TagColorClass => IconColor switch
+    {
+        "blue" => "tag-blue",
+        "pink" => "tag-pink",
+        "purple" => "tag-purple",
+        "cyan" => "tag-cyan",
+        _ => "tag-blue"
+    };
+
+    private string IconSvg => IconColor switch
+    {
+        "blue" => "<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16\"/></svg>",
+        "pink" => "<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
+        "purple" => "<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M8 21h8M12 17v4\"/></svg>",
+        "cyan" => "<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"/><path d=\"M9 12l2 2 4-4\"/></svg>",
+        _ => ""
+    };
+}

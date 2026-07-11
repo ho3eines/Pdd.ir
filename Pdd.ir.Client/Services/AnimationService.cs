@@ -50,5 +50,35 @@ namespace Pdd.ir.Client.Services
         {
             try { await _js.InvokeVoidAsync("countUp", elementId, target, duration); } catch { }
         }
+
+        public async Task InitParallaxScrollAsync()
+        {
+            try { await _js.InvokeVoidAsync("initParallaxScroll"); } catch { }
+        }
+
+        public async Task InitArchitectureScrollAsync()
+        {
+            try { await _js.InvokeVoidAsync("initArchitectureScroll"); } catch { }
+        }
+
+        public async Task InitTypewriterAsync(string text)
+        {
+            try { await _js.InvokeVoidAsync("initTypewriterEffect", text); } catch { }
+        }
+
+        public async Task InitLenisAsync()
+        {
+            try { await _js.InvokeVoidAsync("initSmoothScroll"); } catch { }
+        }
+
+        public async Task DisposeLenisAsync()
+        {
+            try { await _js.InvokeVoidAsync("disposeSmoothScroll"); } catch { }
+        }
+
+        public async Task InitProductCardGlowAsync()
+        {
+            try { await _js.InvokeVoidAsync("initProductCardGlow"); } catch { }
+        }
     }
 }
