@@ -1,0 +1,165 @@
+@page "/"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Pdd.ir | شرکت نرم‌افزاری</PageTitle>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            <span class="gradient-text">Pdd.ir</span>
+        </h1>
+        <p class="hero-subtitle">شرکت نرم‌افزاری پیشرو در توسعه راهکارهای سازمانی</p>
+        <p class="hero-desc">
+            ما با بیش از ۱۰ سال تجربه، نرم‌افزارهای مدرن و کارآمد برای بیمارستان‌ها و سازمان‌های مالی توسعه می‌دهیم.
+        </p>
+        <div class="hero-actions">
+            <a href="/products" class="btn btn-primary btn-lg">مشاهده محصولات</a>
+            <a href="/contact" class="btn btn-outline-light btn-lg">تماس با ما</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="floating-card card-1">
+            <i class="bi bi-hospital"></i>
+            <span>HIS</span>
+        </div>
+        <div class="floating-card card-2">
+            <i class="bi bi-calculator"></i>
+            <span>مالی</span>
+        </div>
+        <div class="floating-card card-3">
+            <i class="bi bi-graph-up"></i>
+            <span>گزارش</span>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="section" id="products">
+    <div class="container">
+        <h2 class="section-title">محصولات ما</h2>
+        <div class="row g-4">
+            @if (_products == null)
+            {
+                @for (int i = 0; i < 2; i++)
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                }
+            }
+            else
+            {
+                @foreach (var product in _products)
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="product-card">
+                            <div class="product-icon">
+                                <i class="bi @(product.Category == "HIS" ? "bi-hospital" : "bi-calculator")"></i>
+                            </div>
+                            <h3>@product.Title</h3>
+                            <p class="text-muted">@product.Subtitle</p>
+                            <a href="/products" class="btn btn-primary">مشاهده جزئیات</a>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">چرا Pdd.ir؟</h2>
+        <div class="row g-4">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <h4>امنیت بالا</h4>
+                    <p>رمزنگاری AES-256 و احراز هویت پیشرفته</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-speedometer2"></i></div>
+                    <h4>سرعت بالا</h4>
+                    <p>ارتباط WebSocket و عملکرد بهینه</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-phone"></i></div>
+                    <h4>واکنش‌گرا</h4>
+                    <p>طراحی مناسب برای تمام دستگاه‌ها</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-headset"></i></div>
+                    <h4>پشتیبانی ۲۴/۷</h4>
+                    <p>تیم پشتیبانی آماده خدمت‌رسانی</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section cta-section">
+    <div class="container text-center">
+        <h2>آماده شروع هستید؟</h2>
+        <p class="mb-4">با ما تماس بگیرید و مشاوره رایگان دریافت کنید</p>
+        <a href="/contact" class="btn btn-light btn-lg">تماس با ما</a>
+    </div>
+</section>
+
+@code {
+    private List<ProductDto>? _products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
+            _products = response?.Data;
+        }
+        catch
+        {
+            _products = new List<ProductDto>();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initAnimations");
+            }
+            catch { }
+        }
+    }
+
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Features { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public T? Data { get; set; }
+    }
+}

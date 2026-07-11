@@ -1,0 +1,124 @@
+@page "/contact"
+@inject HttpClient Http
+
+<PageTitle>تماس با ما | Pdd.ir</PageTitle>
+
+<section class="page-header">
+    <h1>تماس با ما</h1>
+    <p>با ما در ارتباط باشید</p>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-12 col-lg-6">
+                <div class="contact-info">
+                    <h3>اطلاعات تماس</h3>
+                    <div class="info-item">
+                        <i class="bi bi-geo-alt"></i>
+                        <div>
+                            <strong>آدرس</strong>
+                            <p>تهران، خیابان ولیعصر</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-telephone"></i>
+                        <div>
+                            <strong>تلفن</strong>
+                            <p>۰۲۱-۱۲۳۴۵۶۷۸</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-envelope"></i>
+                        <div>
+                            <strong>ایمیل</strong>
+                            <p>info@pdd.ir</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="contact-form-card">
+                    @if (_submitted)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            پیام شما با موفقیت ارسال شد.
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="model" OnValidSubmit="Submit">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">نام *</label>
+                                    <InputText class="form-control" @bind-Value="model.Name" placeholder="نام خود را وارد کنید" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">ایمیل *</label>
+                                    <InputText class="form-control" @bind-Value="model.Email" placeholder="ایمیل خود را وارد کنید" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">تلفن</label>
+                                    <InputText class="form-control" @bind-Value="model.Phone" placeholder="شماره تلفن" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">موضوع</label>
+                                    <InputText class="form-control" @bind-Value="model.Subject" placeholder="موضوع پیام" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">پیام *</label>
+                                    <InputTextArea class="form-control" @bind-Value="model.Message" rows="5" placeholder="پیام خود را بنویسید..." />
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary" disabled="@_submitting">
+                                        @if (_submitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        ارسال پیام
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private ContactModel model = new();
+    private bool _submitting;
+    private bool _submitted;
+
+    private async Task Submit()
+    {
+        _submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/contact", model);
+            if (response.IsSuccessStatusCode)
+            {
+                _submitted = true;
+                model = new();
+            }
+        }
+        catch { }
+
+        _submitting = false;
+        StateHasChanged();
+    }
+
+    public class ContactModel
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Subject { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
+}

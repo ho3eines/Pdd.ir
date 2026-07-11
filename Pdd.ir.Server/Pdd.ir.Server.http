@@ -1,0 +1,6 @@
+@Pdd.ir.Server_HostAddress = http://localhost:5183
+
+GET {{Pdd.ir.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

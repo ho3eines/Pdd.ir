@@ -1,0 +1,106 @@
+@page "/products"
+@inject HttpClient Http
+
+<PageTitle>محصولات | Pdd.ir</PageTitle>
+
+<section class="page-header">
+    <h1>محصولات ما</h1>
+    <p>نرم‌افزارهای مدرن و کارآمد برای سازمان شما</p>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row g-4">
+            @if (_products == null)
+            {
+                @for (int i = 0; i < 4; i++)
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                }
+            }
+            else
+            {
+                @foreach (var product in _products)
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="product-detail-card">
+                            <div class="product-header">
+                                <div class="product-icon-lg">
+                                    <i class="bi @(product.Category == "HIS" ? "bi-hospital" : "bi-calculator")"></i>
+                                </div>
+                                <div>
+                                    <h3>@product.Title</h3>
+                                    <p class="text-muted">@product.Subtitle</p>
+                                </div>
+                            </div>
+                            <p>@product.Description</p>
+                            @if (!string.IsNullOrEmpty(product.Features))
+                            {
+                                <div class="features-list">
+                                    @foreach (var feature in ParseFeatures(product.Features))
+                                    {
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                            <span>@feature</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<ProductDto>? _products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
+            _products = response?.Data;
+        }
+        catch
+        {
+            _products = new List<ProductDto>();
+        }
+    }
+
+    private List<string> ParseFeatures(string features)
+    {
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(features) ?? new List<string>();
+        }
+        catch
+        {
+            return features.Split('\n').Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
+        }
+    }
+
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Features { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public T? Data { get; set; }
+    }
+}

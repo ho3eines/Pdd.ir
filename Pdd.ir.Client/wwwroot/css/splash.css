@@ -1,0 +1,67 @@
+#splash-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #16233b, #050812);
+    z-index: 99999;
+    overflow: hidden;
+}
+
+.logo-wrapper {
+    text-align: center;
+    position: relative;
+}
+
+#brand-logo {
+    width: 160px;
+    filter: drop-shadow(0 0 30px #0D6EFD);
+    opacity: 0;
+    transform: scale(.4);
+}
+
+.brand-name {
+    margin-top: 25px;
+    color: #E5E7EB;
+    font-size: 24px;
+    font-weight: 700;
+    opacity: 0;
+}
+
+.loading-line {
+    margin-top: 30px;
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 255, 255, .15);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.loading-line span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #0D6EFD, #FFB020);
+}
+
+.light-ring {
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: conic-gradient(#0D6EFD, transparent, #FFB020, transparent);
+    filter: blur(35px);
+    opacity: .5;
+}
+
+.particles {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#00E0FF 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: .15;
+}

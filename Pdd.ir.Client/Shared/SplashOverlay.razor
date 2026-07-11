@@ -1,0 +1,42 @@
+@inject IJSRuntime JS
+
+@if (Visible)
+{
+    <div id="splash-container">
+        <div class="particles"></div>
+        <div class="logo-wrapper">
+            <div class="light-ring"></div>
+            <img id="brand-logo" src="assets/logo.svg" />
+            <div class="brand-name">Software Engineering</div>
+            <div class="loading-line">
+                <span></span>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool Visible = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var show = await JS.InvokeAsync<bool>("splash.shouldShow");
+
+            if (show)
+            {
+                await JS.InvokeVoidAsync("splash.start");
+                await Task.Delay(3500);
+                Visible = false;
+                StateHasChanged();
+                await JS.InvokeVoidAsync("splash.completed");
+            }
+            else
+            {
+                Visible = false;
+                StateHasChanged();
+            }
+        }
+    }
+}

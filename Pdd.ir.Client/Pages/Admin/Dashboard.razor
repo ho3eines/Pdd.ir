@@ -1,0 +1,154 @@
+@page "/admin"
+@inject HttpClient Http
+
+<PageTitle>پنل مدیریت | Pdd.ir</PageTitle>
+
+<section class="page-header">
+    <h1>پنل مدیریت</h1>
+    <p>مدیریت محتوا و محصولات</p>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="stat-card stat-card-primary">
+                    <i class="bi bi-box-seam"></i>
+                    <div class="stat-number">@(_productCount)</div>
+                    <div class="stat-label">محصولات</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="stat-card stat-card-success">
+                    <i class="bi bi-envelope"></i>
+                    <div class="stat-number">@(_messageCount)</div>
+                    <div class="stat-label">پیام‌ها</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="stat-card stat-card-warning">
+                    <i class="bi bi-envelope-exclamation"></i>
+                    <div class="stat-number">@(_unreadCount)</div>
+                    <div class="stat-label">پیام‌های خوانده نشده</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="stat-card stat-card-info">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <div class="stat-number">@(_pageCount)</div>
+                    <div class="stat-label">صفحات</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <div class="admin-card">
+                    <h3><i class="bi bi-box-seam"></i> مدیریت محصولات</h3>
+                    @if (_products != null)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>عنوان</th>
+                                        <th>دسته‌بندی</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in _products)
+                                    {
+                                        <tr>
+                                            <td>@p.Title</td>
+                                            <td>@p.Category</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditProduct(p)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="admin-card">
+                    <h3><i class="bi bi-envelope"></i> پیام‌های اخیر</h3>
+                    @if (_messages != null)
+                    {
+                        @foreach (var msg in _messages.Take(5))
+                        {
+                            <div class="message-item @(msg.IsRead ? "" : "unread")">
+                                <div class="message-header">
+                                    <strong>@msg.Name</strong>
+                                    <small class="text-muted">@msg.CreatedAt.ToString("yyyy/MM/dd")</small>
+                                </div>
+                                <p>@msg.Subject</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private int _productCount;
+    private int _messageCount;
+    private int _unreadCount;
+    private int _pageCount;
+    private List<ProductDto>? _products;
+    private List<ContactDto>? _messages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var productsResponse = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
+            _products = productsResponse?.Data;
+            _productCount = _products?.Count ?? 0;
+
+            var messagesResponse = await Http.GetFromJsonAsync<ApiResponse<List<ContactDto>>>("api/contact");
+            _messages = messagesResponse?.Data;
+            _messageCount = _messages?.Count ?? 0;
+            _unreadCount = _messages?.Count(m => !m.IsRead) ?? 0;
+
+            var pagesResponse = await Http.GetFromJsonAsync<ApiResponse<List<object>>>("api/page");
+            _pageCount = pagesResponse?.Data?.Count ?? 0;
+        }
+        catch { }
+    }
+
+    private void EditProduct(ProductDto product)
+    {
+        // TODO: Open edit modal
+    }
+
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Category { get; set; } = "";
+    }
+
+    public class ContactDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Subject { get; set; } = "";
+        public bool IsRead { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public T? Data { get; set; }
+    }
+}

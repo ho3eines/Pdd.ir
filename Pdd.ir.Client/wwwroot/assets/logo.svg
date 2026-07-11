@@ -1,0 +1,15 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Black outline shape -->
+  <path d="M31 23H82C91.94 23 100 31.06 100 41V82H83V56C83 65.94 74.94 74 65 74H31V23Z" fill="white" stroke="#1D1D1D" stroke-width="5" stroke-linejoin="round"></path>
+
+  <!-- Yellow top section -->
+  <path d="M31 23H82C91.94 23 100 31.06 100 41C100 50.94 91.94 56 82 56H31V23Z" fill="#FFB51B" stroke="#1D1D1D" stroke-width="5" stroke-linejoin="round"></path>
+
+  <!-- Blue bottom section -->
+  <path d="M31 74H83V101H31C21.06 101 13 93.94 13 84C13 78.48 21.06 74 31 74Z" fill="#0879B8" stroke="#1D1D1D" stroke-width="5" stroke-linejoin="round"></path>
+
+  <!-- Inner white separation -->
+  <path d="M31 74H65C74.94 74 83 65.94 83 56V74" fill="white" stroke="#1D1D1D" stroke-width="5" stroke-linejoin="round"></path>
+
+</svg>

@@ -1,0 +1,26 @@
+namespace Pdd.ir.Business.Models.DTOs
+{
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Subtitle { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Features { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class ProductCreateRequest
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Subtitle { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Features { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+    }
+}
