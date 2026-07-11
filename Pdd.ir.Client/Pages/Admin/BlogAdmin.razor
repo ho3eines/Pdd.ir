@@ -1,0 +1,189 @@
+@page "/admin/blog"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>مدیریت بلاگ | Pdd.ir</PageTitle>
+
+<PageHeader Title="مدیریت بلاگ" Subtitle="ایجاد و مدیریت مقالات">
+    <button class="btn btn-primary" @onclick="OpenCreateDialog">
+        <i class="bi bi-plus-lg me-1"></i>مقاله جدید
+    </button>
+</PageHeader>
+
+<section class="section">
+    <div class="container">
+        <div class="admin-card">
+            @if (_posts == null)
+            {
+                @for (int i = 0; i < 3; i++)
+                {
+                    <div class="skeleton skeleton-row mb-2"></div>
+                }
+            }
+            else if (!_posts.Any())
+            {
+                <div class="text-center py-4 text-secondary">
+                    <i class="bi bi-journal" style="font-size:2rem;"></i>
+                    <p class="mt-2">مقاله‌ای یافت نشد</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان</th>
+                                <th>نویسنده</th>
+                                <th>بازدید</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in _posts)
+                            {
+                                <tr>
+                                    <td>@p.Id</td>
+                                    <td>@p.Title</td>
+                                    <td>@p.Author</td>
+                                    <td>@p.ViewCount</td>
+                                    <td>
+                                        @if (p.IsPublished)
+                                        {
+                                            <span class="badge bg-success">منتشر شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">پیش‌نویس</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenEditDialog(p)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(p)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (_showDialog)
+{
+    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-color:var(--border-color);">
+                    <h5 class="modal-title">@(_editId.HasValue ? "ویرایش مقاله" : "مقاله جدید")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">عنوان *</label>
+                            <input class="form-control" @bind="_model.Title" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label"> Slug *</label>
+                            <input class="form-control" @bind="_model.Slug" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">خلاصه</label>
+                            <textarea class="form-control" rows="2" @bind="_model.Summary"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">محتوا</label>
+                            <textarea class="form-control" rows="6" @bind="_model.Content"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">نویسنده</label>
+                            <input class="form-control" @bind="_model.Author" />
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" @bind="_model.IsPublished" id="publishCheck">
+                                <label class="form-check-label" for="publishCheck">منتشر شده</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseDialog">انصراف</button>
+                    <button class="btn btn-primary" @onclick="SaveAsync">
+                        <i class="bi bi-floppy me-1"></i>ذخیره
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<BlogDto>? _posts;
+    private bool _showDialog;
+    private int? _editId;
+    private BlogCreateRequest _model = new();
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<BlogDto>>>("api/blog/admin");
+            _posts = response?.Data?.ToList();
+        }
+        catch { _posts = new List<BlogDto>(); }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editId = null;
+        _model = new BlogCreateRequest { Author = "Admin" };
+        _showDialog = true;
+    }
+
+    private void OpenEditDialog(BlogDto p)
+    {
+        _editId = p.Id;
+        _model = new BlogCreateRequest
+        {
+            Title = p.Title, Slug = p.Slug, Summary = p.Summary, Content = p.Content,
+            ImageUrl = p.ImageUrl, Author = p.Author, IsPublished = p.IsPublished
+        };
+        _showDialog = true;
+    }
+
+    private void CloseDialog() { _showDialog = false; StateHasChanged(); }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            if (_editId.HasValue)
+                await Http.PutAsJsonAsync($"api/blog/{_editId}", _model);
+            else
+                await Http.PostAsJsonAsync("api/blog", _model);
+            CloseDialog();
+            await LoadData();
+        }
+        catch { }
+    }
+
+    private async Task DeleteAsync(BlogDto p)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{p.Title}» مطمئن هستید؟");
+        if (!confirmed) return;
+        await Http.DeleteAsync($"api/blog/{p.Id}");
+        await LoadData();
+    }
+}

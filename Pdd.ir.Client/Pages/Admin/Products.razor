@@ -1,0 +1,188 @@
+@page "/admin/products"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>مدیریت محصولات | Pdd.ir</PageTitle>
+
+<PageHeader Title="مدیریت محصولات" Subtitle="ایجاد، ویرایش و حذف محصولات">
+    <button class="btn btn-primary" @onclick="OpenCreateDialog">
+        <i class="bi bi-plus-lg me-1"></i>محصول جدید
+    </button>
+</PageHeader>
+
+<section class="section">
+    <div class="container">
+        <div class="admin-card">
+            @if (_products == null)
+            {
+                @for (int i = 0; i < 3; i++)
+                {
+                    <div class="skeleton skeleton-row mb-2"></div>
+                }
+            }
+            else if (!_products.Any())
+            {
+                <div class="text-center py-4 text-secondary">
+                    <i class="bi bi-box" style="font-size:2rem;"></i>
+                    <p class="mt-2">محصولی یافت نشد</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان</th>
+                                <th>دسته‌بندی</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in _products)
+                            {
+                                <tr>
+                                    <td>@p.Id</td>
+                                    <td>@p.Title</td>
+                                    <td><span class="badge bg-primary">@p.Category</span></td>
+                                    <td>
+                                        @if (p.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenEditDialog(p)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(p)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (_showDialog)
+{
+    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-color:var(--border-color);">
+                    <h5 class="modal-title">@(_editId.HasValue ? "ویرایش محصول" : "محصول جدید")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">عنوان *</label>
+                            <input class="form-control" @bind="_model.Title" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">زیرعنوان</label>
+                            <input class="form-control" @bind="_model.Subtitle" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">توضیحات</label>
+                            <textarea class="form-control" rows="3" @bind="_model.Description"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">دسته‌بندی</label>
+                            <input class="form-control" @bind="_model.Category" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">ترتیب نمایش</label>
+                            <input type="number" class="form-control" @bind="_model.SortOrder" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">ویژگی‌ها (JSON)</label>
+                            <textarea class="form-control" rows="2" @bind="_model.Features"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseDialog">انصراف</button>
+                    <button class="btn btn-primary" @onclick="SaveAsync">
+                        <i class="bi bi-floppy me-1"></i>ذخیره
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProductDto>? _products;
+    private bool _showDialog;
+    private int? _editId;
+    private ProductCreateRequest _model = new();
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
+            _products = response?.Data?.ToList();
+        }
+        catch { _products = new List<ProductDto>(); }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editId = null;
+        _model = new ProductCreateRequest();
+        _showDialog = true;
+    }
+
+    private void OpenEditDialog(ProductDto p)
+    {
+        _editId = p.Id;
+        _model = new ProductCreateRequest
+        {
+            Title = p.Title, Subtitle = p.Subtitle, Description = p.Description,
+            Features = p.Features, ImageUrl = p.ImageUrl, Category = p.Category,
+            SortOrder = p.SortOrder, IsActive = p.IsActive
+        };
+        _showDialog = true;
+    }
+
+    private void CloseDialog() { _showDialog = false; StateHasChanged(); }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            if (_editId.HasValue)
+                await Http.PutAsJsonAsync($"api/product/{_editId}", _model);
+            else
+                await Http.PostAsJsonAsync("api/product", _model);
+
+            CloseDialog();
+            await LoadData();
+        }
+        catch { }
+    }
+
+    private async Task DeleteAsync(ProductDto p)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{p.Title}» مطمئن هستید؟");
+        if (!confirmed) return;
+
+        await Http.DeleteAsync($"api/product/{p.Id}");
+        await LoadData();
+    }
+}

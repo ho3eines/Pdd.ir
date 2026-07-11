@@ -1,0 +1,65 @@
+@page "/blog/{Slug}"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>@(_post?.Title ?? "بلاگ") | Pdd.ir</PageTitle>
+
+@if (_post == null)
+{
+    <div class="section">
+        <div class="container">
+            <div class="skeleton skeleton-card" style="height:400px;"></div>
+        </div>
+    </div>
+}
+else
+{
+    <section class="section">
+        <div class="container" style="max-width:800px;">
+            <AnimatedSection AnimationType="fade-up">
+                <div class="d-flex align-items-center gap-3 mb-4 text-secondary" style="font-size:0.9rem;">
+                    <span><i class="bi bi-person me-1"></i>@_post.Author</span>
+                    <span><i class="bi bi-calendar me-1"></i>@_post.CreatedAt.ToString("yyyy/MM/dd")</span>
+                    <span><i class="bi bi-eye me-1"></i>@_post.ViewCount بازدید</span>
+                </div>
+                <h1 style="font-size:2rem;font-weight:700;">@_post.Title</h1>
+                @if (!string.IsNullOrEmpty(_post.Summary))
+                {
+                    <p class="text-secondary mt-3" style="font-size:1.1rem;">@_post.Summary</p>
+                }
+                <hr class="my-4" style="border-color:var(--border-color);" />
+                <div style="line-height:1.8;color:var(--text-secondary);">
+                    @((MarkupString)_post.Content)
+                </div>
+                <div class="mt-5">
+                    <a href="/blog" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-right me-1"></i>بازگشت به بلاگ
+                    </a>
+                </div>
+            </AnimatedSection>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    private BlogDto? _post;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<BlogDto>>($"api/blog/{Slug}");
+            _post = response?.Data;
+        }
+        catch { }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
+        }
+    }
+}

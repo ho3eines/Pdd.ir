@@ -1,0 +1,26 @@
+<div @ref="_elementRef" class="animated-section @AnimationClass" data-animate="@AnimationType">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string AnimationType { get; set; } = "fade-up";
+    [Parameter] public double Delay { get; set; } = 0;
+
+    private ElementReference _elementRef;
+    private string AnimationClass => $"anim-{AnimationType}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initScrollAnimations");
+            }
+            catch { }
+        }
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+}

@@ -12,9 +12,13 @@ namespace Pdd.ir.Client.Services
         private ClientWebSocket? _webSocket;
         private bool _isConnected;
         private Timer? _reconnectTimer;
+        private int _reconnectAttempts;
+        private string _wsUrl = "";
+        private const int MaxReconnectAttempts = 10;
+        private const int InitialRetryMs = 2000;
+        private const int MaxRetryMs = 30000;
 
         public bool IsWebSocketConnected => _isConnected;
-
         public event Action<bool>? OnConnectionChanged;
 
         public ConnectionService(HttpClient http, ILogger<ConnectionService> logger)
@@ -25,14 +29,15 @@ namespace Pdd.ir.Client.Services
 
         public async Task ConnectAsync(string wsUrl)
         {
+            _wsUrl = wsUrl;
             try
             {
                 _webSocket = new ClientWebSocket();
                 await _webSocket.ConnectAsync(new Uri(wsUrl), CancellationToken.None);
                 _isConnected = true;
+                _reconnectAttempts = 0;
                 OnConnectionChanged?.Invoke(true);
                 _logger.LogInformation("WebSocket connected");
-
                 _ = ReceiveLoopAsync();
             }
             catch (Exception ex)
@@ -40,14 +45,27 @@ namespace Pdd.ir.Client.Services
                 _isConnected = false;
                 OnConnectionChanged?.Invoke(false);
                 _logger.LogWarning("WebSocket connection failed, will use API fallback: {Error}", ex.Message);
-
-                _reconnectTimer = new Timer(async _ => await TryReconnectAsync(wsUrl), null, 5000, 5000);
+                ScheduleReconnect(wsUrl);
             }
+        }
+
+        private void ScheduleReconnect(string wsUrl)
+        {
+            _reconnectTimer?.Dispose();
+            var delay = Math.Min(InitialRetryMs * (int)Math.Pow(2, _reconnectAttempts), MaxRetryMs);
+            _reconnectTimer = new Timer(async _ => await TryReconnectAsync(wsUrl), null, delay, Timeout.Infinite);
         }
 
         private async Task TryReconnectAsync(string wsUrl)
         {
             if (_isConnected) return;
+            _reconnectAttempts++;
+
+            if (_reconnectAttempts >= MaxReconnectAttempts)
+            {
+                _logger.LogWarning("Max reconnect attempts reached");
+                return;
+            }
 
             try
             {
@@ -55,14 +73,14 @@ namespace Pdd.ir.Client.Services
                 _webSocket = new ClientWebSocket();
                 await _webSocket.ConnectAsync(new Uri(wsUrl), CancellationToken.None);
                 _isConnected = true;
+                _reconnectAttempts = 0;
                 OnConnectionChanged?.Invoke(true);
                 _reconnectTimer?.Dispose();
-
                 _ = ReceiveLoopAsync();
             }
             catch
             {
-                // Will retry on next timer tick
+                ScheduleReconnect(wsUrl);
             }
         }
 
@@ -78,6 +96,7 @@ namespace Pdd.ir.Client.Services
                     {
                         _isConnected = false;
                         OnConnectionChanged?.Invoke(false);
+                        ScheduleReconnect(_wsUrl);
                     }
                 }
             }
@@ -105,6 +124,8 @@ namespace Pdd.ir.Client.Services
             }
             catch
             {
+                _isConnected = false;
+                OnConnectionChanged?.Invoke(false);
                 return null;
             }
         }
@@ -114,7 +135,6 @@ namespace Pdd.ir.Client.Services
             try
             {
                 HttpResponseMessage response;
-
                 if (data != null)
                     response = await _http.PostAsJsonAsync(url, data);
                 else
@@ -124,7 +144,6 @@ namespace Pdd.ir.Client.Services
                     return await response.Content.ReadFromJsonAsync<T>();
             }
             catch { }
-
             return default;
         }
 
@@ -137,7 +156,6 @@ namespace Pdd.ir.Client.Services
                     return await response.Content.ReadFromJsonAsync<T>();
             }
             catch { }
-
             return default;
         }
 
@@ -146,7 +164,11 @@ namespace Pdd.ir.Client.Services
             _reconnectTimer?.Dispose();
             if (_webSocket != null)
             {
-                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                try
+                {
+                    await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                }
+                catch { }
                 _webSocket.Dispose();
             }
         }

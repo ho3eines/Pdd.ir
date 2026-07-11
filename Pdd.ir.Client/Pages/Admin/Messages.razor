@@ -1,0 +1,141 @@
+@page "/admin/messages"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>پیام‌ها | Pdd.ir</PageTitle>
+
+<PageHeader Title=" مدیریت پیام‌ها" Subtitle="پیام‌های دریافتی از فرم تماس" />
+
+<section class="section">
+    <div class="container">
+        <div class="admin-card">
+            @if (_messages == null)
+            {
+                @for (int i = 0; i < 3; i++)
+                {
+                    <div class="skeleton skeleton-row mb-2"></div>
+                }
+            }
+            else if (!_messages.Any())
+            {
+                <div class="text-center py-4 text-secondary">
+                    <i class="bi bi-chat-dots" style="font-size:2rem;"></i>
+                    <p class="mt-2">پیامی یافت نشد</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>نام</th>
+                                <th>ایمیل</th>
+                                <th>موضوع</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var msg in _messages)
+                            {
+                                <tr class="@(!msg.IsRead ? "table-active" : "")">
+                                    <td>@msg.Id</td>
+                                    <td>@msg.Name</td>
+                                    <td>@msg.Email</td>
+                                    <td>@msg.Subject</td>
+                                    <td>@msg.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                    <td>
+                                        @if (msg.IsRead)
+                                        {
+                                            <span class="badge bg-secondary">خوانده شده</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary">جدید</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info me-1" @onclick="() => ViewMessage(msg)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(msg)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (_selectedMessage != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-color:var(--border-color);">
+                    <h5 class="modal-title">پیام از @_selectedMessage.Name</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseMessage"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>ایمیل:</strong> @_selectedMessage.Email</p>
+                    <p><strong>تلفن:</strong> @(_selectedMessage.Phone ?? "-")</p>
+                    <p><strong>موضوع:</strong> @(_selectedMessage.Subject ?? "-")</p>
+                    <hr />
+                    <p>@_selectedMessage.Message</p>
+                </div>
+                <div class="modal-footer" style="border-color:var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseMessage">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ContactDto>? _messages;
+    private ContactDto? _selectedMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ContactDto>>>("api/contact");
+            _messages = response?.Data?.ToList();
+        }
+        catch { _messages = new List<ContactDto>(); }
+    }
+
+    private async Task ViewMessage(ContactDto msg)
+    {
+        _selectedMessage = msg;
+        if (!msg.IsRead)
+        {
+            try
+            {
+                await Http.PutAsJsonAsync($"api/contact/{msg.Id}/read", new { });
+                msg.IsRead = true;
+            }
+            catch { }
+        }
+    }
+
+    private void CloseMessage() { _selectedMessage = null; }
+
+    private async Task DeleteAsync(ContactDto msg)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف پیام «{msg.Name}» مطمئن هستید؟");
+        if (!confirmed) return;
+        await Http.DeleteAsync($"api/contact/{msg.Id}");
+        await LoadData();
+    }
+}

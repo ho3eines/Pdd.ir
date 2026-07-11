@@ -1,0 +1,22 @@
+<section class="page-header">
+    <div class="page-header-bg"></div>
+    <div class="container position-relative">
+        <h1 class="page-header-title">@Title</h1>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <p class="page-header-subtitle">@Subtitle</p>
+        }
+        @if (ChildContent != null)
+        {
+            <div class="page-header-actions">
+                @ChildContent
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -96,6 +96,8 @@ namespace Pdd.ir.Server.WebSocket
         {
             using var scope = _scopeFactory.CreateScope();
             var productService = scope.ServiceProvider.GetRequiredService<ProductBusinessService>();
+            var blogService = scope.ServiceProvider.GetRequiredService<BlogBusinessService>();
+            var portfolioService = scope.ServiceProvider.GetRequiredService<PortfolioBusinessService>();
 
             return request.Action switch
             {
@@ -111,6 +113,32 @@ namespace Pdd.ir.Server.WebSocket
                     Success = true,
                     Data = JsonSerializer.SerializeToElement(
                         await productService.GetByIdAsync(int.Parse(request.Data ?? "0")))
+                },
+                "blog.list" => new WsResponse
+                {
+                    Action = "blog.list",
+                    Success = true,
+                    Data = JsonSerializer.SerializeToElement(await blogService.GetAllAsync())
+                },
+                "blog.get" => new WsResponse
+                {
+                    Action = "blog.get",
+                    Success = true,
+                    Data = JsonSerializer.SerializeToElement(
+                        await blogService.GetBySlugAsync(request.Data ?? ""))
+                },
+                "portfolio.list" => new WsResponse
+                {
+                    Action = "portfolio.list",
+                    Success = true,
+                    Data = JsonSerializer.SerializeToElement(await portfolioService.GetAllAsync())
+                },
+                "portfolio.get" => new WsResponse
+                {
+                    Action = "portfolio.get",
+                    Success = true,
+                    Data = JsonSerializer.SerializeToElement(
+                        await portfolioService.GetByIdAsync(int.Parse(request.Data ?? "0")))
                 },
                 _ => new WsResponse { Action = request.Action, Success = false, Message = "Unknown action" }
             };

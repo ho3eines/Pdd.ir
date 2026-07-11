@@ -1,0 +1,61 @@
+@inject IJSRuntime JS
+
+@if (_visible)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+        <div class="toast show" role="alert">
+            <div class="toast-header @(_type switch { "success" => "bg-success text-white", "error" => "bg-danger text-white", "warning" => "bg-warning text-dark", _ => "bg-info text-white" })">
+                <i class="bi @(_type switch { "success" => "bi-check-circle-fill", "error" => "bi-exclamation-circle-fill", "warning" => "bi-exclamation-triangle-fill", _ => "bi-info-circle-fill" }) me-2"></i>
+                <strong class="me-auto">@_title</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="Hide"></button>
+            </div>
+            <div class="toast-body">@_message</div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private string _title = "";
+    private string _message = "";
+    private string _type = "info";
+
+    public async Task ShowSuccessAsync(string title, string message)
+    {
+        _title = title;
+        _message = message;
+        _type = "success";
+        _visible = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        Hide();
+    }
+
+    public async Task ShowErrorAsync(string title, string message)
+    {
+        _title = title;
+        _message = message;
+        _type = "error";
+        _visible = true;
+        StateHasChanged();
+        await Task.Delay(5000);
+        Hide();
+    }
+
+    public async Task ShowInfoAsync(string title, string message)
+    {
+        _title = title;
+        _message = message;
+        _type = "info";
+        _visible = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        Hide();
+    }
+
+    private void Hide()
+    {
+        _visible = false;
+        StateHasChanged();
+    }
+}

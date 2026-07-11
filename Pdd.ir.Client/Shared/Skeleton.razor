@@ -1,0 +1,35 @@
+@switch (Type)
+{
+    case "text":
+        <div class="skeleton skeleton-text" style="@Style"></div>
+        break;
+    case "title":
+        <div class="skeleton skeleton-title" style="@Style"></div>
+        break;
+    case "avatar":
+        <div class="skeleton skeleton-avatar" style="@Style"></div>
+        break;
+    case "card":
+        <div class="skeleton skeleton-card" style="@Style"></div>
+        break;
+    case "row":
+        <div class="skeleton skeleton-row" style="@Style"></div>
+        break;
+    case "table-row":
+        <div class="skeleton skeleton-table-row" style="@Style"></div>
+        break;
+    case "image":
+        <div class="skeleton skeleton-image" style="@Style"></div>
+        break;
+    case "button":
+        <div class="skeleton skeleton-button" style="@Style"></div>
+        break;
+    default:
+        <div class="skeleton skeleton-card" style="@Style"></div>
+        break;
+}
+
+@code {
+    [Parameter] public string Type { get; set; } = "card";
+    [Parameter] public string Style { get; set; } = "";
+}

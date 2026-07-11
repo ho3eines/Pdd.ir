@@ -1,12 +1,10 @@
 @page "/products"
 @inject HttpClient Http
+@inject IJSRuntime JS
 
 <PageTitle>محصولات | Pdd.ir</PageTitle>
 
-<section class="page-header">
-    <h1>محصولات ما</h1>
-    <p>نرم‌افزارهای مدرن و کارآمد برای سازمان شما</p>
-</section>
+<PageHeader Title="محصولات ما" Subtitle="نرم‌افزارهای مدرن و کارآمد برای سازمان شما" />
 
 <section class="section">
     <div class="container">
@@ -25,30 +23,32 @@
                 @foreach (var product in _products)
                 {
                     <div class="col-12 col-md-6">
-                        <div class="product-detail-card">
-                            <div class="product-header">
-                                <div class="product-icon-lg">
-                                    <i class="bi @(product.Category == "HIS" ? "bi-hospital" : "bi-calculator")"></i>
+                        <AnimatedSection AnimationType="fade-up">
+                            <div class="product-detail-card tilt-card">
+                                <div class="product-header">
+                                    <div class="product-icon-lg">
+                                        <i class="bi @(product.Category == "HIS" ? "bi-hospital" : "bi-calculator")"></i>
+                                    </div>
+                                    <div>
+                                        <h3>@product.Title</h3>
+                                        <p class="text-muted">@product.Subtitle</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3>@product.Title</h3>
-                                    <p class="text-muted">@product.Subtitle</p>
-                                </div>
+                                <p>@product.Description</p>
+                                @if (!string.IsNullOrEmpty(product.Features))
+                                {
+                                    <div class="features-list">
+                                        @foreach (var feature in ParseFeatures(product.Features))
+                                        {
+                                            <div class="feature-item">
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                                <span>@feature</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </div>
-                            <p>@product.Description</p>
-                            @if (!string.IsNullOrEmpty(product.Features))
-                            {
-                                <div class="features-list">
-                                    @foreach (var feature in ParseFeatures(product.Features))
-                                    {
-                                        <div class="feature-item">
-                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                            <span>@feature</span>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
+                        </AnimatedSection>
                     </div>
                 }
             }
@@ -72,35 +72,17 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await JS.InvokeVoidAsync("initScrollAnimations"); await JS.InvokeVoidAsync("initTiltEffect"); } catch { }
+        }
+    }
+
     private List<string> ParseFeatures(string features)
     {
-        try
-        {
-            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(features) ?? new List<string>();
-        }
-        catch
-        {
-            return features.Split('\n').Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
-        }
-    }
-
-    public class ProductDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Subtitle { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Features { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Category { get; set; } = "";
-        public int SortOrder { get; set; }
-        public bool IsActive { get; set; }
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public T? Data { get; set; }
+        try { return System.Text.Json.JsonSerializer.Deserialize<List<string>>(features) ?? new List<string>(); }
+        catch { return features.Split('\n').Where(f => !string.IsNullOrWhiteSpace(f)).ToList(); }
     }
 }

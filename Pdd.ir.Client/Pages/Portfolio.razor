@@ -1,0 +1,75 @@
+@page "/portfolio"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>نمونه کارها | Pdd.ir</PageTitle>
+
+<PageHeader Title="نمونه کارها" Subtitle="پروژه‌های موفق Pdd.ir" />
+
+<section class="section">
+    <div class="container">
+        @if (_items == null)
+        {
+            <div class="masonry-grid">
+                @for (int i = 0; i < 6; i++)
+                {
+                    <div class="skeleton" style="height:@(150 + (i % 3) * 50)px;margin-bottom:20px;"></div>
+                }
+            </div>
+        }
+        else if (!_items.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-images" style="font-size:3rem;color:var(--text-secondary);"></i>
+                <p class="mt-3 text-secondary">هنوز نمونه کاری ثبت نشده است</p>
+            </div>
+        }
+        else
+        {
+            <div class="masonry-grid">
+                @foreach (var item in _items)
+                {
+                    <AnimatedSection AnimationType="fade-up">
+                        <div class="portfolio-card">
+                            <div style="height:@(180 + (item.Id % 3) * 40)px;background:linear-gradient(135deg, @(item.Category == "HIS" ? "var(--primary)" : "var(--secondary)") 0%, #8b5cf6 100%);display:flex;align-items:center;justify-content:center;">
+                                <i class="bi @(item.Category == "HIS" ? "bi-hospital" : "bi-calculator")" style="font-size:3rem;color:rgba(255,255,255,0.3);"></i>
+                            </div>
+                            <div class="portfolio-card-overlay">
+                                <div>
+                                    <span class="badge bg-primary mb-2">@item.Category</span>
+                                    <h5 class="text-white mb-1">@item.Title</h5>
+                                    <p class="text-white-50" style="font-size:0.85rem;">@item.Description</p>
+                                </div>
+                            </div>
+                        </div>
+                    </AnimatedSection>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private List<PortfolioDto>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<PortfolioDto>>>("api/portfolio");
+            _items = response?.Data?.ToList();
+        }
+        catch
+        {
+            _items = new List<PortfolioDto>();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+@page "/admin/settings"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>تنظیمات | Pdd.ir</PageTitle>
+
+<PageHeader Title="تنظیمات سایت" Subtitle="مدیریت تنظیمات کلی سایت" />
+
+<section class="section">
+    <div class="container" style="max-width:600px;">
+        <div class="admin-card">
+            <h3><i class="bi bi-gear"></i> اطلاعات سایت</h3>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">نام شرکت</label>
+                    <input class="form-control" @bind="_companyName" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">تلفن</label>
+                    <input class="form-control" @bind="_phone" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">ایمیل</label>
+                    <input class="form-control" @bind="_email" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">آدرس</label>
+                    <textarea class="form-control" rows="2" @bind="_address"></textarea>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" @onclick="SaveSettings">
+                        <i class="bi bi-floppy me-1"></i>ذخیره تنظیمات
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private string _companyName = "Pdd.ir";
+    private string _phone = "021-12345678";
+    private string _email = "info@pdd.ir";
+    private string _address = "تهران، خیابان ولیعصر";
+
+    private async Task SaveSettings()
+    {
+        await JS.InvokeVoidAsync("alert", "تنظیمات با موفقیت ذخیره شد.");
+    }
+}
