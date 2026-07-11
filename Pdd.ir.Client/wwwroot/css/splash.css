@@ -1,67 +1,530 @@
+/* ============================================================
+   SPLASH SCREEN — Cinematic Premium Animation
+   Pdd.ir | Brand Identity Animation
+   ============================================================ */
+
+/* --- Color Tokens (Dark Mode Default) --- */
+:root {
+    --splash-bg-1: #0B0F17;
+    --splash-bg-2: #050812;
+    --splash-bg-3: #16233b;
+    --splash-primary: #0D6EFD;
+    --splash-secondary: #FFB020;
+    --splash-accent: #00E0FF;
+    --splash-text: #E5E7EB;
+    --splash-text-muted: #9CA3AF;
+    --splash-glass: rgba(255, 255, 255, 0.04);
+    --splash-glass-border: rgba(255, 255, 255, 0.08);
+    --splash-particles: rgba(0, 224, 255, 0.5);
+}
+
+/* --- Light Mode Override --- */
+[data-theme="light"] {
+    --splash-bg-1: #F7F9FC;
+    --splash-bg-2: #E6EEF7;
+    --splash-bg-3: #FFFFFF;
+    --splash-primary: #0D6EFD;
+    --splash-secondary: #FF8A00;
+    --splash-accent: #00B4DB;
+    --splash-text: #1F2937;
+    --splash-text-muted: #6B7280;
+    --splash-glass: rgba(255, 255, 255, 0.7);
+    --splash-glass-border: rgba(13, 110, 253, 0.12);
+    --splash-particles: rgba(13, 110, 253, 0.4);
+}
+
+/* ============================================================
+   ROOT CONTAINER
+   ============================================================ */
 #splash-container {
     position: fixed;
     inset: 0;
+    z-index: 99999;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, #16233b, #050812);
-    z-index: 99999;
-    overflow: hidden;
-}
-
-.logo-wrapper {
-    text-align: center;
-    position: relative;
-}
-
-#brand-logo {
-    width: 160px;
-    filter: drop-shadow(0 0 30px #0D6EFD);
+    background:
+        radial-gradient(ellipse at 20% 30%, rgba(13, 110, 253, 0.18) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(255, 176, 32, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at center, var(--splash-bg-3) 0%, var(--splash-bg-1) 60%, var(--splash-bg-2) 100%);
     opacity: 0;
-    transform: scale(.4);
+    transition: opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: opacity;
 }
 
-.brand-name {
-    margin-top: 25px;
-    color: #E5E7EB;
-    font-size: 24px;
-    font-weight: 700;
-    opacity: 0;
+#splash-container.is-ready {
+    opacity: 1;
 }
 
-.loading-line {
-    margin-top: 30px;
-    width: 200px;
-    height: 4px;
-    background: rgba(255, 255, 255, .15);
-    border-radius: 20px;
-    overflow: hidden;
-}
-
-.loading-line span {
-    display: block;
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(90deg, #0D6EFD, #FFB020);
-}
-
-.light-ring {
+/* --- Animated Gradient Layer --- */
+#splash-container::before {
+    content: "";
     position: absolute;
-    width: 260px;
-    height: 260px;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: conic-gradient(#0D6EFD, transparent, #FFB020, transparent);
-    filter: blur(35px);
-    opacity: .5;
+    inset: -50%;
+    background: conic-gradient(
+        from 0deg at 50% 50%,
+        transparent 0%,
+        rgba(13, 110, 253, 0.08) 25%,
+        transparent 50%,
+        rgba(255, 176, 32, 0.08) 75%,
+        transparent 100%
+    );
+    animation: splash-rotate 18s linear infinite;
+    filter: blur(60px);
+    pointer-events: none;
 }
 
+@keyframes splash-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- Noise / Grain Overlay for Premium Feel --- */
+#splash-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/></svg>");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+/* ============================================================
+   PARTICLE CANVAS (Dynamic)
+   ============================================================ */
+#splash-particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* --- Static Particle Layer (CSS only fallback) --- */
 .particles {
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(#00E0FF 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: .15;
+    background-image:
+        radial-gradient(var(--splash-particles) 1px, transparent 1.5px),
+        radial-gradient(var(--splash-particles) 1px, transparent 1.5px);
+    background-size: 80px 80px, 120px 120px;
+    background-position: 0 0, 40px 60px;
+    opacity: 0.3;
+    animation: particles-drift 40s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes particles-drift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-80px, -120px); }
+}
+
+/* ============================================================
+   CENTER ORB (Background light source)
+   ============================================================ */
+.splash-orb {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(13, 110, 253, 0.35) 0%, rgba(0, 224, 255, 0.1) 40%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* ============================================================
+   LOGO WRAPPER (Centerpiece)
+   ============================================================ */
+.logo-wrapper {
+    text-align: center;
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+/* --- Logo Container with Glow Halo --- */
+.logo-stage {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Spinning Glow Ring --- */
+.light-ring {
+    position: absolute;
+    inset: -30px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        var(--splash-primary) 0deg,
+        transparent 90deg,
+        var(--splash-secondary) 180deg,
+        transparent 270deg,
+        var(--splash-primary) 360deg
+    );
+    filter: blur(30px);
+    opacity: 0;
+    animation: light-ring-spin 4s linear infinite;
+}
+
+@keyframes light-ring-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- Inner Sharp Ring --- */
+.light-ring-inner {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: conic-gradient(
+        from 0deg,
+        var(--splash-primary) 0deg,
+        transparent 80deg,
+        var(--splash-secondary) 170deg,
+        transparent 250deg,
+        var(--splash-primary) 360deg
+    ) border-box;
+    -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.7;
+}
+
+/* --- Logo SVG / Image --- */
+#brand-logo {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    opacity: 0;
+    transform: scale(0.3) rotate(-15deg);
+    filter: drop-shadow(0 0 30px rgba(13, 110, 253, 0.6))
+            drop-shadow(0 0 60px rgba(255, 176, 32, 0.3));
+    position: relative;
+    z-index: 2;
+}
+
+/* --- Logo Reflection --- */
+.logo-reflection {
+    position: absolute;
+    bottom: -120px;
+    left: 50%;
+    transform: translateX(-50%) scaleY(-1);
+    width: 140px;
+    height: 100px;
+    opacity: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(13, 110, 253, 0.15) 0%,
+        transparent 80%
+    );
+    filter: blur(8px);
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+/* ============================================================
+   BRAND TEXT
+   ============================================================ */
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+}
+
+.brand-name {
+    color: var(--splash-text);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 0;
+    background: linear-gradient(135deg, var(--splash-text) 0%, var(--splash-accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+}
+
+.brand-tagline {
+    color: var(--splash-text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0;
+    opacity: 0.85;
+}
+
+/* ============================================================
+   LOADING LINE (Progress)
+   ============================================================ */
+.loading-line {
+    margin-top: 12px;
+    width: 220px;
+    height: 3px;
+    background: var(--splash-glass);
+    border: 1px solid var(--splash-glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    opacity: 0;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.loading-line::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--splash-primary) 30%,
+        var(--splash-accent) 50%,
+        var(--splash-secondary) 70%,
+        transparent 100%
+    );
+    width: 0%;
+    border-radius: 20px;
+    box-shadow: 0 0 12px var(--splash-primary);
+}
+
+/* --- Loading Percentage --- */
+.loading-text {
+    color: var(--splash-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    opacity: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   SKIP BUTTON
+   ============================================================ */
+.splash-skip {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 22px;
+    background: var(--splash-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--splash-glass-border);
+    border-radius: 30px;
+    color: var(--splash-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.splash-skip:hover {
+    background: rgba(13, 110, 253, 0.15);
+    border-color: rgba(13, 110, 253, 0.4);
+    color: var(--splash-text);
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.25);
+}
+
+.splash-skip:active {
+    transform: translateX(-50%) translateY(0);
+}
+
+.splash-skip .skip-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ============================================================
+   CORNER MARKS (Premium Tech Detail)
+   ============================================================ */
+.corner-mark {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.corner-mark::before,
+.corner-mark::after {
+    content: "";
+    position: absolute;
+    background: linear-gradient(90deg, var(--splash-accent), transparent);
+}
+
+.corner-mark::before { width: 100%; height: 1px; }
+.corner-mark::after  { width: 1px; height: 100%; }
+
+.corner-mark.tl { top: 24px; left: 24px; }
+.corner-mark.tl::before { top: 0; left: 0; }
+.corner-mark.tl::after  { top: 0; left: 0; background: linear-gradient(180deg, var(--splash-accent), transparent); }
+
+.corner-mark.tr { top: 24px; right: 24px; }
+.corner-mark.tr::before { top: 0; right: 0; background: linear-gradient(-90deg, var(--splash-accent), transparent); }
+.corner-mark.tr::after  { top: 0; right: 0; background: linear-gradient(180deg, var(--splash-accent), transparent); }
+
+.corner-mark.bl { bottom: 24px; left: 24px; }
+.corner-mark.bl::before { bottom: 0; left: 0; background: linear-gradient(90deg, var(--splash-secondary), transparent); }
+.corner-mark.bl::after  { bottom: 0; left: 0; background: linear-gradient(0deg, var(--splash-secondary), transparent); }
+
+.corner-mark.br { bottom: 24px; right: 24px; }
+.corner-mark.br::before { bottom: 0; right: 0; background: linear-gradient(-90deg, var(--splash-secondary), transparent); }
+.corner-mark.br::after  { bottom: 0; right: 0; background: linear-gradient(0deg, var(--splash-secondary), transparent); }
+
+/* ============================================================
+   LIGHT SWEEP (Shine effect over logo)
+   ============================================================ */
+.light-sweep {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(
+        100deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.25) 50%,
+        transparent 70%
+    );
+    transform: skewX(-20deg);
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+}
+
+/* ============================================================
+   PULSE WAVE (radial ripple from logo)
+   ============================================================ */
+.pulse-wave {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 1px solid var(--splash-primary);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ============================================================
+   EXIT ANIMATION
+   ============================================================ */
+#splash-container.is-leaving {
+    pointer-events: none;
+}
+
+#splash-container.is-leaving .logo-stage,
+#splash-container.is-leaving .brand-text,
+#splash-container.is-leaving .loading-line,
+#splash-container.is-leaving .loading-text,
+#splash-container.is-leaving .splash-skip,
+#splash-container.is-leaving .corner-mark {
+    opacity: 0 !important;
+    transition: opacity 0.3s ease-out;
+}
+
+#splash-container.is-leaving {
+    opacity: 0 !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 576px) {
+    .logo-stage {
+        width: 160px;
+        height: 160px;
+    }
+
+    #brand-logo {
+        width: 110px;
+        height: 110px;
+    }
+
+    .light-ring {
+        inset: -20px;
+    }
+
+    .brand-name {
+        font-size: 26px;
+    }
+
+    .brand-tagline {
+        font-size: 11px;
+        letter-spacing: 2px;
+    }
+
+    .loading-line {
+        width: 180px;
+    }
+
+    .splash-orb {
+        width: 400px;
+        height: 400px;
+    }
+
+    .splash-skip {
+        bottom: 24px;
+        font-size: 11px;
+        padding: 8px 18px;
+    }
+
+    .corner-mark { width: 20px; height: 20px; }
+    .corner-mark.tl, .corner-mark.tr { top: 16px; }
+    .corner-mark.bl, .corner-mark.br { bottom: 16px; }
+    .corner-mark.tl, .corner-mark.bl { left: 16px; }
+    .corner-mark.tr, .corner-mark.br { right: 16px; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    #splash-container::before,
+    .light-ring,
+    .particles {
+        animation: none !important;
+    }
+
+    #splash-container,
+    #splash-container * {
+        transition-duration: 0.01ms !important;
+    }
 }

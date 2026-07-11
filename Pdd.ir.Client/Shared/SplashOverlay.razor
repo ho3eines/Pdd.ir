@@ -1,36 +1,75 @@
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 @if (Visible)
 {
-    <div id="splash-container">
+    <div id="splash-container" aria-hidden="@(!Visible)">
+        <!-- Background center orb -->
+        <div class="splash-orb"></div>
+
+        <!-- Static particle texture (CSS fallback) -->
         <div class="particles"></div>
+
+        <!-- Corner tech marks -->
+        <div class="corner-mark tl"></div>
+        <div class="corner-mark tr"></div>
+        <div class="corner-mark bl"></div>
+        <div class="corner-mark br"></div>
+
+        <!-- Main logo stage -->
         <div class="logo-wrapper">
-            <div class="light-ring"></div>
-            <img id="brand-logo" src="assets/logo.svg" />
-            <div class="brand-name">Software Engineering</div>
-            <div class="loading-line">
-                <span></span>
+            <div class="logo-stage">
+                <div class="light-ring"></div>
+                <div class="light-ring-inner"></div>
+
+                <img id="brand-logo" src="assets/logo.svg" alt="Pdd.ir Logo" />
+
+                <div class="light-sweep"></div>
+                <div class="logo-reflection"></div>
+
+                <!-- Pulse waves emitted on completion -->
+                <div class="pulse-wave"></div>
+                <div class="pulse-wave"></div>
+                <div class="pulse-wave"></div>
             </div>
+
+            <div class="brand-text">
+                <h1 class="brand-name">Pdd.ir</h1>
+                <p class="brand-tagline">Software Engineering</p>
+            </div>
+
+            <div class="loading-line" aria-label="Loading progress"></div>
+            <div class="loading-text" aria-live="polite">0%</div>
         </div>
+
+        <!-- Skip button -->
+        <button class="splash-skip" @onclick="Skip" type="button" aria-label="رد کردن انیمیشن">
+            <span>رد کردن</span>
+            <span class="skip-key">ESC</span>
+        </button>
     </div>
 }
 
 @code {
     private bool Visible = true;
+    private DotNetObjectReference<SplashOverlay>? _selfRef;
+
+    [Parameter]
+    public int MinDurationMs { get; set; } = 3200;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender) return;
+
+        try
         {
             var show = await JS.InvokeAsync<bool>("splash.shouldShow");
 
             if (show)
             {
-                await JS.InvokeVoidAsync("splash.start");
-                await Task.Delay(3500);
-                Visible = false;
-                StateHasChanged();
-                await JS.InvokeVoidAsync("splash.completed");
+                // Start the cinematic animation; the JS calls back when done
+                _selfRef = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("splash.start", _selfRef);
             }
             else
             {
@@ -38,5 +77,36 @@
                 StateHasChanged();
             }
         }
+        catch (Exception ex)
+        {
+            // If anything fails, fail safe — hide splash and let app load
+            Console.Error.WriteLine($"Splash init failed: {ex.Message}");
+            Visible = false;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAnimationComplete()
+    {
+        Visible = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task Skip()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("splash.skip");
+        }
+        catch { /* ignore */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _selfRef?.Dispose();
+        await Task.CompletedTask;
     }
 }
+
