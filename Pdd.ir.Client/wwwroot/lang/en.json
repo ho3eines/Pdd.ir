@@ -51,5 +51,11 @@
   "admin_portfolio": "Portfolio Management",
   "admin_messages": "Messages",
   "admin_users": "Users",
-  "admin_settings": "Settings"
+  "admin_settings": "Settings",
+  "latest_projects": "Latest Company Projects",
+  "company_goal": "Company Main Goal",
+  "customer_growth": "Company Customer Growth",
+  "ready_to_start": "Ready to Get Started?",
+  "contact_description": "Contact us and get the best solution",
+  "website": "Website"
 }

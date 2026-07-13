@@ -1,35 +1,42 @@
 @page "/admin/settings"
-@inject HttpClient Http
+@inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>تنظیمات | Pdd.ir</PageTitle>
+<PageTitle>@T.Text("settings") | PDD</PageTitle>
 
-<PageHeader Title="تنظیمات سایت" Subtitle="مدیریت تنظیمات کلی سایت" />
+<div class="d-flex align-items-center justify-between mb-4" style="padding-top:24px;">
+    <div>
+        <h1 style="font-size:28px;font-weight:700;">@T.Text("settings")</h1>
+        <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "مدیریت تنظیمات کلی سایت" : "Manage general site settings")</p>
+    </div>
+</div>
 
-<section class="section">
+<section class="section" style="padding-top:0;">
     <div class="container" style="max-width:600px;">
-        <div class="admin-card">
-            <h3><i class="bi bi-gear"></i> اطلاعات سایت</h3>
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label">نام شرکت</label>
+        <div class="card">
+            <h3 style="margin-bottom:20px;"><i class="bi bi-gear me-2"></i>@(T.CurrentLanguage == "fa" ? "اطلاعات سایت" : "Site Information")</h3>
+            <div style="display:grid;gap:16px;">
+                <div>
+                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "نام شرکت" : "Company Name")</label>
                     <input class="form-control" @bind="_companyName" />
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">تلفن</label>
-                    <input class="form-control" @bind="_phone" />
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <label class="form-label">@(T.CurrentLanguage == "fa" ? "تلفن" : "Phone")</label>
+                        <input class="form-control" @bind="_phone" />
+                    </div>
+                    <div>
+                        <label class="form-label">@(T.CurrentLanguage == "fa" ? "ایمیل" : "Email")</label>
+                        <input class="form-control" @bind="_email" />
+                    </div>
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">ایمیل</label>
-                    <input class="form-control" @bind="_email" />
-                </div>
-                <div class="col-12">
-                    <label class="form-label">آدرس</label>
+                <div>
+                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "آدرس" : "Address")</label>
                     <textarea class="form-control" rows="2" @bind="_address"></textarea>
                 </div>
-                <div class="col-12">
+                <div>
                     <button class="btn btn-primary" @onclick="SaveSettings">
-                        <i class="bi bi-floppy me-1"></i>ذخیره تنظیمات
+                        <i class="bi bi-floppy me-1"></i>@(T.CurrentLanguage == "fa" ? "ذخیره تنظیمات" : "Save Settings")
                     </button>
                 </div>
             </div>
@@ -45,6 +52,6 @@
 
     private async Task SaveSettings()
     {
-        await JS.InvokeVoidAsync("alert", "تنظیمات با موفقیت ذخیره شد.");
+        await JS.InvokeVoidAsync("alert", T.CurrentLanguage == "fa" ? "تنظیمات با موفقیت ذخیره شد." : "Settings saved successfully.");
     }
 }

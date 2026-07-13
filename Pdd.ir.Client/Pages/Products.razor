@@ -4,7 +4,7 @@
 
 <PageTitle>@T.Text("products") | PDD</PageTitle>
 
-<PageHeader Title="@T.Text("products")" Subtitle="@T.Text("hero_subtitle_3")" />
+<PageHeader Title="@T.Text("products")" Subtitle="@(T.CurrentLanguage == "fa" ? "نرم‌افزارهای درمانی طراح داده پیشرو" : "PDD Medical Software")" />
 
 <section class="section">
     <div class="container">
@@ -14,42 +14,42 @@
                     <i class="bi bi-hospital"></i>
                 </div>
                 <h3>HIS</h3>
-                <p>@T.Text("products_his") — @(T.CurrentLanguage == "fa" ? "از پذیرش تا ترخیص بیماران بستری" : "From admission to discharge of inpatients")</p>
+                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار جامع مدیریت بیمارستانی — شامل تمامی امکانات مورد نیاز از پذیرش تا ترخیص بیماران بستری. HIS شامل قسمت‌ها و پکیج‌های مختلفی است که نیازهای مراکز درمانی را در زمینه پذیرش، عملیات درمانی و مالی بیماران بستری پوشش خواهد داد. این نرم‌افزار قابلیت ارتباط با سیستم‌های مالی اداری و اتوماسیون را داراست و همچنین قابلیت ارتباط با PACS و دستگاه‌های آزمایشگاهی را دارا می‌باشد." : "Hospital Information System — Includes all required features from admission to discharge of inpatients. HIS covers various departments and packages for admission, treatment and financial operations. It can connect with financial/administrative systems and PACS and laboratory devices.")</p>
             </div>
             <div class="card reveal">
                 <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
                     <i class="bi bi-clipboard2-pulse"></i>
                 </div>
                 <h3>CIS</h3>
-                <p>@T.Text("products_cis") — @(T.CurrentLanguage == "fa" ? "مدیریت تعرفه‌ها و ارسال نسخ بیمه‌ها" : "Tariff management and insurance prescription submission")</p>
+                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار CIS یا Clinic Information System نرم‌افزاری است برای مدیریت کلینیک‌ها و کلیه مراکز درمانی سرپایی. این نرم‌افزار شما را در مدیریت هر چه بهتر کلینیک و مراکز سرپایی یاری می‌رساند. مدیریت تعرفه‌ها، ارسال نسخ کلیه بیمه‌ها به صورت الکترونیکی، گزارشات متنوع و ... گوشه‌ای از امکانات نرم‌افزار مدیریت کلینیک‌های شرکت طراح داده پیشرو می‌باشد." : "CIS or Clinic Information System is software for managing clinics and all outpatient medical centers. It helps you manage clinics better. Tariff management, electronic submission of all insurance prescriptions, various reports and more are just a glimpse of PDD clinic management software features.")</p>
             </div>
             <div class="card reveal">
                 <div class="card-icon" style="background:rgba(121,40,202,0.15);color:var(--pdd-purple);">
                     <i class="bi bi-camera-reels"></i>
                 </div>
                 <h3>RIS</h3>
-                <p>@T.Text("products_ris") — @(T.CurrentLanguage == "fa" ? "مدیریت MRI، سی‌تی اسکن و..." : "Management of MRI, CT Scan and...")</p>
+                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار RIS یا Radiology Information System نرم‌افزاری است برای مدیریت مراکز تصویربرداری اعم از MRI، سی‌تی اسکن و .... نرم‌افزار تصویربرداری یا RIS این شرکت از کامل‌ترین امکانات جوابدهی برخوردار است. تعریف سرویس‌های خودکار، گزارشات کامل و متنوع و ده‌ها امکان دیگر این نرم‌افزار را به یکی از محبوب‌ترین نرم‌افزارهای تصویربرداری نزد مدیران و کاربران تبدیل کرده است." : "RIS or Radiology Information System is software for managing imaging centers including MRI, CT Scan and more. PDD's RIS has the most complete reporting capabilities. Automatic service definition, comprehensive reports and dozens of other features make it one of the most popular imaging software.")</p>
             </div>
             <div class="card reveal">
                 <div class="card-icon" style="background:rgba(80,227,194,0.15);color:var(--pdd-cyan);">
                     <i class="bi bi-lungs"></i>
                 </div>
                 <h3>LIS</h3>
-                <p>@T.Text("products_lis") — @(T.CurrentLanguage == "fa" ? "سرعت بالا، زیبایی، امکانات متنوع" : "High speed, beauty, diverse features")</p>
+                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار LIS یا Laboratory Information System نرم‌افزاری است برای مدیریت آزمایشگاه‌ها و پاتولوژی. سرعت بالای نرم‌افزار، زیبایی، امکانات متنوع، رابط کاربری آسان، قابلیت تعریف انواع تعرفه‌ها، پشتیبانی از انواع بیمه‌های پایه و تکمیلی، جواب‌دهی با امکانات بسیار بالا و ... گوشه‌ای از نرم‌افزار محبوب LIS طراح داده پیشرو می‌باشد." : "LIS or Laboratory Information System is software for managing laboratories and pathology. High speed, beauty, diverse features, easy user interface, ability to define various tariffs, support for basic and supplementary insurance, high-capability reporting and more are just a glimpse of PDD's popular LIS software.")</p>
             </div>
             <div class="card reveal">
                 <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
                     <i class="bi bi-calculator"></i>
                 </div>
                 <h3>MIS</h3>
-                <p>@T.Text("products_mis") — @(T.CurrentLanguage == "fa" ? "ارتباط میان نرم‌افزارهای درمانی و مالی" : "Connection between medical and financial software")</p>
+                <p>@(T.CurrentLanguage == "fa" ? "ارتباط میان نرم‌افزارهای درمانی و مالی اداری از مشکلات عدیده مراکز درمانی است که این مهم با وجود نرم‌افزارهای مالی اداری این شرکت برطرف شده است. قابلیت‌های متنوع سیستم‌های حسابداری، انبار، حقوق و دستمزد، خزانه‌داری و اموال کار کردن را به امری لذت‌بخش و راحت برای کاربران تبدیل می‌نماید." : "The connection between medical and financial/administrative software is a major challenge for medical centers, which PDD's financial software solves. Diverse capabilities of accounting, inventory, payroll, treasury and asset systems make working pleasant and easy for users.")</p>
             </div>
             <div class="card reveal">
                 <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
                     <i class="bi bi-building"></i>
                 </div>
-                <h3>@T.Text("products_automation")</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "مدیریت گردش نامه‌ها و اطلاعات در سازمان" : "Management of organizational documents and information")</p>
+                <h3>@(T.CurrentLanguage == "fa" ? "اتوماسیون اداری" : "Office Automation")</h3>
+                <p>@(T.CurrentLanguage == "fa" ? "یکی از مشکلات سازمان‌ها و مراکز درمانی کشور گردش نامه‌ها و اطلاعات در سازمان است. حجم زیاد نامه‌نگاری‌ها، مشکل در پیگیری آنها، بايگاني غيرقابل كنترل، میزان زیاد کاغذ مصرفی و ..... مشکل دیگر از جمله مسائل و مشکلات سازمان‌هاست که به کمک نرم‌افزار اتوماسیون اداری شرکت طراح داده پیشرو مرتفع خواهد شد." : "One of the problems of organizations and medical centers is document circulation. High volume of correspondence, difficulty in tracking, uncontrollable filing, excessive paper usage and more are problems that PDD's office automation software solves.")</p>
             </div>
         </div>
     </div>

@@ -1,61 +1,68 @@
 @page "/blog"
+@inject ITranslateService T
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>بلاگ | Pdd.ir</PageTitle>
+<PageTitle>@T.Text("blog") | PDD</PageTitle>
 
-<PageHeader Title="بلاگ" Subtitle="اخبار و مقالات تخصصی Pdd.ir" />
+<PageHeader Title="@T.Text("blog")" Subtitle="@(T.CurrentLanguage == "fa" ? "اخبار و مقالات تخصصی" : "News and specialized articles")" />
 
 <section class="section">
     <div class="container">
         @if (_posts == null)
         {
-            <div class="row g-4">
+            <div class="grid-3">
                 @for (int i = 0; i < 3; i++)
                 {
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <div class="skeleton skeleton-card" style="height:320px;"></div>
-                    </div>
+                    <div class="skeleton skeleton-card" style="height:320px;"></div>
                 }
             </div>
         }
         else if (!_posts.Any())
         {
             <div class="text-center py-5">
-                <i class="bi bi-journal-x" style="font-size:3rem;color:var(--text-secondary);"></i>
-                <p class="mt-3 text-secondary">هنوز مقاله‌ای منتشر نشده است</p>
+                <i class="bi bi-journal-x" style="font-size:3rem;color:var(--pdd-text-muted);"></i>
+                <p class="mt-3 text-muted">@(T.CurrentLanguage == "fa" ? "هنوز مقاله‌ای منتشر نشده است" : "No articles published yet")</p>
             </div>
         }
         else
         {
-            <div class="row g-4">
+            <div class="grid-3">
                 @foreach (var post in _posts)
                 {
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <AnimatedSection AnimationType="fade-up">
-                            <a href="/blog/@post.Slug" class="text-decoration-none">
-                                <div class="blog-card">
-                                    <div class="blog-card-image">
+                    <AnimatedSection AnimationType="fade-up">
+                        <a href="/blog/@post.Slug" class="text-decoration-none">
+                            <div class="blog-card">
+                                <div class="blog-card-image">
+                                    @if (!string.IsNullOrEmpty(post.ImageUrl))
+                                    {
+                                        <img src="@post.ImageUrl" alt="@post.Title" />
+                                    }
+                                    else
+                                    {
                                         <i class="bi bi-journal-richtext"></i>
-                                    </div>
-                                    <div class="blog-card-body">
-                                        <div class="blog-card-meta">
-                                            <span><i class="bi bi-person me-1"></i>@post.Author</span>
-                                            <span><i class="bi bi-calendar me-1"></i>@post.CreatedAt.ToString("yyyy/MM/dd")</span>
-                                            <span><i class="bi bi-eye me-1"></i>@post.ViewCount</span>
-                                        </div>
-                                        <h5 class="text-white mb-2">@post.Title</h5>
-                                        <p class="text-secondary" style="font-size:0.9rem;">@post.Summary</p>
-                                    </div>
+                                    }
+                                    <div class="blog-card-image-overlay"></div>
                                 </div>
-                            </a>
-                        </AnimatedSection>
-                    </div>
+                                <div class="blog-card-body">
+                                    <div class="blog-card-meta">
+                                        <span><i class="bi bi-person me-1"></i>@post.Author</span>
+                                        <span><i class="bi bi-calendar me-1"></i>@post.CreatedAt.ToString("yyyy/MM/dd")</span>
+                                        <span><i class="bi bi-eye me-1"></i>@post.ViewCount</span>
+                                    </div>
+                                    <h5 style="color:var(--pdd-text);margin-bottom:8px;">@post.Title</h5>
+                                    <p class="text-muted" style="font-size:0.9rem;">@post.Summary</p>
+                                </div>
+                            </div>
+                        </a>
+                    </AnimatedSection>
                 }
             </div>
         }
     </div>
 </section>
+
+<CorporateFooter />
 
 @code {
     private List<BlogDto>? _posts;

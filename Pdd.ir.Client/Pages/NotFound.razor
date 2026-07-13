@@ -1,7 +1,11 @@
 @page "/notfound"
+@inject ITranslateService T
 
-<div class="page-header">
-    <h1>۴۰۴</h1>
-    <p>صفحه مورد نظر یافت نشد</p>
-    <a href="/" class="btn btn-primary mt-3">بازگشت به خانه</a>
+<div class="page-header" style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
+    <div class="page-header-bg"></div>
+    <div class="container position-relative text-center">
+        <h1 style="font-size:clamp(80px,15vw,160px);font-weight:900;background:linear-gradient(135deg,var(--pdd-primary),var(--pdd-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">404</h1>
+        <p style="font-size:20px;color:var(--pdd-text-muted);margin-bottom:32px;">@(T.CurrentLanguage == "fa" ? "صفحه مورد نظر یافت نشد" : "Page not found")</p>
+        <a href="/" class="btn btn-primary btn-lg">@(T.CurrentLanguage == "fa" ? "بازگشت به خانه" : "Back to Home")</a>
+    </div>
 </div>

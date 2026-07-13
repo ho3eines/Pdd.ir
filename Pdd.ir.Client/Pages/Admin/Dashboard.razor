@@ -1,97 +1,86 @@
 @page "/admin"
 @inject HttpClient Http
+@inject ITranslateService T
 
-<PageTitle>پنل مدیریت | Pdd.ir</PageTitle>
+<PageTitle>@T.Text("dashboard") | PDD</PageTitle>
 
-<section class="page-header">
-    <h1>پنل مدیریت</h1>
-    <p>مدیریت محتوا و محصولات</p>
-</section>
+<div class="section-header" style="padding-top:24px;">
+    <h1 class="section-title" style="font-size:28px;">@T.Text("dashboard")</h1>
+    <p class="section-subtitle" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "مدیریت محتوا و محصولات" : "Content and product management")</p>
+</div>
 
-<section class="section">
+<section class="section" style="padding-top:0;">
     <div class="container">
-        <div class="row g-4 mb-4">
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card stat-card-primary">
-                    <i class="bi bi-box-seam"></i>
-                    <div class="stat-number">@(_productCount)</div>
-                    <div class="stat-label">محصولات</div>
-                </div>
+        <div class="grid-4 mb-4">
+            <div class="stat-card">
+                <i class="bi bi-box-seam" style="font-size:24px;color:var(--pdd-primary);"></i>
+                <div class="stat-number" style="font-size:32px;">@(_productCount)</div>
+                <div class="stat-label">@T.Text("products")</div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card stat-card-success">
-                    <i class="bi bi-envelope"></i>
-                    <div class="stat-number">@(_messageCount)</div>
-                    <div class="stat-label">پیام‌ها</div>
-                </div>
+            <div class="stat-card">
+                <i class="bi bi-envelope" style="font-size:24px;color:var(--pdd-cyan);"></i>
+                <div class="stat-number" style="font-size:32px;">@(_messageCount)</div>
+                <div class="stat-label">@T.Text("admin_messages")</div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card stat-card-warning">
-                    <i class="bi bi-envelope-exclamation"></i>
-                    <div class="stat-number">@(_unreadCount)</div>
-                    <div class="stat-label">پیام‌های خوانده نشده</div>
-                </div>
+            <div class="stat-card">
+                <i class="bi bi-envelope-exclamation" style="font-size:24px;color:var(--pdd-secondary);"></i>
+                <div class="stat-number" style="font-size:32px;">@(_unreadCount)</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "خوانده نشده" : "Unread")</div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card stat-card-info">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <div class="stat-number">@(_pageCount)</div>
-                    <div class="stat-label">صفحات</div>
-                </div>
+            <div class="stat-card">
+                <i class="bi bi-file-earmark-text" style="font-size:24px;color:var(--pdd-pink);"></i>
+                <div class="stat-number" style="font-size:32px;">@(_pageCount)</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "صفحات" : "Pages")</div>
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-12 col-lg-6">
-                <div class="admin-card">
-                    <h3><i class="bi bi-box-seam"></i> مدیریت محصولات</h3>
-                    @if (_products != null)
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+        <div class="grid-2">
+            <div class="card">
+                <h3 style="margin-bottom:16px;"><i class="bi bi-box-seam me-2"></i>@T.Text("admin_products")</h3>
+                @if (_products != null)
+                {
+                    <div style="overflow-x:auto;">
+                        <table class="table table-hover" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
+                                    <th>@(T.CurrentLanguage == "fa" ? "دسته‌بندی" : "Category")</th>
+                                    <th>@(T.CurrentLanguage == "fa" ? "عملیات" : "Actions")</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in _products)
+                                {
                                     <tr>
-                                        <th>عنوان</th>
-                                        <th>دسته‌بندی</th>
-                                        <th>عملیات</th>
+                                        <td>@p.Title</td>
+                                        <td>@p.Category</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-glass" @onclick="() => EditProduct(p)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var p in _products)
-                                    {
-                                        <tr>
-                                            <td>@p.Title</td>
-                                            <td>@p.Category</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditProduct(p)">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+            <div class="card">
+                <h3 style="margin-bottom:16px;"><i class="bi bi-envelope me-2"></i>@(T.CurrentLanguage == "fa" ? "پیام‌های اخیر" : "Recent Messages")</h3>
+                @if (_messages != null)
+                {
+                    @foreach (var msg in _messages.Take(5))
+                    {
+                        <div style="padding:12px;border-bottom:1px solid var(--pdd-border);@(msg.IsRead ? "" : "background:var(--pdd-primary-glow);")">
+                            <div class="d-flex justify-between align-center">
+                                <strong style="font-size:14px;">@msg.Name</strong>
+                                <small class="text-muted">@msg.CreatedAt.ToString("yyyy/MM/dd")</small>
+                            </div>
+                            <p style="font-size:13px;margin-top:4px;">@msg.Subject</p>
                         </div>
                     }
-                </div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <div class="admin-card">
-                    <h3><i class="bi bi-envelope"></i> پیام‌های اخیر</h3>
-                    @if (_messages != null)
-                    {
-                        @foreach (var msg in _messages.Take(5))
-                        {
-                            <div class="message-item @(msg.IsRead ? "" : "unread")">
-                                <div class="message-header">
-                                    <strong>@msg.Name</strong>
-                                    <small class="text-muted">@msg.CreatedAt.ToString("yyyy/MM/dd")</small>
-                                </div>
-                                <p>@msg.Subject</p>
-                            </div>
-                        }
-                    }
-                </div>
+                }
             </div>
         </div>
     </div>
@@ -126,7 +115,6 @@
 
     private void EditProduct(ProductDto product)
     {
-        // TODO: Open edit modal
     }
 
     public class ProductDto

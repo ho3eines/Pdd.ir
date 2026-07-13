@@ -1,80 +1,60 @@
-<footer class="corporate-footer">
+@inject ITranslateService T
+
+<footer class="footer">
     <div class="container">
         <div class="footer-grid">
-            <div class="footer-brand">
-                <div class="footer-logo">
-                    <span class="footer-logo-text">PDD</span>
-                    <span class="footer-logo-name">شرکت مهندسی طراح داده پیشرو</span>
-                </div>
+            <div>
+                <span class="footer-logo-text">PDD</span>
+                <span class="footer-logo-name">@T.Text("company_name")</span>
                 <p class="footer-desc">
-                    ارائه‌کننده نرم‌افزارهای درمانی با قابلیت بالا و کاربری آسان — ثبت ۲۵۶۳۷۴ با مسئولیت محدود (از سال ۱۳۸۳)
+                    @(T.CurrentLanguage == "fa"
+                        ? "تولید و پشتیبانی نرم‌افزارهای درمانی با قابلیت بالا و کاربری آسان — ثبت ۲۵۶۳۷۴ با مسئولیت محدود (از سال ۱۳۸۳)"
+                        : "Production and support of medical software with high capabilities and easy use — Registration No. 256374 (Since 2004)")
                 </p>
             </div>
-
             <div class="footer-col">
-                <h4>محصولات</h4>
+                <h4>@T.Text("products")</h4>
                 <ul>
-                    <li><a href="#products">سیستم جامع بیمارستانی HIS</a></li>
-                    <li><a href="#products">سیستم مدیریت درمانگاهی CIS</a></li>
-                    <li><a href="#products">سیستم مدیریت تصویربرداری RIS</a></li>
-                    <li><a href="#products">سیستم مدیریت آزمایشگاه LIS</a></li>
-                    <li><a href="#products">سیستم مدیریت مالی و اداری MIS</a></li>
-                    <li><a href="#products">اتوماسیون اداری</a></li>
+                    <li><a href="/products">HIS — @(T.CurrentLanguage == "fa" ? "بیمارستانی" : "Hospital")</a></li>
+                    <li><a href="/products">CIS — @(T.CurrentLanguage == "fa" ? "درمانگاهی" : "Clinic")</a></li>
+                    <li><a href="/products">RIS — @(T.CurrentLanguage == "fa" ? "تصویربرداری" : "Imaging")</a></li>
+                    <li><a href="/products">LIS — @(T.CurrentLanguage == "fa" ? "آزمایشگاه" : "Laboratory")</a></li>
+                    <li><a href="/products">MIS — @(T.CurrentLanguage == "fa" ? "مالی اداری" : "Financial")</a></li>
+                    <li><a href="/products">@(T.CurrentLanguage == "fa" ? "اتوماسیون اداری" : "Office Automation")</a></li>
                 </ul>
             </div>
-
             <div class="footer-col">
-                <h4>شرکت</h4>
+                <h4>@(T.CurrentLanguage == "fa" ? "شرکت" : "Company")</h4>
                 <ul>
-                    <li><a href="#projects">پروژه‌ها</a></li>
-                    <li><a href="#architecture">معماری سیستم</a></li>
-                    <li><a href="#contact">تماس با ما</a></li>
+                    <li><a href="/about">@T.Text("about")</a></li>
+                    <li><a href="/portfolio">@T.Text("portfolio")</a></li>
+                    <li><a href="/contact">@T.Text("contact")</a></li>
                 </ul>
             </div>
-
             <div class="footer-col">
-                <h4>اطلاعات تماس</h4>
+                <h4>@T.Text("contact")</h4>
                 <ul class="contact-list">
                     <li>
-                        <span class="contact-icon">📍</span>
-                        <span>تهران - شهرک غرب - بلوار دریا - پلاک ۲۴۰ - واحد ۱</span>
+                        <span class="contact-icon"><i class="bi bi-geo-alt"></i></span>
+                        <span>@(T.CurrentLanguage == "fa" ? "تهران - شهرک غرب - بلوار دریا" : "Tehran - West Town - Darya Blvd")</span>
                     </li>
                     <li>
-                        <span class="contact-icon">📞</span>
+                        <span class="contact-icon"><i class="bi bi-telephone"></i></span>
                         <span dir="ltr">021-88368070</span>
                     </li>
                     <li>
-                        <span class="contact-icon">📠</span>
-                        <span dir="ltr">021-88360807</span>
+                        <span class="contact-icon"><i class="bi bi-envelope"></i></span>
+                        <span dir="ltr">pdd_tdp@yahoo.com</span>
                     </li>
                     <li>
-                        <span class="contact-icon">✉️</span>
-                        <span dir="ltr">pdd_tdp@yahoo.com</span>
+                        <span class="contact-icon"><i class="bi bi-globe"></i></span>
+                        <span dir="ltr">www.pdd.ir</span>
                     </li>
                 </ul>
             </div>
-
-            <div class="footer-col">
-                <h4>ساعات کار شرکت</h4>
-                <div class="working-hours">
-                    <div class="hours-row">
-                        <span class="hours-day">شنبه تا چهارشنبه</span>
-                        <span class="hours-time" dir="ltr">08:00 – 16:00</span>
-                    </div>
-                    <div class="hours-row">
-                        <span class="hours-day">پنج‌شنبه</span>
-                        <span class="hours-time" dir="ltr">08:00 – 12:00</span>
-                    </div>
-                    <div class="hours-row">
-                        <span class="hours-day">جمعه</span>
-                        <span class="hours-time closed">تعطیل</span>
-                    </div>
-                </div>
-            </div>
         </div>
-
         <div class="footer-bottom">
-            <p>&copy; ۱۳۸۳-۱۴۰۵ شرکت مهندسی طراح داده پیشرو (PDD) — تمامی حقوق محفوظ است</p>
+            <p>© @(T.CurrentLanguage == "fa" ? "۱۳۸۳-۱۴۰۵" : "2004-2026") @T.Text("company_name") — @T.Text("all_rights_reserved")</p>
         </div>
     </div>
 </footer>

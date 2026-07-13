@@ -1,113 +1,272 @@
 @page "/"
 @inject IJSRuntime JS
 @inject ITranslateService T
+@implements IAsyncDisposable
 
-<HeroSlider />
-<ClientsSlider />
+<div class="home-fullscreen" id="homeScreen">
 
-<!-- STATS -->
-<section class="section">
-    <div class="container">
-        <div class="stats-grid">
-            <div class="stat reveal">
-                <div class="stat-number" data-count="22">۰</div>
-                <div class="stat-label">@T.Text("years_experience")</div>
+    <div class="mouse-glow" id="mouseGlow"></div>
+    <canvas class="home-particles" id="homeParticles"></canvas>
+
+    <!-- Top bar: Logo + Lang -->
+    <div class="home-topbar">
+        <a href="/" class="home-logo">
+            <span class="home-logo-text">PDD</span>
+            <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+        </a>
+        <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
+            <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
+            <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
+        </button>
+    </div>
+
+    <!-- Main Content: Center + Right -->
+    <div class="home-main">
+
+        <!-- Center: Text Slider -->
+        <div class="home-center">
+            <div class="text-slider" id="textSlider">
+                @for (int i = 0; i < _slides.Count; i++)
+                {
+                    var slide = _slides[i];
+                    <div class="text-slide @(_currentSlide == i ? "active" : "") @(_prevSlide == i ? "leaving" : "")">
+                        <div class="slide-badge">
+                            <span class="badge-dot"></span>
+                            @(T.CurrentLanguage == "fa" ? slide.BadgeFa : slide.BadgeEn)
+                        </div>
+                        <h1 class="slide-title">
+                            <span class="gradient-text">@(T.CurrentLanguage == "fa" ? slide.TitleFa : slide.TitleEn)</span>
+                        </h1>
+                        <p class="slide-desc">@(T.CurrentLanguage == "fa" ? slide.DescFa : slide.DescEn)</p>
+                    </div>
+                }
             </div>
-            <div class="stat reveal">
-                <div class="stat-number" data-count="110">۰</div>
-                <div class="stat-label">@T.Text("medical_centers")</div>
+
+            <div class="slider-controls">
+                <button class="slider-arrow" @onclick="PrevSlide" aria-label="Prev"><i class="bi bi-chevron-left"></i></button>
+                <div class="slider-dots">
+                    @for (int i = 0; i < _slides.Count; i++)
+                    {
+                        var idx = i;
+                        <button class="slider-dot @(_currentSlide == idx ? "active" : "")" @onclick="() => GoToSlide(idx)"></button>
+                    }
+                </div>
+                <button class="slider-arrow" @onclick="NextSlide" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
             </div>
-            <div class="stat reveal">
-                <div class="stat-number" data-count="27">۰</div>
-                <div class="stat-label">@T.Text("subsystems")</div>
+
+            <div class="slider-progress">
+                <div class="slider-progress-bar" style="width:@(_progress)%"></div>
             </div>
-            <div class="stat reveal">
-                <div class="stat-number">۲۴/۷</div>
-                <div class="stat-label">@T.Text("support_24_7")</div>
+        </div>
+
+        <!-- Right: Products -->
+        <div class="home-products-panel">
+            <div class="products-header">
+                <span class="products-label">@(T.CurrentLanguage == "fa" ? "محصولات ما" : "Our Products")</span>
+                <div class="products-divider"></div>
+            </div>
+            <div class="products-list" id="productsList">
+                @for (int i = 0; i < _products.Count; i++)
+                {
+                    var p = _products[i];
+                    var idx = i;
+                    <div class="product-row" style="--i:@(idx)">
+                        <div class="product-info">
+                            <div class="product-icon" style="background:@(p.IconBg);color:@(p.IconColor)">
+                                <i class="bi @p.Icon"></i>
+                            </div>
+                            <div class="product-text">
+                                <span class="product-name">@(T.CurrentLanguage == "fa" ? p.NameFa : p.NameEn)</span>
+                                <span class="product-sub">@(T.CurrentLanguage == "fa" ? p.SubFa : p.SubEn)</span>
+                            </div>
+                        </div>
+                        <button class="product-btn" @onclick="() => NavigateToProduct(p.Route)">
+                            <i class="bi bi-arrow-left-short"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="products-footer">
+                <a href="/contact" class="btn-glow-sm">
+                    <i class="bi bi-headset"></i>
+                    @(T.CurrentLanguage == "fa" ? "مشاوره رایگان" : "Free Consultation")
+                </a>
             </div>
         </div>
     </div>
-</section>
 
-<!-- PRODUCTS PREVIEW -->
-<section class="section section-alt">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title reveal">@T.Text("products")</h2>
-            <p class="section-subtitle reveal">@T.Text("hero_subtitle_3")</p>
-        </div>
-        <div class="grid-3">
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
-                    <i class="bi bi-hospital"></i>
-                </div>
-                <h3>HIS</h3>
-                <p>@T.Text("products_his")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
-                    <i class="bi bi-clipboard2-pulse"></i>
-                </div>
-                <h3>CIS</h3>
-                <p>@T.Text("products_cis")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(121,40,202,0.15);color:var(--pdd-purple);">
-                    <i class="bi bi-camera-reels"></i>
-                </div>
-                <h3>RIS</h3>
-                <p>@T.Text("products_ris")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(80,227,194,0.15);color:var(--pdd-cyan);">
-                    <i class="bi bi-lungs"></i>
-                </div>
-                <h3>LIS</h3>
-                <p>@T.Text("products_lis")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
-                    <i class="bi bi-calculator"></i>
-                </div>
-                <h3>MIS</h3>
-                <p>@T.Text("products_mis")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
-                    <i class="bi bi-building"></i>
-                </div>
-                <h3>@T.Text("products_automation")</h3>
-                <p>@T.Text("products_automation")</p>
+    <!-- Bottom: Clients -->
+    <div class="home-clients">
+        <div class="clients-label">@(T.CurrentLanguage == "fa" ? "مشتریان ما" : "Our Clients")</div>
+        <div class="clients-track-wrap">
+            <div class="clients-track">
+                @foreach (var c in _clients.Concat(_clients))
+                {
+                    <div class="client-item">
+                        <i class="bi @c.Icon"></i>
+                        <span>@c.Name</span>
+                    </div>
+                }
             </div>
         </div>
     </div>
-</section>
-
-<!-- CTA -->
-<section class="section">
-    <div class="container text-center">
-        <h2 class="section-title reveal">@(T.CurrentLanguage == "fa" ? "آماده شروع هستید؟" : "Ready to Get Started?")</h2>
-        <p class="section-subtitle reveal" style="margin-bottom:32px;">@(T.CurrentLanguage == "fa" ? "با ما تماس بگیرید و بهترین راهکار را دریافت کنید" : "Contact us and get the best solution")</p>
-        <div class="hero-actions" style="justify-content:center;">
-            <a href="/contact" class="btn btn-primary btn-lg">@T.Text("contact_us")</a>
-            <a href="/products" class="btn btn-outline btn-lg">@T.Text("view_products")</a>
-        </div>
-    </div>
-</section>
-
-<CorporateFooter />
+</div>
 
 @code {
+    private int _currentSlide = 0;
+    private int _prevSlide = -1;
+    private double _progress = 0;
+    private Timer? _slideTimer;
+    private Timer? _progressTimer;
+
+    private List<SlideItem> _slides => new()
+    {
+        new SlideItem
+        {
+            BadgeFa = "راهکار هوشمند", BadgeEn = "Smart Solution",
+            TitleFa = "نرم‌افزار جامع مدیریت درمانی", TitleEn = "Comprehensive Healthcare Software",
+            DescFa = "طراحی سیستم‌های مدرن برای بیمارستان‌ها و مراکز درمانی با بیش از ۲۲ سال تجربه",
+            DescEn = "Modern systems for hospitals and medical centers with over 22 years of experience"
+        },
+        new SlideItem
+        {
+            BadgeFa = "پوشش جامع", BadgeEn = "Full Coverage",
+            TitleFa = "۲۷ زیرسیستم یکپارچه", TitleEn = "27 Integrated Subsystems",
+            DescFa = "از پذیرش بیمار تا ترخیص، از آزمایشگاه تا خزانه‌داری — همه در یک پلتفرم",
+            DescEn = "From patient admission to discharge, lab to treasury — all in one platform"
+        },
+        new SlideItem
+        {
+            BadgeFa = "پشتیبانی", BadgeEn = "Support",
+            TitleFa = "پشتیبانی ۲۴ ساعته", TitleEn = "24/7 Support",
+            DescFa = "بیش از ۱۱۰ مرکز درمانی در سراسر کشور به ما اعتماد کرده‌اند",
+            DescEn = "Over 110 medical centers across the country trust us"
+        }
+    };
+
+    private List<ProductItem> _products => new()
+    {
+        new ProductItem { Icon = "bi-hospital", IconBg = "rgba(13,110,253,0.15)", IconColor = "#0D6EFD", NameFa = "HIS — بیمارستانی", NameEn = "HIS — Hospital", SubFa = "مدیریت جامع بیمارستان", SubEn = "Hospital Management", Route = "/products" },
+        new ProductItem { Icon = "bi-clipboard2-pulse", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "CIS — درمانگاهی", NameEn = "CIS — Clinic", SubFa = "مدیریت کلینیک", SubEn = "Clinic Management", Route = "/products" },
+        new ProductItem { Icon = "bi-camera-reels", IconBg = "rgba(121,40,202,0.15)", IconColor = "#7928ca", NameFa = "RIS — تصویربرداری", NameEn = "RIS — Imaging", SubFa = "مراکز MRI و CT", SubEn = "MRI & CT Centers", Route = "/products" },
+        new ProductItem { Icon = "bi-lungs", IconBg = "rgba(80,227,194,0.15)", IconColor = "#50e3c2", NameFa = "LIS — آزمایشگاه", NameEn = "LIS — Laboratory", SubFa = "مدیریت آزمایشگاه", SubEn = "Lab Management", Route = "/products" },
+        new ProductItem { Icon = "bi-calculator", IconBg = "rgba(13,110,253,0.15)", IconColor = "#0D6EFD", NameFa = "MIS — مالی اداری", NameEn = "MIS — Financial", SubFa = "حسابداری و خزانه", SubEn = "Accounting & Treasury", Route = "/products" },
+        new ProductItem { Icon = "bi-building", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "اتوماسیون اداری", NameEn = "Office Automation", SubFa = "گردش نامه و بایگانی", SubEn = "Document & Filing", Route = "/products" }
+    };
+
+    private List<ClientItem> _clients => new()
+    {
+        new ClientItem { Icon = "bi-hospital", Name = "قائم جیرفت" },
+        new ClientItem { Icon = "bi-heart-pulse", Name = "محمد کرمانشاهی" },
+        new ClientItem { Icon = "bi-clipboard2-pulse", Name = "شفا ساری" },
+        new ClientItem { Icon = "bi-hospital", Name = "حضرت فاطمه ساوه" },
+        new ClientItem { Icon = "bi-heart-pulse", Name = "آیت‌الله گلپایگانی" },
+        new ClientItem { Icon = "bi-clipboard2-pulse", Name = "امیرالمؤمنین" },
+        new ClientItem { Icon = "bi-hospital", Name = "شهید بهشتی" },
+        new ClientItem { Icon = "bi-heart-pulse", Name = "امام خمینی" }
+    };
+
+    protected override void OnInitialized()
+    {
+        _slideTimer = new Timer(_ =>
+        {
+            InvokeAsync(() => { NextSlide(); StateHasChanged(); });
+        }, null, 6000, 6000);
+
+        _progressTimer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                _progress += 1.67;
+                if (_progress >= 100) _progress = 0;
+                StateHasChanged();
+            });
+        }, null, 100, 100);
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             try
             {
-                await JS.InvokeVoidAsync("initScrollAnimations");
-                await JS.InvokeVoidAsync("initCounters");
+                var lang = T.CurrentLanguage;
+                if (string.IsNullOrEmpty(lang)) lang = "fa";
+                await JS.InvokeVoidAsync("setDocDirection", lang);
+                await JS.InvokeVoidAsync("initHomeMouseGlow");
+                await JS.InvokeVoidAsync("initHomeParticles");
+                await JS.InvokeVoidAsync("initHomeProductReveal");
             }
             catch { }
         }
+    }
+
+    private void NextSlide()
+    {
+        _prevSlide = _currentSlide;
+        _currentSlide = (_currentSlide + 1) % _slides.Count;
+        _progress = 0;
+    }
+
+    private void PrevSlide()
+    {
+        _prevSlide = _currentSlide;
+        _currentSlide = (_currentSlide - 1 + _slides.Count) % _slides.Count;
+        _progress = 0;
+    }
+
+    private void GoToSlide(int index)
+    {
+        _prevSlide = _currentSlide;
+        _currentSlide = index;
+        _progress = 0;
+    }
+
+    private void NavigateToProduct(string route) => Navigation.NavigateTo(route);
+
+    private async Task ToggleLang()
+    {
+        var lang = T.CurrentLanguage == "fa" ? "en" : "fa";
+        await T.LoadLanguageAsync(lang);
+        await JS.InvokeVoidAsync("localStorage.setItem", "app_lang", lang);
+        await JS.InvokeVoidAsync("setDocDirection", lang);
+        StateHasChanged();
+    }
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_slideTimer != null) await _slideTimer.DisposeAsync();
+        if (_progressTimer != null) await _progressTimer.DisposeAsync();
+        try { await JS.InvokeVoidAsync("disposeHomeMouseGlow"); } catch { }
+        try { await JS.InvokeVoidAsync("disposeHomeParticles"); } catch { }
+    }
+
+    private class SlideItem
+    {
+        public string BadgeFa { get; set; } = "";
+        public string BadgeEn { get; set; } = "";
+        public string TitleFa { get; set; } = "";
+        public string TitleEn { get; set; } = "";
+        public string DescFa { get; set; } = "";
+        public string DescEn { get; set; } = "";
+    }
+    private class ProductItem
+    {
+        public string Icon { get; set; } = "";
+        public string IconBg { get; set; } = "";
+        public string IconColor { get; set; } = "";
+        public string NameFa { get; set; } = "";
+        public string NameEn { get; set; } = "";
+        public string SubFa { get; set; } = "";
+        public string SubEn { get; set; } = "";
+        public string Route { get; set; } = "";
+    }
+    private class ClientItem
+    {
+        public string Icon { get; set; } = "";
+        public string Name { get; set; } = "";
     }
 }

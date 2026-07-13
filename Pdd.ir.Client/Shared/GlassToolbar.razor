@@ -20,8 +20,8 @@
 
         <div class="toolbar-actions">
             <div class="lang-switcher">
-                <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="() => SwitchLang("fa')">FA</button>
-                <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="() => SwitchLang("en')">EN</button>
+                <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="SwitchToFa">FA</button>
+                <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="SwitchToEn">EN</button>
             </div>
             <a href="/contact" class="btn btn-glass btn-sm">@T.Text("contact_us")</a>
             <button class="toolbar-toggle" id="menuToggle" @onclick="ToggleMenu">
@@ -52,10 +52,12 @@
                 await T.LoadLanguageAsync(lang);
             else
                 await T.LoadLanguageAsync("fa");
+            await JS.InvokeVoidAsync("setDocDirection", T.CurrentLanguage);
         }
         catch
         {
             await T.LoadLanguageAsync("fa");
+            try { await JS.InvokeVoidAsync("setDocDirection", "fa"); } catch { }
         }
     }
 
@@ -64,6 +66,9 @@
         await T.LoadLanguageAsync(lang);
         StateHasChanged();
     }
+
+    private async Task SwitchToFa() => await SwitchLang("fa");
+    private async Task SwitchToEn() => await SwitchLang("en");
 
     private void ToggleMenu()
     {

@@ -1,59 +1,79 @@
 @page "/contact"
-@inject HttpClient Http
+@inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>تماس با ما | PDD</PageTitle>
+<PageTitle>@T.Text("contact") | PDD</PageTitle>
 
-<section class="section" style="padding-top:120px;">
-    <div class="content">
-        <h2 class="section-title reveal">تماس با ما</h2>
+<PageHeader Title="@T.Text("contact")" Subtitle="@(T.CurrentLanguage == "fa" ? "شرکت طراح داده پیشرو ، ارائه‌کننده نرم‌افزارهای بیمارستانی" : "PDD Company, Provider of Hospital Software")" />
+
+<section class="section">
+    <div class="container">
         <div class="contact-grid">
             <div class="contact-info reveal">
                 <div class="info-item">
                     <i class="bi bi-geo-alt"></i>
                     <div>
-                        <strong>آدرس</strong>
-                        <p>تهران - شهرک غرب - بلوار دریا - پلاک ۲۴۰ - واحد ۱</p>
+                        <strong>@T.Text("address")</strong>
+                        <p>@(T.CurrentLanguage == "fa" ? "تهران - شهرک غرب - خیابان دریا - جنب خیابان سعدی - پلاک ۲۴۰ - واحد ۱" : "Tehran - West Town - Darya St. - Next to Saadi St. - No. 240 - Unit 1")</p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i class="bi bi-telephone"></i>
                     <div>
-                        <strong>تلفن</strong>
+                        <strong>@T.Text("phone")</strong>
                         <p dir="ltr">021-88368070</p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i class="bi bi-fax"></i>
                     <div>
-                        <strong>فکس</strong>
+                        <strong>@T.Text("fax")</strong>
                         <p dir="ltr">021-88360807</p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i class="bi bi-envelope"></i>
                     <div>
-                        <strong>ایمیل</strong>
+                        <strong>@T.Text("email")</strong>
                         <p dir="ltr">pdd_tdp@yahoo.com</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-globe"></i>
+                    <div>
+                        <strong>@(T.CurrentLanguage == "fa" ? "وبسایت" : "Website")</strong>
+                        <p dir="ltr">www.pdd.ir</p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i class="bi bi-clock"></i>
                     <div>
-                        <strong>ساعات کار</strong>
-                        <p>شنبه تا چهارشنبه: ۰۸:۰۰ - ۱۶:۰۰</p>
-                        <p>پنج‌شنبه: ۰۸:۰۰ - ۱۲:۰۰</p>
-                        <p>جمعه: تعطیل</p>
+                        <strong>@T.Text("working_hours")</strong>
+                        <p>@(T.CurrentLanguage == "fa" ? "شنبه تا چهارشنبه: ۰۸:۰۰ - ۱۶:۰۰" : "Saturday to Wednesday: 08:00 - 16:00")</p>
+                        <p>@(T.CurrentLanguage == "fa" ? "پنج‌شنبه: ۰۸:۰۰ - ۱۲:۰۰" : "Thursday: 08:00 - 12:00")</p>
+                        <p>@(T.CurrentLanguage == "fa" ? "جمعه: تعطیل" : "Friday: Closed")</p>
                     </div>
                 </div>
             </div>
             <div class="contact-form reveal">
                 <form onsubmit="event.preventDefault();">
-                    <input type="text" placeholder="نام شما" class="form-input" />
-                    <input type="email" placeholder="ایمیل" class="form-input" />
-                    <input type="text" placeholder="موضوع" class="form-input" />
-                    <textarea placeholder="پیام شما" rows="5" class="form-input"></textarea>
-                    <button type="submit" class="btn-glow">ارسال پیام</button>
+                    <div style="margin-bottom:16px;">
+                        <label class="form-label">@T.Text("your_name") *</label>
+                        <input type="text" class="form-control" placeholder="@T.Text("your_name")" />
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label class="form-label">@T.Text("your_email") *</label>
+                        <input type="email" class="form-control" placeholder="@T.Text("your_email")" />
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label class="form-label">@T.Text("subject")</label>
+                        <input type="text" class="form-control" placeholder="@T.Text("subject")" />
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label class="form-label">@T.Text("your_message") *</label>
+                        <textarea class="form-control" rows="5" placeholder="@T.Text("your_message")"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">@T.Text("send_message")</button>
                 </form>
             </div>
         </div>
