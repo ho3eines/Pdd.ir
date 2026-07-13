@@ -1,9 +1,10 @@
 @inject AuthService Auth
+@inject ITranslateService T
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
-            <span class="gradient-text" style="font-weight:800;">Pdd.ir</span>
+            <span style="font-weight:800;color:var(--pdd-primary);">Pdd.ir</span>
         </a>
     </div>
 </div>
@@ -11,32 +12,32 @@
 <nav class="flex-column">
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-            <span class="bi bi-house-door-fill" aria-hidden="true"></span> خانه
+            <span class="bi bi-house-door-fill" aria-hidden="true"></span> @T.Text("home")
         </NavLink>
     </div>
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="products">
-            <span class="bi bi-box-seam" aria-hidden="true"></span> محصولات
+            <span class="bi bi-box-seam" aria-hidden="true"></span> @T.Text("products")
         </NavLink>
     </div>
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="blog">
-            <span class="bi bi-journal-richtext" aria-hidden="true"></span> بلاگ
+            <span class="bi bi-journal-richtext" aria-hidden="true"></span> @T.Text("blog")
         </NavLink>
     </div>
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="portfolio">
-            <span class="bi bi-images" aria-hidden="true"></span> نمونه کارها
+            <span class="bi bi-images" aria-hidden="true"></span> @T.Text("portfolio")
         </NavLink>
     </div>
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="about">
-            <span class="bi bi-info-circle" aria-hidden="true"></span> درباره ما
+            <span class="bi bi-info-circle" aria-hidden="true"></span> @T.Text("about")
         </NavLink>
     </div>
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="contact">
-            <span class="bi bi-envelope" aria-hidden="true"></span> تماس با ما
+            <span class="bi bi-envelope" aria-hidden="true"></span> @T.Text("contact")
         </NavLink>
     </div>
 
@@ -45,37 +46,37 @@
         <hr class="text-secondary mx-3 my-2" style="opacity:0.3;" />
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin">
-                <span class="bi bi-speedometer2" aria-hidden="true"></span> داشبورد
+                <span class="bi bi-speedometer2" aria-hidden="true"></span> @T.Text("dashboard")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/products">
-                <span class="bi bi-box" aria-hidden="true"></span> مدیریت محصولات
+                <span class="bi bi-box" aria-hidden="true"></span> @T.Text("admin_products")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/blog">
-                <span class="bi bi-pencil-square" aria-hidden="true"></span> مدیریت بلاگ
+                <span class="bi bi-pencil-square" aria-hidden="true"></span> @T.Text("admin_blog")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/portfolio">
-                <span class="bi bi-collection" aria-hidden="true"></span> مدیریت نمونه کارها
+                <span class="bi bi-collection" aria-hidden="true"></span> @T.Text("admin_portfolio")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/messages">
-                <span class="bi bi-chat-dots" aria-hidden="true"></span> پیام‌ها
+                <span class="bi bi-chat-dots" aria-hidden="true"></span> @T.Text("admin_messages")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/users">
-                <span class="bi bi-people" aria-hidden="true"></span> کاربران
+                <span class="bi bi-people" aria-hidden="true"></span> @T.Text("admin_users")
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin/settings">
-                <span class="bi bi-gear" aria-hidden="true"></span> تنظیمات
+                <span class="bi bi-gear" aria-hidden="true"></span> @T.Text("admin_settings")
             </NavLink>
         </div>
     }

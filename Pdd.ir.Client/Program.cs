@@ -13,5 +13,6 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ConnectionService>();
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AnimationService>();
+builder.Services.AddScoped<ITranslateService, TranslateService>();
 
 await builder.Build().RunAsync();

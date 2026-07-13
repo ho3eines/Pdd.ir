@@ -1,0 +1,77 @@
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject ITranslateService T
+
+<nav class="glass-toolbar" id="toolbar">
+    <div class="toolbar-inner">
+        <a href="/" class="toolbar-logo">
+            <span class="logo-text">PDD</span>
+            <span class="logo-name">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+        </a>
+
+        <div class="toolbar-links" id="navLinks">
+            <a href="/" class="toolbar-nav-link">@T.Text("home")</a>
+            <a href="/products" class="toolbar-nav-link">@T.Text("products")</a>
+            <a href="/blog" class="toolbar-nav-link">@T.Text("blog")</a>
+            <a href="/portfolio" class="toolbar-nav-link">@T.Text("portfolio")</a>
+            <a href="/about" class="toolbar-nav-link">@T.Text("about")</a>
+            <a href="/contact" class="toolbar-nav-link">@T.Text("contact")</a>
+        </div>
+
+        <div class="toolbar-actions">
+            <div class="lang-switcher">
+                <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="() => SwitchLang("fa')">FA</button>
+                <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="() => SwitchLang("en')">EN</button>
+            </div>
+            <a href="/contact" class="btn btn-glass btn-sm">@T.Text("contact_us")</a>
+            <button class="toolbar-toggle" id="menuToggle" @onclick="ToggleMenu">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="mobile-menu @( _menuOpen ? "open" : "" )" id="mobileMenu">
+        <a href="/" class="mobile-link" @onclick="CloseMenu">@T.Text("home")</a>
+        <a href="/products" class="mobile-link" @onclick="CloseMenu">@T.Text("products")</a>
+        <a href="/blog" class="mobile-link" @onclick="CloseMenu">@T.Text("blog")</a>
+        <a href="/portfolio" class="mobile-link" @onclick="CloseMenu">@T.Text("portfolio")</a>
+        <a href="/about" class="mobile-link" @onclick="CloseMenu">@T.Text("about")</a>
+        <a href="/contact" class="mobile-link" @onclick="CloseMenu">@T.Text("contact")</a>
+    </div>
+</nav>
+
+@code {
+    private bool _menuOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var lang = await JS.InvokeAsync<string>("localStorage.getItem", "app_lang");
+            if (!string.IsNullOrEmpty(lang))
+                await T.LoadLanguageAsync(lang);
+            else
+                await T.LoadLanguageAsync("fa");
+        }
+        catch
+        {
+            await T.LoadLanguageAsync("fa");
+        }
+    }
+
+    private async Task SwitchLang(string lang)
+    {
+        await T.LoadLanguageAsync(lang);
+        StateHasChanged();
+    }
+
+    private void ToggleMenu()
+    {
+        _menuOpen = !_menuOpen;
+    }
+
+    private void CloseMenu()
+    {
+        _menuOpen = false;
+    }
+}

@@ -1,0 +1,27 @@
+<section class="clients-section">
+    <div class="clients-track">
+        @foreach (var logo in _logos.Concat(_logos))
+        {
+            <div class="client-logo">
+                <i class="@logo.Icon"></i>
+                <span>@logo.Name</span>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private List<LogoItem> _logos => new()
+    {
+        new("bi bi-hospital", "بیمارستان قائم"),
+        new("bi bi-hospital", "بیمارستان شفا"),
+        new("bi bi-hospital", "بیمارستان فاطمه"),
+        new("bi bi-hospital", "بیمارستان محمد"),
+        new("bi bi-hospital", "بیمارستان امام"),
+        new("bi bi-hospital", "بیمارستان نیکوکاری"),
+        new("bi bi-hospital", "بیمارستان محب مهر"),
+        new("bi bi-hospital", "بیمارستان چمران"),
+    };
+
+    private record LogoItem(string Icon, string Name);
+}

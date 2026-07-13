@@ -1,0 +1,113 @@
+@page "/"
+@inject IJSRuntime JS
+@inject ITranslateService T
+
+<HeroSlider />
+<ClientsSlider />
+
+<!-- STATS -->
+<section class="section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat reveal">
+                <div class="stat-number" data-count="22">۰</div>
+                <div class="stat-label">@T.Text("years_experience")</div>
+            </div>
+            <div class="stat reveal">
+                <div class="stat-number" data-count="110">۰</div>
+                <div class="stat-label">@T.Text("medical_centers")</div>
+            </div>
+            <div class="stat reveal">
+                <div class="stat-number" data-count="27">۰</div>
+                <div class="stat-label">@T.Text("subsystems")</div>
+            </div>
+            <div class="stat reveal">
+                <div class="stat-number">۲۴/۷</div>
+                <div class="stat-label">@T.Text("support_24_7")</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRODUCTS PREVIEW -->
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title reveal">@T.Text("products")</h2>
+            <p class="section-subtitle reveal">@T.Text("hero_subtitle_3")</p>
+        </div>
+        <div class="grid-3">
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
+                    <i class="bi bi-hospital"></i>
+                </div>
+                <h3>HIS</h3>
+                <p>@T.Text("products_his")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+                <h3>CIS</h3>
+                <p>@T.Text("products_cis")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(121,40,202,0.15);color:var(--pdd-purple);">
+                    <i class="bi bi-camera-reels"></i>
+                </div>
+                <h3>RIS</h3>
+                <p>@T.Text("products_ris")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(80,227,194,0.15);color:var(--pdd-cyan);">
+                    <i class="bi bi-lungs"></i>
+                </div>
+                <h3>LIS</h3>
+                <p>@T.Text("products_lis")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
+                    <i class="bi bi-calculator"></i>
+                </div>
+                <h3>MIS</h3>
+                <p>@T.Text("products_mis")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
+                    <i class="bi bi-building"></i>
+                </div>
+                <h3>@T.Text("products_automation")</h3>
+                <p>@T.Text("products_automation")</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="section">
+    <div class="container text-center">
+        <h2 class="section-title reveal">@(T.CurrentLanguage == "fa" ? "آماده شروع هستید؟" : "Ready to Get Started?")</h2>
+        <p class="section-subtitle reveal" style="margin-bottom:32px;">@(T.CurrentLanguage == "fa" ? "با ما تماس بگیرید و بهترین راهکار را دریافت کنید" : "Contact us and get the best solution")</p>
+        <div class="hero-actions" style="justify-content:center;">
+            <a href="/contact" class="btn btn-primary btn-lg">@T.Text("contact_us")</a>
+            <a href="/products" class="btn btn-outline btn-lg">@T.Text("view_products")</a>
+        </div>
+    </div>
+</section>
+
+<CorporateFooter />
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initScrollAnimations");
+                await JS.InvokeVoidAsync("initCounters");
+            }
+            catch { }
+        }
+    }
+}

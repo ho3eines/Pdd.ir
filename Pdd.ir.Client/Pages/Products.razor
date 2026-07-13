@@ -1,88 +1,68 @@
 @page "/products"
-@inject HttpClient Http
+@inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>محصولات | Pdd.ir</PageTitle>
+<PageTitle>@T.Text("products") | PDD</PageTitle>
 
-<PageHeader Title="محصولات ما" Subtitle="نرم‌افزارهای مدرن و کارآمد برای سازمان شما" />
+<PageHeader Title="@T.Text("products")" Subtitle="@T.Text("hero_subtitle_3")" />
 
 <section class="section">
     <div class="container">
-        <div class="row g-4">
-            @if (_products == null)
-            {
-                @for (int i = 0; i < 4; i++)
-                {
-                    <div class="col-12 col-md-6">
-                        <div class="skeleton skeleton-card"></div>
-                    </div>
-                }
-            }
-            else
-            {
-                @foreach (var product in _products)
-                {
-                    <div class="col-12 col-md-6">
-                        <AnimatedSection AnimationType="fade-up">
-                            <div class="product-detail-card tilt-card">
-                                <div class="product-header">
-                                    <div class="product-icon-lg">
-                                        <i class="bi @(product.Category == "HIS" ? "bi-hospital" : "bi-calculator")"></i>
-                                    </div>
-                                    <div>
-                                        <h3>@product.Title</h3>
-                                        <p class="text-muted">@product.Subtitle</p>
-                                    </div>
-                                </div>
-                                <p>@product.Description</p>
-                                @if (!string.IsNullOrEmpty(product.Features))
-                                {
-                                    <div class="features-list">
-                                        @foreach (var feature in ParseFeatures(product.Features))
-                                        {
-                                            <div class="feature-item">
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                                <span>@feature</span>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        </AnimatedSection>
-                    </div>
-                }
-            }
+        <div class="grid-3">
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
+                    <i class="bi bi-hospital"></i>
+                </div>
+                <h3>HIS</h3>
+                <p>@T.Text("products_his") — @(T.CurrentLanguage == "fa" ? "از پذیرش تا ترخیص بیماران بستری" : "From admission to discharge of inpatients")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+                <h3>CIS</h3>
+                <p>@T.Text("products_cis") — @(T.CurrentLanguage == "fa" ? "مدیریت تعرفه‌ها و ارسال نسخ بیمه‌ها" : "Tariff management and insurance prescription submission")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(121,40,202,0.15);color:var(--pdd-purple);">
+                    <i class="bi bi-camera-reels"></i>
+                </div>
+                <h3>RIS</h3>
+                <p>@T.Text("products_ris") — @(T.CurrentLanguage == "fa" ? "مدیریت MRI، سی‌تی اسکن و..." : "Management of MRI, CT Scan and...")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(80,227,194,0.15);color:var(--pdd-cyan);">
+                    <i class="bi bi-lungs"></i>
+                </div>
+                <h3>LIS</h3>
+                <p>@T.Text("products_lis") — @(T.CurrentLanguage == "fa" ? "سرعت بالا، زیبایی، امکانات متنوع" : "High speed, beauty, diverse features")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
+                    <i class="bi bi-calculator"></i>
+                </div>
+                <h3>MIS</h3>
+                <p>@T.Text("products_mis") — @(T.CurrentLanguage == "fa" ? "ارتباط میان نرم‌افزارهای درمانی و مالی" : "Connection between medical and financial software")</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
+                    <i class="bi bi-building"></i>
+                </div>
+                <h3>@T.Text("products_automation")</h3>
+                <p>@(T.CurrentLanguage == "fa" ? "مدیریت گردش نامه‌ها و اطلاعات در سازمان" : "Management of organizational documents and information")</p>
+            </div>
         </div>
     </div>
 </section>
 
+<CorporateFooter />
+
 @code {
-    private List<ProductDto>? _products;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
-            _products = response?.Data;
-        }
-        catch
-        {
-            _products = new List<ProductDto>();
-        }
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try { await JS.InvokeVoidAsync("initScrollAnimations"); await JS.InvokeVoidAsync("initTiltEffect"); } catch { }
+            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
         }
-    }
-
-    private List<string> ParseFeatures(string features)
-    {
-        try { return System.Text.Json.JsonSerializer.Deserialize<List<string>>(features) ?? new List<string>(); }
-        catch { return features.Split('\n').Where(f => !string.IsNullOrWhiteSpace(f)).ToList(); }
     }
 }

@@ -2,122 +2,72 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>تماس با ما | Pdd.ir</PageTitle>
+<PageTitle>تماس با ما | PDD</PageTitle>
 
-<PageHeader Title="تماس با ما" Subtitle="با ما در ارتباط باشید" />
-
-<section class="section">
-    <div class="container">
-        <div class="row g-5">
-            <div class="col-12 col-lg-6">
-                <AnimatedSection AnimationType="slide-left">
-                    <div class="contact-info">
-                        <h3>اطلاعات تماس</h3>
-                        <div class="info-item">
-                            <i class="bi bi-geo-alt"></i>
-                            <div>
-                                <strong>آدرس</strong>
-                                <p>تهران، خیابان ولیعصر</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="bi bi-telephone"></i>
-                            <div>
-                                <strong>تلفن</strong>
-                                <p>۰۲۱-۱۲۳۴۵۶۷۸</p>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="bi bi-envelope"></i>
-                            <div>
-                                <strong>ایمیل</strong>
-                                <p>info@pdd.ir</p>
-                            </div>
-                        </div>
+<section class="section" style="padding-top:120px;">
+    <div class="content">
+        <h2 class="section-title reveal">تماس با ما</h2>
+        <div class="contact-grid">
+            <div class="contact-info reveal">
+                <div class="info-item">
+                    <i class="bi bi-geo-alt"></i>
+                    <div>
+                        <strong>آدرس</strong>
+                        <p>تهران - شهرک غرب - بلوار دریا - پلاک ۲۴۰ - واحد ۱</p>
                     </div>
-                </AnimatedSection>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-telephone"></i>
+                    <div>
+                        <strong>تلفن</strong>
+                        <p dir="ltr">021-88368070</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-fax"></i>
+                    <div>
+                        <strong>فکس</strong>
+                        <p dir="ltr">021-88360807</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-envelope"></i>
+                    <div>
+                        <strong>ایمیل</strong>
+                        <p dir="ltr">pdd_tdp@yahoo.com</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-clock"></i>
+                    <div>
+                        <strong>ساعات کار</strong>
+                        <p>شنبه تا چهارشنبه: ۰۸:۰۰ - ۱۶:۰۰</p>
+                        <p>پنج‌شنبه: ۰۸:۰۰ - ۱۲:۰۰</p>
+                        <p>جمعه: تعطیل</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-12 col-lg-6">
-                <AnimatedSection AnimationType="slide-right">
-                    <div class="contact-form-card">
-                        @if (_submitted)
-                        {
-                            <div class="alert alert-success">
-                                <i class="bi bi-check-circle"></i>
-                                پیام شما با موفقیت ارسال شد.
-                            </div>
-                        }
-                        else
-                        {
-                            <EditForm Model="model" OnValidSubmit="Submit">
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label">نام *</label>
-                                        <InputText class="form-control" @bind-Value="model.Name" placeholder="نام خود را وارد کنید" />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label">ایمیل *</label>
-                                        <InputText class="form-control" @bind-Value="model.Email" placeholder="ایمیل خود را وارد کنید" />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">تلفن</label>
-                                        <InputText class="form-control" @bind-Value="model.Phone" placeholder="شماره تلفن" />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">موضوع</label>
-                                        <InputText class="form-control" @bind-Value="model.Subject" placeholder="موضوع پیام" />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">پیام *</label>
-                                        <InputTextArea class="form-control" @bind-Value="model.Message" rows="5" placeholder="پیام خود را بنویسید..." />
-                                    </div>
-                                    <div class="col-12">
-                                        <button type="submit" class="btn btn-primary glow-hover" disabled="@_submitting">
-                                            @if (_submitting)
-                                            {
-                                                <span class="spinner-border spinner-border-sm me-2"></span>
-                                            }
-                                            ارسال پیام
-                                        </button>
-                                    </div>
-                                </div>
-                            </EditForm>
-                        }
-                    </div>
-                </AnimatedSection>
+            <div class="contact-form reveal">
+                <form onsubmit="event.preventDefault();">
+                    <input type="text" placeholder="نام شما" class="form-input" />
+                    <input type="email" placeholder="ایمیل" class="form-input" />
+                    <input type="text" placeholder="موضوع" class="form-input" />
+                    <textarea placeholder="پیام شما" rows="5" class="form-input"></textarea>
+                    <button type="submit" class="btn-glow">ارسال پیام</button>
+                </form>
             </div>
         </div>
     </div>
 </section>
 
-@code {
-    private ContactRequest model = new();
-    private bool _submitting;
-    private bool _submitted;
+<CorporateFooter />
 
+@code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
         }
-    }
-
-    private async Task Submit()
-    {
-        _submitting = true;
-        StateHasChanged();
-        try
-        {
-            var response = await Http.PostAsJsonAsync("api/contact", model);
-            if (response.IsSuccessStatusCode)
-            {
-                _submitted = true;
-                model = new();
-            }
-        }
-        catch { }
-        _submitting = false;
-        StateHasChanged();
     }
 }

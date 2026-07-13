@@ -1,0 +1,169 @@
+@inject IJSRuntime JS
+@inject ITranslateService T
+@implements IAsyncDisposable
+
+<div class="hero-slider" id="heroSlider">
+    @foreach (var slide in _slides)
+    {
+        <div class="hero-slide @slide.CssClass @(_currentIndex == slide.Index ? "active" : "")" data-index="@slide.Index">
+            <div class="hero-slide-bg @slide.BgClass"></div>
+
+            @if (slide.IsCentered)
+            {
+                <div class="hero-slide-content" style="flex-direction:column;text-align:center;">
+                    <div class="hero-slide-text">
+                        <h1 class="hero-title">@((MarkupString)slide.Title)</h1>
+                        <p class="hero-subtitle">@slide.Subtitle</p>
+                        <div class="hero-actions" style="justify-content:center;">
+                            <a href="/products" class="btn btn-primary btn-lg">@T.Text("view_products")</a>
+                            <a href="/contact" class="btn btn-outline btn-lg">@T.Text("contact_us")</a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="hero-slide-content">
+                    <div class="hero-slide-text">
+                        <h1 class="hero-title">@((MarkupString)slide.Title)</h1>
+                        <p class="hero-subtitle">@slide.Subtitle</p>
+                        <div class="hero-actions">
+                            <a href="/products" class="btn btn-primary">@T.Text("view_products")</a>
+                            <a href="/contact" class="btn btn-outline">@T.Text("contact_us")</a>
+                        </div>
+                    </div>
+                    <div class="hero-slide-visual">
+                        @slide.Visual
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="hero-slider-controls">
+        <button class="hero-arrow" @onclick="Prev" aria-label="Previous slide">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        @for (int i = 0; i < _slides.Count; i++)
+        {
+            var idx = i;
+            <div class="hero-dot @(_currentIndex == idx ? "active" : "")" @onclick="() => GoTo(idx)"></div>
+        }
+        <button class="hero-arrow" @onclick="Next" aria-label="Next slide">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    </div>
+
+    <div class="hero-progress">
+        <div class="hero-progress-bar" style="width:@(_progress)%"></div>
+    </div>
+</div>
+
+@code {
+    private int _currentIndex = 0;
+    private double _progress = 0;
+    private Timer? _timer;
+    private Timer? _progressTimer;
+    private const int SlideDuration = 5000;
+
+    private List<SlideData> _slides => new()
+    {
+        new SlideData
+        {
+            Index = 0,
+            CssClass = "centered",
+            BgClass = "slide-bg-1",
+            IsCentered = true,
+            Title = $"<span class='gradient'>{T.Text("hero_title_1")}</span>",
+            Subtitle = T.Text("hero_subtitle_1")
+        },
+        new SlideData
+        {
+            Index = 1,
+            CssClass = "split",
+            BgClass = "slide-bg-2",
+            IsCentered = false,
+            Title = $"<span class='gradient'>{T.Text("hero_title_2")}</span>",
+            Subtitle = T.Text("hero_subtitle_2"),
+            Visual = (@<div class="hospital-visual">
+                <div class="hospital-visual-inner">
+                    <i class="bi bi-hospital"></i>
+                    <span>HIS • RIS • LIS</span>
+                </div>
+            </div>)
+        },
+        new SlideData
+        {
+            Index = 2,
+            CssClass = "split",
+            BgClass = "slide-bg-3",
+            IsCentered = false,
+            Title = $"<span class='gradient'>{T.Text("hero_title_3")}</span>",
+            Subtitle = T.Text("hero_subtitle_3"),
+            Visual = (@<div class="hero-product-cards">
+                <div class="hero-product-card"><i class="bi bi-hospital"></i><span>HIS</span></div>
+                <div class="hero-product-card"><i class="bi bi-clipboard2-pulse"></i><span>CIS</span></div>
+                <div class="hero-product-card"><i class="bi bi-camera-reels"></i><span>RIS</span></div>
+                <div class="hero-product-card"><i class="bi bi-lungs"></i><span>LIS</span></div>
+                <div class="hero-product-card"><i class="bi bi-calculator"></i><span>MIS</span></div>
+            </div>)
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        _timer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                Next();
+                StateHasChanged();
+            });
+        }, null, SlideDuration, SlideDuration);
+
+        _progressTimer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                _progress += 2;
+                if (_progress >= 100) _progress = 0;
+                StateHasChanged();
+            });
+        }, null, 100, 100);
+    }
+
+    private void Next()
+    {
+        _currentIndex = (_currentIndex + 1) % _slides.Count;
+        _progress = 0;
+    }
+
+    private void Prev()
+    {
+        _currentIndex = (_currentIndex - 1 + _slides.Count) % _slides.Count;
+        _progress = 0;
+    }
+
+    private void GoTo(int index)
+    {
+        _currentIndex = index;
+        _progress = 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_timer != null) await _timer.DisposeAsync();
+        if (_progressTimer != null) await _progressTimer.DisposeAsync();
+    }
+
+    private class SlideData
+    {
+        public int Index { get; set; }
+        public string CssClass { get; set; } = "";
+        public string BgClass { get; set; } = "";
+        public bool IsCentered { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public RenderFragment? Visual { get; set; }
+    }
+}

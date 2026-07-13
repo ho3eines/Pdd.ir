@@ -243,34 +243,32 @@ window.initArchitectureScroll = function (dotNetRef) {
         }
     });
 
+    function addClass(id, cls) { var el = document.getElementById(id); if (el) el.classList.add(cls); }
+    function removeClass(id, cls) { var el = document.getElementById(id); if (el) el.classList.remove(cls); }
+
     _archTimeline
         .to('#archStep1', { opacity: 1, pointerEvents: 'auto', duration: 0.15 }, 0)
-        .to('#nodeHIS', { className: '+=active', duration: 0.01 }, 0)
-        .to('#nodeHISm', { className: '+=active', duration: 0.01 }, 0)
+        .call(function() { addClass('nodeHIS', 'active'); addClass('nodeHISm', 'active'); }, null, 0)
         .to('#archStep1', { opacity: 0, pointerEvents: 'none', duration: 0.1 }, 0.25)
-        .to('#nodeHIS', { className: '-=active', duration: 0.01 }, 0.35)
-        .to('#nodeHISm', { className: '-=active', duration: 0.01 }, 0.35)
+        .call(function() { removeClass('nodeHIS', 'active'); removeClass('nodeHISm', 'active'); }, null, 0.35)
         .to('#archStep2', { opacity: 1, pointerEvents: 'auto', duration: 0.15 }, 0.3)
-        .to('#nodeHIS', { className: '+=active', duration: 0.01 }, 0.3)
-        .to('#nodeHISm', { className: '+=active', duration: 0.01 }, 0.3)
-        .to('#nodeRIS', { className: '+=active', duration: 0.01 }, 0.3)
-        .to('#nodeRISm', { className: '+=active', duration: 0.01 }, 0.3)
-        .to('#line1', { className: '+=active', duration: 0.5 }, 0.3)
-        .to('#line1m', { className: '+=active', duration: 0.5 }, 0.3)
+        .call(function() {
+            addClass('nodeHIS', 'active'); addClass('nodeHISm', 'active');
+            addClass('nodeRIS', 'active'); addClass('nodeRISm', 'active');
+            addClass('line1', 'active'); addClass('line1m', 'active');
+        }, null, 0.3)
         .to('#archStep2', { opacity: 0, pointerEvents: 'none', duration: 0.1 }, 0.55)
-        .to('#nodeHIS', { className: '-=active', duration: 0.01 }, 0.65)
-        .to('#nodeHISm', { className: '-=active', duration: 0.01 }, 0.65)
-        .to('#nodeRIS', { className: '-=active', duration: 0.01 }, 0.65)
-        .to('#nodeRISm', { className: '-=active', duration: 0.01 }, 0.65)
-        .to('#line1', { className: '-=active', duration: 0.01 }, 0.65)
-        .to('#line1m', { className: '-=active', duration: 0.01 }, 0.65)
+        .call(function() {
+            removeClass('nodeHIS', 'active'); removeClass('nodeHISm', 'active');
+            removeClass('nodeRIS', 'active'); removeClass('nodeRISm', 'active');
+            removeClass('line1', 'active'); removeClass('line1m', 'active');
+        }, null, 0.65)
         .to('#archStep3', { opacity: 1, pointerEvents: 'auto', duration: 0.15 }, 0.6)
-        .to('#nodeRIS', { className: '+=active', duration: 0.01 }, 0.6)
-        .to('#nodeRISm', { className: '+=active', duration: 0.01 }, 0.6)
-        .to('#nodeMIS', { className: '+=active', duration: 0.01 }, 0.6)
-        .to('#nodeMISm', { className: '+=active', duration: 0.01 }, 0.6)
-        .to('#line2', { className: '+=active', duration: 0.5 }, 0.6)
-        .to('#line2m', { className: '+=active', duration: 0.5 }, 0.6);
+        .call(function() {
+            addClass('nodeRIS', 'active'); addClass('nodeRISm', 'active');
+            addClass('nodeMIS', 'active'); addClass('nodeMISm', 'active');
+            addClass('line2', 'active'); addClass('line2m', 'active');
+        }, null, 0.6);
 
     ScrollTrigger.create({
         trigger: '#archStep3',
@@ -359,5 +357,136 @@ window.disposeSmoothScroll = function () {
     if (_mainLenis) {
         _mainLenis.destroy();
         _mainLenis = null;
+    }
+};
+
+// ═══════════════════════════════════════════════════════════
+// HOME PAGE ANIMATIONS
+// ═══════════════════════════════════════════════════════════
+window.home = {
+    init: function () {
+        if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+        gsap.registerPlugin(ScrollTrigger);
+
+        this.heroAnimation();
+        this.revealAnimation();
+        this.parallaxHero();
+        this.architectureStory();
+        this.counters();
+        this.mouseGlow();
+        this.toolbarScroll();
+    },
+
+    heroAnimation: function () {
+        var tl = gsap.timeline({ delay: 0.3 });
+        tl.from('.hero-badge', { y: 20, opacity: 0, duration: 0.6, ease: 'power2.out' })
+          .from('.title .line', { y: 60, opacity: 0, duration: 0.8, stagger: 0.15, ease: 'power3.out' }, '-=0.3')
+          .from('.subtitle', { y: 30, opacity: 0, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+          .from('.hero-actions', { y: 20, opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+          .from('.hero-stats', { y: 20, opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+          .from('.float-card', { scale: 0.8, opacity: 0, duration: 0.5, stagger: 0.15, ease: 'back.out(1.4)' }, '-=0.3')
+          .from('.scroll-indicator', { opacity: 0, duration: 0.5 }, '-=0.1');
+        this.initHeroGlow();
+    },
+
+    initHeroGlow: function () {
+        var glow = document.getElementById('heroGlow');
+        var hero = document.getElementById('hero');
+        if (!glow || !hero) return;
+        var throttle = null;
+        hero.addEventListener('mousemove', function (e) {
+            if (throttle) return;
+            throttle = setTimeout(function () { throttle = null; }, 16);
+            var rect = hero.getBoundingClientRect();
+            glow.style.left = (e.clientX - rect.left) + 'px';
+            glow.style.top = (e.clientY - rect.top) + 'px';
+        });
+    },
+
+    revealAnimation: function () {
+        gsap.utils.toArray('.reveal').forEach(function (el) {
+            gsap.from(el, {
+                y: 50, opacity: 0, duration: 0.8, ease: 'power2.out',
+                scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' }
+            });
+        });
+    },
+
+    parallaxHero: function () {
+        gsap.to('.hero-bg', {
+            backgroundPosition: '50% 100%', ease: 'none',
+            scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
+        });
+    },
+
+    architectureStory: function () {
+        var steps = gsap.utils.toArray('.arch-step');
+        var nodes = document.querySelectorAll('.arch-node');
+        var connectors = document.querySelectorAll('.arch-connector');
+
+        steps.forEach(function (el, i) {
+            gsap.to(el, {
+                opacity: 1, y: 0, duration: 0.5,
+                scrollTrigger: {
+                    trigger: '.architecture',
+                    start: function () { return 'top -' + (i * 100); },
+                    end: function () { return 'top -' + ((i + 1) * 100); },
+                    scrub: true,
+                    onEnter: function () {
+                        if (nodes[i]) nodes[i].classList.add('active');
+                        if (connectors[i]) connectors[i].classList.add('active');
+                    },
+                    onLeaveBack: function () {
+                        if (nodes[i]) nodes[i].classList.remove('active');
+                        if (connectors[i]) connectors[i].classList.remove('active');
+                    }
+                }
+            });
+            if (i > 0) {
+                gsap.to(steps[i - 1], {
+                    opacity: 0, y: -30, duration: 0.3,
+                    scrollTrigger: { trigger: '.architecture', start: function () { return 'top -' + (i * 100); }, scrub: true }
+                });
+            }
+        });
+    },
+
+    counters: function () {
+        gsap.utils.toArray('[data-count]').forEach(function (el) {
+            var target = parseInt(el.getAttribute('data-count'));
+            var obj = { val: 0 };
+            gsap.to(obj, {
+                val: target, duration: 2, ease: 'power2.out',
+                scrollTrigger: { trigger: el, start: 'top 85%' },
+                onUpdate: function () { el.textContent = Math.floor(obj.val).toLocaleString('fa-IR') + '+'; }
+            });
+        });
+    },
+
+    mouseGlow: function () {
+        var throttle = null;
+        document.addEventListener('mousemove', function (e) {
+            if (throttle) return;
+            throttle = setTimeout(function () { throttle = null; }, 16);
+            document.querySelectorAll('.card, .project').forEach(function (el) {
+                var rect = el.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var y = e.clientY - rect.top;
+                if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                    el.style.background = 'radial-gradient(circle 300px at ' + x + 'px ' + y + 'px, rgba(0,112,243,0.06), rgba(255,255,255,0.03))';
+                } else {
+                    el.style.background = '';
+                }
+            });
+        });
+    },
+
+    toolbarScroll: function () {
+        var toolbar = document.getElementById('toolbar');
+        if (!toolbar) return;
+        window.addEventListener('scroll', function () {
+            if (window.scrollY > 50) { toolbar.classList.add('scrolled'); }
+            else { toolbar.classList.remove('scrolled'); }
+        });
     }
 };

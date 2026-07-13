@@ -1,48 +1,50 @@
 @page "/about"
+@inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>درباره ما | Pdd.ir</PageTitle>
+<PageTitle>@T.Text("about") | PDD</PageTitle>
 
-<PageHeader Title="درباره ما" Subtitle="بیش از ۱۰ سال تجربه در توسعه نرم‌افزارهای سازمانی" />
+<PageHeader Title="@T.Text("about")" Subtitle="@(T.CurrentLanguage == "fa" ? "شرکت مهندسی طراح داده پیشرو" : "PDD Engineering Company")" />
 
 <section class="section">
     <div class="container">
-        <div class="row align-items-center g-5">
-            <div class="col-12 col-lg-6">
-                <AnimatedSection AnimationType="slide-left">
-                    <h2>شرکت Pdd.ir</h2>
-                    <p class="mb-3">
-                        ما یک تیم متخصص و با تجربه در زمینه توسعه نرم‌افزارهای سازمانی هستیم.
-                        با بیش از ۱۰ سال فعالیت، راهکارهای نوینی برای بیمارستان‌ها، مراکز درمانی
-                        و سازمان‌های مالی ارائه داده‌ایم.
-                    </p>
-                    <p>
-                        هدف ما ارتقای سطح فناوری در سازمان‌های ایرانی و کمک به بهبود فرآیندهای
-                        مدیریتی از طریق نرم‌افزارهای مدرن و کارآمد است.
-                    </p>
-                </AnimatedSection>
+        <div class="contact-grid" style="text-align:center;">
+            <div class="reveal" style="text-align:right;">
+                <p style="line-height:2;color:var(--pdd-text-muted);font-size:15px;">
+                    @(T.CurrentLanguage == "fa"
+                        ? "طراح داده پیشرو به شماره ثبت ۲۵۶۳۷۴ با مسئولیت محدود در سال ۱۳۸۳ فعالیت خود را توسط یک جمع ۳ نفره بدون سرمایه اولیه به همراه ۲ کیس کامپیوتر که در آن زمان متعلق به شرکت نبود آغاز کرد."
+                        : "PDD Engineering Company with registration number 256374 started its activity in 2004 with a 3-person team without initial capital.")
+                </p>
+                <p style="line-height:2;color:var(--pdd-text-muted);font-size:15px;">
+                    @(T.CurrentLanguage == "fa"
+                        ? "در همان سال اول، اولین نسل نرم‌افزارهای تحت ویندوز با تکنولوژی .NET را با عنوان طب پرداز در کشور به کاربران ارائه نمود."
+                        : "In the first year, it introduced the first generation of Windows-based software with .NET technology to users in the country.")
+                </p>
+                <p style="line-height:2;color:var(--pdd-text-muted);font-size:15px;">
+                    @(T.CurrentLanguage == "fa"
+                        ? "این شرکت هم اکنون به عنوان یکی از بزرگترین طراح و تولید کنندگان سیستم‌های جامع اطلاعات مدیریت بیمارستانی در ایران مشغول به فعالیت بوده و نرم‌افزارهای آن توسط کارشناسان مراکز درمانی به عنوان یکی از مطمئن‌ترین و پیشرفته‌ترین محصولات به کار گرفته می‌شود."
+                        : "This company is currently one of the largest designers and producers of comprehensive hospital management information systems in Iran.")
+                </p>
             </div>
-            <div class="col-12 col-lg-6">
-                <AnimatedSection AnimationType="slide-right">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-number" data-count="10">۰</div>
-                            <div class="stat-label">سال تجربه</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" data-count="50">۰</div>
-                            <div class="stat-label">پروژه موفق</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" data-count="30">۰</div>
-                            <div class="stat-label">مشتری راضی</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">۲۴/۷</div>
-                            <div class="stat-label">پشتیبانی</div>
-                        </div>
+            <div class="reveal">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" data-count="22">۰</div>
+                        <div class="stat-label">@T.Text("years_experience")</div>
                     </div>
-                </AnimatedSection>
+                    <div class="stat-card">
+                        <div class="stat-number" data-count="110">۰</div>
+                        <div class="stat-label">@T.Text("medical_centers")</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" data-count="27">۰</div>
+                        <div class="stat-label">@T.Text("subsystems")</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">۶</div>
+                        <div class="stat-label">@(T.CurrentLanguage == "fa" ? "نرم‌افزار" : "Software")</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -50,40 +52,31 @@
 
 <section class="section section-alt">
     <div class="container">
-        <AnimatedSection AnimationType="fade-up">
-            <h2 class="section-title">ارزش‌های ما</h2>
-        </AnimatedSection>
-        <div class="row g-4">
-            <div class="col-12 col-md-4">
-                <AnimatedSection AnimationType="scale-up">
-                    <div class="value-card glow-hover">
-                        <i class="bi bi-lightbulb"></i>
-                        <h4>نوآوری</h4>
-                        <p>همیشه در جستجوی راه‌حل‌های نوین هستیم</p>
-                    </div>
-                </AnimatedSection>
+        <div class="section-header">
+            <h2 class="section-title reveal">@(T.CurrentLanguage == "fa" ? "مسیر رشد شرکت" : "Company Growth Path")</h2>
+        </div>
+        <div class="stats-grid reveal">
+            <div class="stat-card">
+                <div class="stat-number" data-count="10">۰</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "سال ۱۳۸۵" : "Year 2006")</div>
             </div>
-            <div class="col-12 col-md-4">
-                <AnimatedSection AnimationType="scale-up">
-                    <div class="value-card glow-hover">
-                        <i class="bi bi-people"></i>
-                        <h4>کار تیمی</h4>
-                        <p>موفقیت ما مدیون همکاری تیمی است</p>
-                    </div>
-                </AnimatedSection>
+            <div class="stat-card">
+                <div class="stat-number" data-count="40">۰</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "سال ۱۳۸۹" : "Year 2010")</div>
             </div>
-            <div class="col-12 col-md-4">
-                <AnimatedSection AnimationType="scale-up">
-                    <div class="value-card glow-hover">
-                        <i class="bi bi-award"></i>
-                        <h4>کیفیت</h4>
-                        <p>کیفیت در تمام مراحل توسعه اولویت ماست</p>
-                    </div>
-                </AnimatedSection>
+            <div class="stat-card">
+                <div class="stat-number" data-count="70">۰</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "سال ۱۳۹۳" : "Year 2014")</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-count="90">۰</div>
+                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "سال ۱۳۹۴" : "Year 2015")</div>
             </div>
         </div>
     </div>
 </section>
+
+<CorporateFooter />
 
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
