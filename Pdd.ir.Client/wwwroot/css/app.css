@@ -2127,7 +2127,7 @@ main {
 /* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
    CUSTOMER SHOWCASE â€” Infinite Marquee (name + logo)
    â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ */
-.cs-marquee {`n  cursor: default;
+.cs-marquee {`n  cursor: default;`n  cursor: default;
   direction: ltr;
   flex-shrink: 0;
   height: 70px;
@@ -2137,7 +2137,7 @@ main {
   border-top: 1px solid rgba(255,255,255,0.04);
 }
 
-.cs-track {  display: inline-flex;
+.cs-track {`n  animation-play-state: running;  display: inline-flex;
   align-items: center;
   height: 100%;
   gap: 36px;
@@ -2207,9 +2207,9 @@ main {
 
 /* â•گâ•گâ•گ RESPONSIVE â•گâ•گâ•گ */
 @media (max-width: 576px) {
-  .cs-marquee {`n  cursor: default;
+  .cs-marquee {`n  cursor: default;`n  cursor: default;
   direction: ltr; height: 56px; }
-  .cs-track {
+  .cs-track {`n  animation-play-state: running;
   display: inline-flex; gap: 24px; }
   .cs-img { width: 32px; height: 32px; }
   .cs-icon { width: 32px; height: 32px; font-size: 15px; }
@@ -2217,9 +2217,10 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cs-track {
+  .cs-track {`n  animation-play-state: running;
   display: inline-flex; animation: none; }
 }
+
 
 
 
