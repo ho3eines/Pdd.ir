@@ -1,4 +1,4 @@
-﻿/* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+/* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
    PDD.ir â€” UNIFIED DESIGN SYSTEM
    Single CSS File â€” All Styles Consolidated
    â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ */
@@ -1834,19 +1834,17 @@ main {
   .home-center { flex: 1; padding: 60px 24px 12px; }
   .home-products-panel {
     width: 100%; min-width: 0;
-    flex-direction: row; align-items: center;
-    padding: 12px 24px;
+    padding: 10px 24px;
     border-left: none; border-top: 1px solid var(--pdd-border);
-    overflow-x: auto; gap: 16px;
   }
   .products-header, .products-footer { display: none; }
-  .products-list { flex-direction: row; gap: 6px; flex-wrap: nowrap; }
+  .products-list { flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .product-row {
-    padding: 8px 12px; white-space: nowrap;
-    min-width: max-content;
+    padding: 6px 10px; white-space: nowrap;
     transform: none !important;
     animation: none !important;
     opacity: 1 !important;
+    flex: 0 0 auto;
   }
   .product-sub { display: none; }
   .product-btn { display: none; }
@@ -1960,26 +1958,6 @@ main {
 
 /* â•گâ•گâ•گ RESPONSIVE â•گâ•گâ•گ */
 @media (max-width: 1024px) {
-  .home-main { flex-direction: column; }
-  .home-center { flex: 1; padding: 60px 24px 12px; }
-  .home-products-panel {
-    width: 100%; min-width: 0;
-    flex-direction: row; align-items: center;
-    padding: 12px 24px;
-    border-left: none; border-top: 1px solid var(--pdd-border);
-    overflow-x: auto; gap: 16px;
-  }
-  .products-header, .products-footer { display: none; }
-  .products-list { flex-direction: row; gap: 6px; flex-wrap: nowrap; }
-  .product-row {
-    padding: 8px 12px; white-space: nowrap;
-    min-width: max-content;
-    transform: none !important;
-    animation: none !important;
-    opacity: 1 !important;
-  }
-  .product-sub { display: none; }
-  .product-btn { display: none; }
   .home-clients { padding: 8px 24px 12px; }
   .home-clients .clients-track { gap: 10px; }
 }
