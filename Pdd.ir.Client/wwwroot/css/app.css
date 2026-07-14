@@ -2124,11 +2124,12 @@ main {
   transform: scaleX(-1);
 }
 
-/* â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-   CUSTOMER SHOWCASE â€” Infinite Marquee (name + logo)
-   â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ */
-.cs-marquee {`n  cursor: default;`n  cursor: default;
+/* =========================================================
+   CUSTOMER SHOWCASE — Infinite Marquee (name + logo)
+   ========================================================= */
+.cs-marquee {
   direction: ltr;
+  cursor: default;
   flex-shrink: 0;
   height: 70px;
   overflow: hidden;
@@ -2137,12 +2138,14 @@ main {
   border-top: 1px solid rgba(255,255,255,0.04);
 }
 
-.cs-track {`n  animation-play-state: running;  display: inline-flex;
+.cs-track {
+  display: inline-flex;
   align-items: center;
   height: 100%;
   gap: 36px;
   width: max-content;
   animation: csSlide 30s linear infinite;
+  animation-play-state: running;
 }
 
 @keyframes csSlide {
@@ -2150,19 +2153,20 @@ main {
   100% { transform: translateX(-50%); }
 }
 
-.cs-item {`n  transition: transform 0.3s, opacity 0.3s;
+.cs-item {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
   opacity: 0.45;
-  transition: opacity 0.3s;
+  transition: transform 0.3s, opacity 0.3s, filter 0.3s;
 }
-.cs-item:hover {`n  transform: scale(1.1);
+.cs-item:hover {
   opacity: 1;
+  transform: scale(1.15);
 }
 
-/* â”€â”€ Image logo â”€â”€ */
+/* -- Image logo -- */
 .cs-img {
   width: 40px;
   height: 40px;
@@ -2177,7 +2181,7 @@ main {
   transform: scale(1.1);
 }
 
-/* â”€â”€ Icon fallback â”€â”€ */
+/* -- Icon fallback -- */
 .cs-icon {
   width: 40px;
   height: 40px;
@@ -2193,7 +2197,7 @@ main {
   transform: scale(1.1);
 }
 
-/* â”€â”€ Name â”€â”€ */
+/* -- Name -- */
 .cs-name {
   font-size: 11px;
   font-weight: 600;
@@ -2205,22 +2209,19 @@ main {
   color: var(--pdd-text);
 }
 
-/* â•گâ•گâ•گ RESPONSIVE â•گâ•گâ•گ */
+/* === RESPONSIVE === */
 @media (max-width: 576px) {
-  .cs-marquee {`n  cursor: default;`n  cursor: default;
-  direction: ltr; height: 56px; }
-  .cs-track {`n  animation-play-state: running;
-  display: inline-flex; gap: 24px; }
+  .cs-marquee { height: 56px; }
+  .cs-track { gap: 24px; }
   .cs-img { width: 32px; height: 32px; }
   .cs-icon { width: 32px; height: 32px; font-size: 15px; }
   .cs-name { font-size: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cs-track {`n  animation-play-state: running;
-  display: inline-flex; animation: none; }
+  .cs-track { animation: none; }
 }
 
-
-
-
+.cs-marquee:hover .cs-track {
+  animation-play-state: paused;
+}
