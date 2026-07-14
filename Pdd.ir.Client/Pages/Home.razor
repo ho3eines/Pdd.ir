@@ -8,6 +8,16 @@
     <div class="mouse-glow" id="mouseGlow"></div>
     <canvas class="home-particles" id="homeParticles"></canvas>
 
+    <!-- Background Images Layer -->
+    <div class="home-bg-layer">
+        @for (int i = 0; i < _slides.Count; i++)
+        {
+            <div class="home-bg-img @(_currentSlide == i ? "active" : "")" style="background-image:url('@_slides[i].ImageUrl')"></div>
+        }
+        <div class="home-bg-overlay"></div>
+        <div class="home-bg-grain"></div>
+    </div>
+
     <!-- Top bar: Logo + Lang -->
     <div class="home-topbar">
         <a href="/" class="home-logo">
@@ -97,20 +107,7 @@
     </div>
 
     <!-- Bottom: Clients -->
-    <div class="home-clients">
-        <div class="clients-label">@(T.CurrentLanguage == "fa" ? "مشتریان ما" : "Our Clients")</div>
-        <div class="clients-track-wrap">
-            <div class="clients-track">
-                @foreach (var c in _clients.Concat(_clients))
-                {
-                    <div class="client-item">
-                        <i class="bi @c.Icon"></i>
-                        <span>@c.Name</span>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
+    <CustomerShowcase Customers="_clients" />
 </div>
 
 @code {
@@ -127,21 +124,24 @@
             BadgeFa = "راهکار هوشمند", BadgeEn = "Smart Solution",
             TitleFa = "نرم‌افزار جامع مدیریت درمانی", TitleEn = "Comprehensive Healthcare Software",
             DescFa = "طراحی سیستم‌های مدرن برای بیمارستان‌ها و مراکز درمانی با بیش از ۲۲ سال تجربه",
-            DescEn = "Modern systems for hospitals and medical centers with over 22 years of experience"
+            DescEn = "Modern systems for hospitals and medical centers with over 22 years of experience",
+            ImageUrl = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920&q=80"
         },
         new SlideItem
         {
             BadgeFa = "پوشش جامع", BadgeEn = "Full Coverage",
             TitleFa = "۲۷ زیرسیستم یکپارچه", TitleEn = "27 Integrated Subsystems",
             DescFa = "از پذیرش بیمار تا ترخیص، از آزمایشگاه تا خزانه‌داری — همه در یک پلتفرم",
-            DescEn = "From patient admission to discharge, lab to treasury — all in one platform"
+            DescEn = "From patient admission to discharge, lab to treasury — all in one platform",
+            ImageUrl = "https://images.unsplash.com/photo-1551190822-a9ce113ac100?w=1920&q=80"
         },
         new SlideItem
         {
             BadgeFa = "پشتیبانی", BadgeEn = "Support",
             TitleFa = "پشتیبانی ۲۴ ساعته", TitleEn = "24/7 Support",
             DescFa = "بیش از ۱۱۰ مرکز درمانی در سراسر کشور به ما اعتماد کرده‌اند",
-            DescEn = "Over 110 medical centers across the country trust us"
+            DescEn = "Over 110 medical centers across the country trust us",
+            ImageUrl = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1920&q=80"
         }
     };
 
@@ -155,16 +155,24 @@
         new ProductItem { Icon = "bi-building", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "اتوماسیون اداری", NameEn = "Office Automation", SubFa = "گردش نامه و بایگانی", SubEn = "Document & Filing", Route = "/products" }
     };
 
-    private List<ClientItem> _clients => new()
+    private List<Customer> _clients => new()
     {
-        new ClientItem { Icon = "bi-hospital", Name = "قائم جیرفت" },
-        new ClientItem { Icon = "bi-heart-pulse", Name = "محمد کرمانشاهی" },
-        new ClientItem { Icon = "bi-clipboard2-pulse", Name = "شفا ساری" },
-        new ClientItem { Icon = "bi-hospital", Name = "حضرت فاطمه ساوه" },
-        new ClientItem { Icon = "bi-heart-pulse", Name = "آیت‌الله گلپایگانی" },
-        new ClientItem { Icon = "bi-clipboard2-pulse", Name = "امیرالمؤمنین" },
-        new ClientItem { Icon = "bi-hospital", Name = "شهید بهشتی" },
-        new ClientItem { Icon = "bi-heart-pulse", Name = "امام خمینی" }
+        new Customer { Abbr = "شب", NameFa = "شهید بهشتی", NameEn = "Shahid Beheshti", Color = "#0D6EFD" },
+        new Customer { Abbr = "مت", NameFa = "دانشگاه تهران", NameEn = "TUMS", Color = "#f81ce5" },
+        new Customer { Abbr = "دای", NameFa = "دانشگاه ایران", NameEn = "Iran University", Color = "#7928ca" },
+        new Customer { Abbr = "قب", NameFa = "قائم جیرفت", NameEn = "Ghaem Jiroft", Color = "#50e3c2" },
+        new Customer { Abbr = "مک", NameFa = "محمد کرمانشاهی", NameEn = "Mohammad Kermanshahi", Color = "#0D6EFD" },
+        new Customer { Abbr = "شس", NameFa = "شفا ساری", NameEn = "Shafa Sari", Color = "#f81ce5" },
+        new Customer { Abbr = "حف", NameFa = "حضرت فاطمه ساوه", NameEn = "Hazrate Fatemeh Saveh", Color = "#7928ca" },
+        new Customer { Abbr = "آگ", NameFa = "آیت‌الله گلپایگانی", NameEn = "Ayatollah Golpaygani", Color = "#50e3c2" },
+        new Customer { Abbr = "ام", NameFa = "امیرالمؤمنین", NameEn = "Amiralmomenin", Color = "#0D6EFD" },
+        new Customer { Abbr = "اخ", NameFa = "امام خمینی", NameEn = "Imam Khomeini", Color = "#f81ce5" },
+        new Customer { Abbr = "دگ", NameFa = "دانشگاه گلستان", NameEn = "Golestan University", Color = "#7928ca" },
+        new Customer { Abbr = "دس", NameFa = "دانشگاه سمنان", NameEn = "Semnan University", Color = "#50e3c2" },
+        new Customer { Abbr = "دز", NameFa = "دانشگاه زنجان", NameEn = "Zanjan University", Color = "#0D6EFD" },
+        new Customer { Abbr = "دی", NameFa = "دانشگاه یزد", NameEn = "Yazd University", Color = "#f81ce5" },
+        new Customer { Abbr = "دک", NameFa = "دانشگاه کاشان", NameEn = "Kashan University", Color = "#7928ca" },
+        new Customer { Abbr = "قز", NameFa = "دانشگاه قزوین", NameEn = "Qazvin University", Color = "#50e3c2" }
     };
 
     protected override void OnInitialized()
@@ -252,6 +260,7 @@
         public string TitleEn { get; set; } = "";
         public string DescFa { get; set; } = "";
         public string DescEn { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
     }
     private class ProductItem
     {
@@ -263,10 +272,5 @@
         public string SubFa { get; set; } = "";
         public string SubEn { get; set; } = "";
         public string Route { get; set; } = "";
-    }
-    private class ClientItem
-    {
-        public string Icon { get; set; } = "";
-        public string Name { get; set; } = "";
     }
 }

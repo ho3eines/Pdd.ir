@@ -126,8 +126,8 @@ var _homeGlowActive = false;
 
 function _homeGlowLoop() {
     if (!_homeGlowActive) return;
-    _homeGlowX += (_homeGlowTargetX - _homeGlowX) * 0.12;
-    _homeGlowY += (_homeGlowTargetY - _homeGlowY) * 0.12;
+    _homeGlowX += (_homeGlowTargetX - _homeGlowX) * 0.08;
+    _homeGlowY += (_homeGlowTargetY - _homeGlowY) * 0.08;
     var glow = document.getElementById('mouseGlow');
     if (glow) {
         glow.style.transform = 'translate(-50%, -50%) translate3d(' + _homeGlowX + 'px, ' + _homeGlowY + 'px, 0)';
@@ -160,7 +160,7 @@ window.initHomeParticles = function () {
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     var dpr = window.devicePixelRatio || 1;
-    var count = window.innerWidth < 768 ? 25 : 50;
+    var count = window.innerWidth < 768 ? 30 : 60;
 
     function resize() {
         canvas.width = window.innerWidth * dpr;
@@ -175,11 +175,13 @@ window.initHomeParticles = function () {
             _homeParticlesArr.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                vx: (Math.random() - 0.5) * 0.3 * dpr,
-                vy: (Math.random() - 0.5) * 0.3 * dpr,
-                r: (Math.random() * 1.2 + 0.3) * dpr,
-                a: Math.random() * 0.4 + 0.1,
-                hue: Math.random() < 0.6 ? 215 : (Math.random() < 0.5 ? 300 : 170)
+                vx: (Math.random() - 0.5) * 0.25 * dpr,
+                vy: (Math.random() - 0.5) * 0.25 * dpr - 0.1 * dpr,
+                r: (Math.random() * 1.5 + 0.2) * dpr,
+                a: Math.random() * 0.35 + 0.08,
+                hue: Math.random() < 0.5 ? 215 : (Math.random() < 0.5 ? 300 : 170),
+                pulse: Math.random() * Math.PI * 2,
+                pulseSpeed: Math.random() * 0.02 + 0.005
             });
         }
     }
@@ -190,23 +192,44 @@ window.initHomeParticles = function () {
         _homeParticlesArr.forEach(function (p) {
             p.x += p.vx;
             p.y += p.vy;
-            if (p.x < 0) p.x = canvas.width;
-            if (p.x > canvas.width) p.x = 0;
-            if (p.y < 0) p.y = canvas.height;
-            if (p.y > canvas.height) p.y = 0;
+            p.pulse += p.pulseSpeed;
+            var pulseFactor = 0.7 + Math.sin(p.pulse) * 0.3;
+            if (p.x < -10) p.x = canvas.width + 10;
+            if (p.x > canvas.width + 10) p.x = -10;
+            if (p.y < -10) p.y = canvas.height + 10;
+            if (p.y > canvas.height + 10) p.y = -10;
 
             var color;
-            if (p.hue === 215) color = 'rgba(13, 110, 253, ' + p.a + ')';
-            else if (p.hue === 300) color = 'rgba(248, 28, 229, ' + p.a + ')';
-            else color = 'rgba(80, 227, 194, ' + p.a + ')';
+            if (p.hue === 215) color = 'rgba(13, 110, 253, ' + (p.a * pulseFactor) + ')';
+            else if (p.hue === 300) color = 'rgba(248, 28, 229, ' + (p.a * pulseFactor) + ')';
+            else color = 'rgba(80, 227, 194, ' + (p.a * pulseFactor) + ')';
 
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, p.r * pulseFactor, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.shadowColor = color;
-            ctx.shadowBlur = 6;
+            ctx.shadowBlur = 8;
             ctx.fill();
         });
+
+        // Draw connections between nearby particles
+        for (var i = 0; i < _homeParticlesArr.length; i++) {
+            for (var j = i + 1; j < _homeParticlesArr.length; j++) {
+                var dx = _homeParticlesArr[i].x - _homeParticlesArr[j].x;
+                var dy = _homeParticlesArr[i].y - _homeParticlesArr[j].y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120 * dpr) {
+                    var alpha = (1 - dist / (120 * dpr)) * 0.08;
+                    ctx.beginPath();
+                    ctx.moveTo(_homeParticlesArr[i].x, _homeParticlesArr[i].y);
+                    ctx.lineTo(_homeParticlesArr[j].x, _homeParticlesArr[j].y);
+                    ctx.strokeStyle = 'rgba(13, 110, 253, ' + alpha + ')';
+                    ctx.lineWidth = 0.5 * dpr;
+                    ctx.stroke();
+                }
+            }
+        }
+
         _homeParticlesRAF = requestAnimationFrame(draw);
     }
 
@@ -252,3 +275,5 @@ window.addRippleEffect = function () {
         activator.style.transform = 'scale(1)';
     }, 200);
 };
+
+// Customer Showcase — pure CSS marquee, no JS needed

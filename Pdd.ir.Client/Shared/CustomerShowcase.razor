@@ -1,0 +1,27 @@
+@using Pdd.ir.Client.Models
+
+<div class="cs-marquee">
+    <div class="cs-track">
+        @foreach (var c in Customers.Concat(Customers))
+        {
+            <div class="cs-item">
+                @if (!string.IsNullOrEmpty(c.ImageUrl))
+                {
+                    <img class="cs-img" src="@c.ImageUrl" alt="@c.NameFa" />
+                }
+                else
+                {
+                    <div class="cs-icon" style="background:@c.Color;color:#fff">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                }
+                <span class="cs-name">@(T.CurrentLanguage == "fa" ? c.NameFa : c.NameEn)</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<Customer> Customers { get; set; } = new();
+    [Inject] private ITranslateService T { get; set; } = default!;
+}
