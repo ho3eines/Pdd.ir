@@ -13,6 +13,7 @@ RUN dotnet publish Pdd.ir.Server/Pdd.ir.Server.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
 WORKDIR /app
-COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Pdd.ir.Server.dll"]

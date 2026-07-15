@@ -42,6 +42,7 @@ builder.Services.AddCors(options =>
                 "https://localhost:7001",
                 "https://localhost:7125",
                 "http://localhost:5183",
+                "http://localhost:8080",
                 "http://pdd.ir",
                 "https://pdd.ir")
             .SetIsOriginAllowed(_ => true)
@@ -68,7 +69,7 @@ app.UseCors();
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
-    AllowedOrigins = { "http://localhost:5000", "http://localhost:5001", "https://localhost:7001", "http://localhost:5183", "https://localhost:5183", "https://localhost:7125", "http://localhost:7125" }
+    AllowedOrigins = { "http://localhost:5000", "http://localhost:5001", "https://localhost:7001", "http://localhost:5183", "https://localhost:5183", "https://localhost:7125", "http://localhost:7125", "http://localhost:8080" }
 });
 
 app.MapControllers();
