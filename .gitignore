@@ -51,6 +51,9 @@ project_agent.md
 stop.txt
 .mcp.json
 AGENTS.md
+
+# Docker data
+sql-data/
 *.exe
 *.dll
 *.pdb

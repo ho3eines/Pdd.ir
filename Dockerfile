@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
 WORKDIR /src
 
 COPY Pdd.ir.slnx .
@@ -11,7 +11,7 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish Pdd.ir.Server/Pdd.ir.Server.csproj -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 EXPOSE 8080
