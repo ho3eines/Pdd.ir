@@ -71,7 +71,7 @@ app.UseCors();
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
-    AllowedOrigins = { "http://localhost:5000", "http://localhost:5001", "https://localhost:7001", "http://localhost:5183", "https://localhost:5183", "https://localhost:7125", "http://localhost:7125", "http://localhost:8080", "http://localhost:80" }
+    AllowedOrigins = { "*" }
 });
 
 app.MapControllers();
