@@ -276,4 +276,22 @@ window.addRippleEffect = function () {
     }, 200);
 };
 
+// ── Theme Toggle ────────────────────────────────────────
+window.getTheme = function () {
+    return localStorage.getItem('pdd_theme') || 'dark';
+};
+
+window.setTheme = function (theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('pdd_theme', theme);
+};
+
+window.toggleTheme = function () {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('pdd_theme', next);
+    return next;
+};
+
 // Customer Showcase — pure CSS marquee, no JS needed

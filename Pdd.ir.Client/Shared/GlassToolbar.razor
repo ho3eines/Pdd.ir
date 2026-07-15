@@ -19,6 +19,9 @@
         </div>
 
         <div class="toolbar-actions">
+            <button class="theme-toggle-btn" @onclick="ToggleTheme" aria-label="Toggle theme">
+                <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
+            </button>
             <div class="lang-switcher">
                 <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="SwitchToFa">FA</button>
                 <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="SwitchToEn">EN</button>
@@ -42,11 +45,18 @@
 
 @code {
     private bool _menuOpen = false;
+    private bool _isDark = true;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            var savedTheme = await JS.InvokeAsync<string>("localStorage.getItem", "pdd_theme");
+            if (!string.IsNullOrEmpty(savedTheme))
+            {
+                _isDark = savedTheme == "dark";
+                await JS.InvokeVoidAsync("setTheme", savedTheme);
+            }
             var lang = await JS.InvokeAsync<string>("localStorage.getItem", "app_lang");
             if (!string.IsNullOrEmpty(lang))
                 await T.LoadLanguageAsync(lang);
@@ -59,6 +69,13 @@
             await T.LoadLanguageAsync("fa");
             try { await JS.InvokeVoidAsync("setDocDirection", "fa"); } catch { }
         }
+    }
+
+    private async Task ToggleTheme()
+    {
+        var result = await JS.InvokeAsync<string>("toggleTheme");
+        _isDark = result == "dark";
+        StateHasChanged();
     }
 
     private async Task SwitchLang(string lang)

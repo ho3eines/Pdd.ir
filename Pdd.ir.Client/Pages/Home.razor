@@ -28,6 +28,9 @@
             <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
             <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
         </button>
+        <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
+            <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
+        </button>
     </div>
 
     <!-- Main Content: Center + Right -->
@@ -116,6 +119,7 @@
     private double _progress = 0;
     private Timer? _slideTimer;
     private Timer? _progressTimer;
+    private bool _isDark = true;
 
     private List<SlideItem> _slides => new()
     {
@@ -199,6 +203,11 @@
         {
             try
             {
+                var savedTheme = await JS.InvokeAsync<string>("getTheme");
+                _isDark = savedTheme != "light";
+                await JS.InvokeVoidAsync("setTheme", _isDark ? "dark" : "light");
+                StateHasChanged();
+
                 var lang = T.CurrentLanguage;
                 if (string.IsNullOrEmpty(lang)) lang = "fa";
                 await JS.InvokeVoidAsync("setDocDirection", lang);
@@ -239,6 +248,13 @@
         await T.LoadLanguageAsync(lang);
         await JS.InvokeVoidAsync("localStorage.setItem", "app_lang", lang);
         await JS.InvokeVoidAsync("setDocDirection", lang);
+        StateHasChanged();
+    }
+
+    private async Task ToggleTheme()
+    {
+        var result = await JS.InvokeAsync<string>("toggleTheme");
+        _isDark = result == "dark";
         StateHasChanged();
     }
 
