@@ -5,196 +5,169 @@
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
 ![Blazor](https://img.shields.io/badge/Blazor-WASM-512BD4)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2022-CC2927)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)
 
 ---
 
-## 📋 فهرست مطالب
+## فهرست مطالب
 
 - [معرفی پروژه](#معرفی-پروژه)
 - [ویژگی‌ها](#ویژگی‌ها)
+- [نحوه اجرا با Docker](#نحوه-اجرا-با-docker)
+- [نحوه اجرا بدون Docker](#نحوه-اجرا-بدون-docker)
 - [معماری پروژه](#معماری-پروژه)
-- [پیش‌نیازها](#پیش‌نیازها)
-- [نحوه اجرا](#نحوه-اجرا)
 - [ساختار پوشه‌ها](#ساختار-پوشه‌ها)
 - [تکنولوژی‌ها](#تکنولوژی‌ها)
-- [تنظیمات محیطی](#تنظیمات-محیطی)
 - [راهنمای توسعه](#راهنمای-توسعه)
 
 ---
 
 ## معرفی پروژه
 
-**PDD.ir** وب‌سایت رسمی شرکت **طراح داده پیشرو** است که ارائه‌کننده نرم‌افزارهای بیمارستانی (HIS, CIS, RIS, MIS) می‌باشد. این پروژه یک سیستم مدیریت محتوا (CMS) کامل با پنل مدیریتی است که امکان مدیریت محصولات، وبلاگ، نمونه‌کارها، پیام‌ها و کاربران را فراهم می‌کند.
+**PDD.ir** وب‌سایت رسمی شرکت **طراح داده پیشرو** است که ارائه‌کننده نرم‌افزارهای بیمارستانی (HIS, CIS, RIS, MIS) می‌باشد.
 
-### بخش‌های اصلی سایت
+### بخش‌های اصلی
 
-- **صفحه اصلی** — اسلایدر هیرو، لوگوی مشتریان، آمار شرکت، پیش‌نمایش محصولات
-- **محصولات** — نمایش نرم‌افزارهای بیمارستانی
-- **وبلاگ** — مقالات و اخبار شرکت
-- **نمونه‌کارها** — پروژه‌های انجام شده
-- **تماس با ما** — فرم ارتباط با مشتری
-- **درباره ما** — معرفی شرکت
-
-### پنل مدیریت (Admin)
-
-- **داشبورد** — آمار و نمودارها
-- **مدیریت محصولات** — CRUD محصولات
-- **مدیریت وبلاگ** — نوشتن و ویرایش مقالات
-- **مدیریت نمونه‌کارها** — افزودن پروژه‌های جدید
-- **مدیریت پیام‌ها** — مشاهده پیام‌های دریافتی
-- **مدیریت کاربران** — کاربران و نقش‌ها
-- **تنظیمات** — تنظیمات سایت
+| بخش | توضیح |
+|-----|-------|
+| **صفحه اصلی** | اسلایدر هیرو، لوگوی مشتریان، آمار، محصولات |
+| **محصولات** | نمایش نرم‌افزارهای بیمارستانی |
+| **وبلاگ** | مقالات و اخبار شرکت |
+| **نمونه‌کارها** | پروژه‌های انجام شده |
+| **تماس با ما** | فرم ارتباط با مشتری |
+| **پنل مدیریت** | داشبورد + CRUD محصولات/بلاگ/کاربران |
 
 ---
 
 ## ویژگی‌ها
 
-### فنی
-
-- ✅ **Blazor WebAssembly** — اپلیکیشن SPA کامل در سمت کلاینت
-- ✅ **WebSocket + HTTP Fallback** — ارتباط بلادرنگ با سرور
-- ✅ **SQL Server + Dapper** — دسترسی به دیتابیس با کارایی بالا
+- ✅ **Blazor WebAssembly** — اپلیکیشن SPA کامل
+- ✅ **WebSocket + HTTP Fallback** — ارتباط بلادرنگ
+- ✅ **SQL Server + Dapper** — دسترسی سریع به دیتابیس
 - ✅ **JWT Authentication** — احراز هویت امن
-- ✅ **AES Encryption** — رمزنگاری داده‌ها
 - ✅ **Role-Based Access** — سیستم نقش و دسترسی
-- ✅ **CRUD Service Pattern** — سرویس‌های CRUD با کش در حافظه
-
-### رابط کاربری
-
-- ✅ **Bootstrap 5 + Glassmorphism** — طراحی مدرن شیشه‌ای
-- ✅ **RTL Support** — پشتیبانی کامل از فارسی
+- ✅ **Bootstrap 5 + Glassmorphism** — طراحی مدرن
+- ✅ **RTL Support** — پشتیبانی کامل فارسی
 - ✅ **Dark/Light Theme** — تم تاریک و روشن
 - ✅ **GSAP Animations** — انیمیشن‌های حرفه‌ای
-- ✅ **Responsive** — طراحی واکنش‌گرا برای تمام دستگاه‌ها
-- ✅ **Skeleton Loading** — لودینگ اسکلتونی
-- ✅ **i18n** — چندزبانه (فارسی/انگلیسی)
+- ✅ **Docker Ready** — اجرای آسان با Docker
+
+---
+
+## نحوه اجرا با Docker
+
+> **توصیه شده:** ساده‌ترین روش اجرا، استفاده از Docker است.
+
+### پیش‌نیاز
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) نصب باشد
+
+### اجرا
+
+```bash
+# ۱. کلون کردن ریپازیتوری
+git clone https://github.com/ho3eines/Pdd.ir.git
+cd Pdd.ir
+
+# ۲. اجرای Docker Compose
+docker compose up -d
+```
+
+منتظر بمانید تا：
+- دیتابیس SQL Server راه‌اندازی شود (~30 ثانیه)
+- پروژه build و اجرا شود (~2-3 دقیقه)
+
+### دسترسی
+
+| سرویس | آدرس |
+|-------|------|
+| **وب‌سایت** | [http://localhost:8080](http://localhost:8080) |
+| **پنل مدیریت** | [http://localhost:8080/admin](http://localhost:8080/admin) |
+| **SQL Server** | `localhost:1433` |
+
+### کاربر پیش‌فرض
+
+| نام کاربری | رمز عبور |
+|-----------|----------|
+| `admin` | `admin123` |
+
+### مدیریت Docker
+
+```bash
+# توقف سرویس‌ها
+docker compose down
+
+# حذف سرویس‌ها + دیتا
+docker compose down -v
+
+# مشاهده لاگ‌ها
+docker compose logs -f
+
+# مشاهده وضعیت
+docker compose ps
+```
+
+---
+
+## نحوه اجرا بدون Docker
+
+### پیش‌نیازها
+
+| نرم‌افزار | نسخه |
+|----------|-------|
+| .NET SDK | 8.0+ |
+| SQL Server | 2019+ |
+
+### مراحل
+
+```bash
+# ۱. کلون کردن
+git clone https://github.com/ho3eines/Pdd.ir.git
+cd Pdd.ir
+
+# ۲. باز کردن در Visual Studio
+# فایل Pdd.ir.slnx را باز کنید
+
+# ۳. تنظیم رشته اتصال
+# فایل Pdd.ir.Server/appsettings.json را ویرایش کنید
+
+# ۴. اجرا
+# پروژه Pdd.ir.Server را به عنوان Startup انتخاب کنید
+# یا:
+dotnet run --project Pdd.ir.Server
+
+# ۵. اجرای اسکریپت‌های SQL
+# فایل‌های SQL در مسیر زیر هستند:
+# Pdd.ir.Server/wwwroot/resource/
+# ابتدا 202607111200_Create_All.sql
+# سپس بقیه فایل‌ها به ترتیب تاریخ
+```
 
 ---
 
 ## معماری پروژه
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Pdd.ir.Client                          │
-│                   (Blazor WebAssembly)                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │    Pages     │  │   Shared    │  │      Services       │ │
-│  │  (Razor)     │  │ (Components)│  │  (Communication)    │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└───────────────────────────┬─────────────────────────────────┘
-                            │ WebSocket / HTTP
-┌───────────────────────────┴─────────────────────────────────┐
-│                      Pdd.ir.Server                          │
-│                    (ASP.NET Core)                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ Controllers  │  │  WebSocket  │  │     Services        │ │
-│  │   (REST)     │  │   Handler   │  │  (Business + JWT)   │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└───────────────────────────┬─────────────────────────────────┘
-                            │
-┌───────────────────────────┴─────────────────────────────────┐
-│                      Pdd.ir.Data                            │
-│                   (Dapper + SQL Server)                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │  DbService   │  │   Queries   │  │     Models          │ │
-│  │  (Connection)│  │  (TSQL)     │  │    (DTOs)           │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                            │
-┌───────────────────────────┴─────────────────────────────────┐
-│                      Pdd.ir.Business                        │
-│                   (Business Logic)                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Services   │  │   Models    │  │    Validators       │ │
-│  │ (Validation) │  │   (Domain)  │  │    (Rules)          │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│               Pdd.ir.Client (Blazor WASM)           │
+│  Pages → Shared → Services → Models                 │
+└──────────────────────┬──────────────────────────────┘
+                       │ WebSocket / HTTP
+┌──────────────────────┴──────────────────────────────┐
+│               Pdd.ir.Server (ASP.NET Core)           │
+│  Controllers → WebSocket → Services                  │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────┴──────────────────────────────┐
+│               Pdd.ir.Data (Dapper)                   │
+│  DbService → Queries → Models                        │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────┴──────────────────────────────┐
+│               Pdd.ir.Business (Logic)                │
+│  Services → Models → Validators                      │
+└─────────────────────────────────────────────────────┘
 ```
-
-### الگوهای طراحی
-
-| الگو | توضیح |
-|------|-------|
-| **Modal-First CRUD** | تمام عملیات CRUD از طریق مودال انجام می‌شود |
-| **Communication Service** | ارتباط کلاینت-سرور از طریق `ICommunicationService` |
-| **CRUD Service Pattern** | هر جدول سرویس جداگانه با کش در حافظه |
-| **WebSocket Handler** | تمام action ها در یک switch expression |
-| **Role-Based Auth** | سیستم نقش و دسترسی مبتنی بر permissions |
-
----
-
-## پیش‌نیازها
-
-### نرم‌افزاری
-
-| نرم‌افزار | نسخه | لینک دانلود |
-|----------|-------|-------------|
-| .NET SDK | 8.0+ | [dotnet.microsoft.com](https://dotnet.microsoft.com/download/dotnet/8.0) |
-| SQL Server | 2019+ | [microsoft.com/sql](https://www.microsoft.com/sql-server) |
-| Visual Studio | 2022+ | [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) |
-| Node.js (اختیاری) | 18+ | [nodejs.org](https://nodejs.org/) |
-
-### سخت‌افزاری
-
-- حداقل 4GB RAM
-- 10GB فضای دیسک
-- اتصال اینترنت
-
----
-
-## نحوه اجرا
-
-### ۱. کلون کردن ریپازیتوری
-
-```bash
-git clone https://github.com/ho3eines/Pdd.ir.git
-cd Pdd.ir
-```
-
-### ۲. تنظیم دیتابیس
-
-```bash
-# ایجاد دیتابیس SQL Server
-# فایل‌های SQL در مسیر زیر قرار دارند:
-# Pdd.ir.Server/wwwroot/resource/
-```
-
-### ۳. تنظیم رشته اتصال
-
-فایل `appsettings.json` در پروژه `Pdd.ir.Server` را ویرایش کنید:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "workstation id=YOUR_SERVER;password=YOUR_PASSWORD;user id=YOUR_USER;data source=YOUR_SERVER;initial catalog=pdd;Encrypt=False"
-  }
-}
-```
-
-### ۴. اجرای پروژه
-
-```bash
-# اجرا با Visual Studio
-# پروژه Pdd.ir.Server را به عنوان Startup انتخاب کنید
-
-# یا اجرا با دات‌نت CLI
-dotnet run --project Pdd.ir.Server
-```
-
-### ۵. دسترسی به سایت
-
-| آدرس | توضیح |
-|------|-------|
-| `https://localhost:7125` | صفحه اصلی سایت |
-| `https://localhost:7125/admin` | پنل مدیریت |
-| `https://localhost:7125/login` | صفحه ورود |
-
-### کاربر پیش‌فرض
-
-| نام کاربری | رمز عبور |
-|-----------|----------|
-| `admin` | `123456` |
 
 ---
 
@@ -202,47 +175,37 @@ dotnet run --project Pdd.ir.Server
 
 ```
 Pdd.ir/
-├── Pdd.ir.Client/                  # کلاینت Blazor WASM
-│   ├── Pages/                      # صفحات
-│   │   ├── Home.razor              # صفحه اصلی
-│   │   ├── Products.razor          # محصولات
-│   │   ├── Blog.razor              # وبلاگ
-│   │   ├── BlogDetail.razor        # جزئیات مقاله
-│   │   ├── Portfolio.razor         # نمونه‌کارها
-│   │   ├── Contact.razor           # تماس با ما
-│   │   ├── About.razor             # درباره ما
-│   │   ├── Login.razor             # ورود
-│   │   └── Admin/                  # پنل مدیریت
-│   │       ├── Dashboard.razor     # داشبورد
-│   │       ├── Products.razor      # مدیریت محصولات
-│   │       ├── BlogAdmin.razor     # مدیریت وبلاگ
-│   │       ├── PortfolioAdmin.razor# مدیریت نمونه‌کارها
-│   │       ├── Messages.razor      # مدیریت پیام‌ها
-│   │       ├── Users.razor         # مدیریت کاربران
-│   │       ├── Roles.razor         # مدیریت نقش‌ها
-│   │       └── Settings.razor      # تنظیمات
-│   ├── Shared/                     # کامپوننت‌های مشترک
-│   ├── Services/                   # سرویس‌های کلاینت
-│   ├── Layout/                     # لایوت‌ها
-│   └── Models/                     # مدل‌ها و DTOs
+├── Pdd.ir.Client/              # کلاینت Blazor WASM
+│   ├── Pages/                  # صفحات
+│   │   ├── Home.razor          # صفحه اصلی
+│   │   ├── Products.razor      # محصولات
+│   │   ├── Blog.razor          # وبلاگ
+│   │   ├── Portfolio.razor     # نمونه‌کارها
+│   │   ├── Contact.razor       # تماس با ما
+│   │   ├── Login.razor         # ورود
+│   │   └── Admin/              # پنل مدیریت
+│   ├── Shared/                 # کامپوننت‌های مشترک
+│   ├── Services/               # سرویس‌های کلاینت
+│   └── Layout/                 # لایوت‌ها
 │
-├── Pdd.ir.Server/                  # سرور ASP.NET Core
-│   ├── Controllers/                # کنترلرهای REST API
-│   ├── WebSocket/                  # هندلر WebSocket
-│   ├── Services/                   # سرویس‌های سرور
-│   └── wwwroot/resource/           # فایل‌های SQL
+├── Pdd.ir.Server/              # سرور ASP.NET Core
+│   ├── Controllers/            # REST API
+│   ├── WebSocket/              # ارتباط بلادرنگ
+│   ├── Services/               # سرویس‌های سرور
+│   └── wwwroot/resource/       # اسکریپت‌های SQL
 │
-├── Pdd.ir.Business/                # لایه منطق کسب‌وکار
-│   ├── Services/                   # سرویس‌های بیزینس
-│   └── Models/                     # مدل‌های دامنه
+├── Pdd.ir.Business/            # لایه منطق کسب‌وکار
+│   ├── Services/               # سرویس‌های بیزینس
+│   └── Models/                 # مدل‌ها
 │
-├── Pdd.ir.Data/                    # لایه دسترسی به داده
-│   ├── DbService.cs                # سرویس اتصال دیتابیس
-│   └── Queries/                    # کوئری‌های TSQL
+├── Pdd.ir.Data/                # لایه دسترسی به داده
+│   ├── DbService.cs            # اتصال دیتابیس
+│   └── Queries/                # کوئری‌های TSQL
 │
-├── index.html                      # صفحه لندینگ (سیستم‌عامل)
-├── splash.png                      # اسپلش شروع
-└── logo.png                        # لوگوی شرکت
+├── Dockerfile                  # فایل Docker
+├── docker-compose.yml          # Docker Compose
+├── init-db.sql                 # اسکریپت ایجاد دیتابیس
+└── Pdd.ir.slnx                 # فایل Solution
 ```
 
 ---
@@ -250,56 +213,21 @@ Pdd.ir/
 ## تکنولوژی‌ها
 
 ### فرانت‌اند
-
-| تکنولوژی | نسخه | کاربرد |
-|----------|-------|--------|
-| Blazor WebAssembly | 8.0 | فریمورک UI |
-| Bootstrap | 5.3 | CSS Framework |
-| Tailwind CSS | CDN | Utility CSS |
-| GSAP | 3.12 | انیمیشن‌ها |
-| Vazirmatn | — | فونت فارسی |
-| Inter | — | فونت انگلیسی |
+| تکنولوژی | کاربرد |
+|----------|--------|
+| Blazor WASM | فریمورک UI |
+| Bootstrap 5 | CSS Framework |
+| GSAP | انیمیشن‌ها |
+| Vazirmatn | فونت فارسی |
 
 ### بک‌اند
-
-| تکنولوژی | نسخه | کاربرد |
-|----------|-------|--------|
-| ASP.NET Core | 8.0 | وب سرور |
-| Dapper | — | ORM سبک |
-| SQL Server | 2019+ | دیتابیس |
-| JWT | — | احراز هویت |
-| WebSocket | — | ارتباط بلادرنگ |
-| AES | — | رمزنگاری |
-
----
-
-## تنظیمات محیطی
-
-### متغیرهای محیطی
-
-```bash
-# رشته اتصال دیتابیس
-ConnectionString="workstation id=server;password=pass;user id=user;data source=.;initial catalog=pdd"
-
-# پورت سرور
-ASPNETCORE_URLS="https://localhost:7125;http://localhost:5183"
-```
-
-### فایل appsettings.json
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "..."
-  },
-  "JwtSettings": {
-    "SecretKey": "your-secret-key",
-    "Issuer": "Pdd.ir",
-    "Audience": "Pdd.ir",
-    "ExpiryMinutes": 60
-  }
-}
-```
+| تکنولوژی | کاربرد |
+|----------|--------|
+| ASP.NET Core 8 | وب سرور |
+| Dapper | ORM |
+| SQL Server | دیتابیس |
+| JWT | احراز هویت |
+| WebSocket | ارتباط بلادرنگ |
 
 ---
 
@@ -307,100 +235,28 @@ ASPNETCORE_URLS="https://localhost:7125;http://localhost:5183"
 
 ### الگوی اضافه کردن ماژول جدید
 
-#### ۱. ایجاد مدل در `Pdd.ir.Business/Models`
-
-```csharp
-public class MyEntity
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
-}
-```
-
-#### ۲. ایجاد کوئری در `Pdd.ir.Data/Queries`
-
-```csharp
-public static class MyEntityQueries
-{
-    public const string GetAll = "SELECT * FROM MyEntity WITH (NOLOCK) WHERE IsActive=1";
-    public const string Insert = "INSERT INTO MyEntity (Name, IsActive) VALUES (@Name, @IsActive)";
-    public const string Update = "UPDATE MyEntity SET Name=@Name WHERE Id=@Id";
-    public const string Delete = "UPDATE MyEntity SET IsActive=0 WHERE Id=@Id";
-}
-```
-
-#### ۳. ایجاد سرویس بیزینس در `Pdd.ir.Business/Services`
-
-```csharp
-public class MyEntityBusinessService
-{
-    private readonly IDbService _db;
-    
-    public MyEntityBusinessService(IDbService db) => _db = db;
-    
-    public async Task<List<MyEntity>> GetAllAsync()
-        => (await _db.QueryAsync<MyEntity>(MyEntityQueries.GetAll)).ToList();
-}
-```
-
-#### ۴. ایجاد کنترلر در `Pdd.ir.Server/Controllers`
-
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class MyEntityController : ControllerBase
-{
-    private readonly MyEntityBusinessService _service;
-    
-    public MyEntityController(MyEntityBusinessService service) => _service = service;
-    
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-        => Ok(await _service.GetAllAsync());
-}
-```
-
-#### ۵. ایجاد صفحه در `Pdd.ir.Client/Pages/Admin`
-
-```razor
-@page "/admin/myentity"
-@inject ICommunicationService Comm
-
-<PageTitle>مدیریت | PDD</PageTitle>
-
-<div class="page-enter">
-    @* محتوای صفحه *@
-</div>
+```bash
+# ۱. مدل در Pdd.ir.Business/Models
+# ۲. کوئری در Pdd.ir.Data/Queries
+# ۳. سرویس در Pdd.ir.Business/Services
+# ۴. کنترلر در Pdd.ir.Server/Controllers
+# ۵. صفحه در Pdd.ir.Client/Pages/Admin
+# ۶. ثبت سرویس در Pdd.ir.Server/Program.cs
 ```
 
 ### قوانین توسعه
 
 | قانون | توضیح |
 |-------|-------|
-| **Skeleton Loading** | تمام state‌های لودینگ با Skeleton باشند |
-| **Modal-First** | CRUD ها با مودال باشند (نه صفحه جدا) |
-| **Glassmorphism** | استفاده از کلاس‌های CSS utility |
-| **RTL** | تمام متن‌ها فارسی با `dir="rtl"` |
-| **i18n** | استفاده از `T.Text()` برای متن‌ها |
-| **WebSocket** | ارتباط از طریق `ICommunicationService` |
+| **Skeleton Loading** | لودینگ با Skeleton (نه spinner) |
+| **Modal-First** | CRUD ها با مودال |
+| **Glassmorphism** | استایل شیشه‌ای |
+| **RTL** | تمام متن‌ها فارسی |
+| **i18n** | استفاده از `T.Text()` |
+| **Git** | هر تغییر → commit + push |
 
 ---
 
 ## مجوز
 
-این پروژه متعلق به شرکت **طراح داده پیشرو** می‌باشد.
-
----
-
-## ارتباط با ما
-
-| راه ارتباطی | آدرس |
-|------------|-------|
-| وب‌سایت | [pdd.ir](https://pdd.ir) |
-| ایمیل | info@pdd.ir |
-| گیت‌هاب | [github.com/ho3eines/Pdd.ir](https://github.com/ho3eines/Pdd.ir) |
-
----
-
-**ساخته شده با ❤️ توسط تیم طراح داده پیشرو**
+متعلق به شرکت **طراح داده پیشرو** — [pdd.ir](https://pdd.ir)
