@@ -1,80 +1,105 @@
 @page "/contact"
+@inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("contact") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "تماس با ما" : "Contact") | PDD</PageTitle>
 
-<PageHeader Title="@T.Text("contact")" Subtitle="@(T.CurrentLanguage == "fa" ? "شرکت طراح داده پیشرو ، ارائه‌کننده نرم‌افزارهای بیمارستانی" : "PDD Company, Provider of Hospital Software")" />
+<PageHeader Title="@(T.CurrentLanguage == "fa" ? "تماس با ما" : "Contact")" Subtitle="@(T.CurrentLanguage == "fa" ? "شرکت طراح داده پیشرو" : "PDD Company")" />
 
 <section class="section">
     <div class="container">
-        <div class="contact-grid">
-            <div class="contact-info reveal">
-                <div class="info-item">
-                    <i class="bi bi-geo-alt"></i>
-                    <div>
-                        <strong>@T.Text("address")</strong>
-                        <p>@(T.CurrentLanguage == "fa" ? "تهران - شهرک غرب - خیابان دریا - جنب خیابان سعدی - پلاک ۲۴۰ - واحد ۱" : "Tehran - West Town - Darya St. - Next to Saadi St. - No. 240 - Unit 1")</p>
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <AnimatedSection AnimationType="fade-up">
+                    <div class="glass-card p-4">
+                        <h5 style="font-size:16px;font-weight:700;margin-bottom:20px;">@(T.CurrentLanguage == "fa" ? "اطلاعات تماس" : "Contact Info")</h5>
+                        <div style="display:flex;flex-direction:column;gap:16px;">
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(13,110,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-geo-alt" style="color:var(--pdd-primary);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "آدرس" : "Address")</div>
+                                    <div style="font-size:13px;color:var(--text-secondary);">@(T.CurrentLanguage == "fa" ? "تهران - شهرک غرب - خیابان دریا" : "Tehran - West Town - Darya St.")</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(80,227,194,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-telephone" style="color:var(--pdd-cyan);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "تلفن" : "Phone")</div>
+                                    <div style="font-size:13px;color:var(--text-secondary);" dir="ltr">021-88368070</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(248,28,229,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-envelope" style="color:var(--pdd-pink);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "ایمیل" : "Email")</div>
+                                    <div style="font-size:13px;color:var(--text-secondary);" dir="ltr">pdd_tdp@yahoo.com</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(121,40,202,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-clock" style="color:var(--pdd-purple);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "ساعات کاری" : "Working Hours")</div>
+                                    <div style="font-size:13px;color:var(--text-secondary);">@(T.CurrentLanguage == "fa" ? "شنبه تا چهارشنبه: ۰۸:۰۰ - ۱۶:۰۰" : "Sat-Wed: 08:00 - 16:00")</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-telephone"></i>
-                    <div>
-                        <strong>@T.Text("phone")</strong>
-                        <p dir="ltr">021-88368070</p>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-fax"></i>
-                    <div>
-                        <strong>@T.Text("fax")</strong>
-                        <p dir="ltr">021-88360807</p>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-envelope"></i>
-                    <div>
-                        <strong>@T.Text("email")</strong>
-                        <p dir="ltr">pdd_tdp@yahoo.com</p>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-globe"></i>
-                    <div>
-                        <strong>@(T.CurrentLanguage == "fa" ? "وبسایت" : "Website")</strong>
-                        <p dir="ltr">www.pdd.ir</p>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="bi bi-clock"></i>
-                    <div>
-                        <strong>@T.Text("working_hours")</strong>
-                        <p>@(T.CurrentLanguage == "fa" ? "شنبه تا چهارشنبه: ۰۸:۰۰ - ۱۶:۰۰" : "Saturday to Wednesday: 08:00 - 16:00")</p>
-                        <p>@(T.CurrentLanguage == "fa" ? "پنج‌شنبه: ۰۸:۰۰ - ۱۲:۰۰" : "Thursday: 08:00 - 12:00")</p>
-                        <p>@(T.CurrentLanguage == "fa" ? "جمعه: تعطیل" : "Friday: Closed")</p>
-                    </div>
-                </div>
+                </AnimatedSection>
             </div>
-            <div class="contact-form reveal">
-                <form onsubmit="event.preventDefault();">
-                    <div style="margin-bottom:16px;">
-                        <label class="form-label">@T.Text("your_name") *</label>
-                        <input type="text" class="form-control" placeholder="@T.Text("your_name")" />
+            <div class="col-12 col-lg-6">
+                <AnimatedSection AnimationType="fade-up">
+                    <div class="glass-card p-4">
+                        <h5 style="font-size:16px;font-weight:700;margin-bottom:20px;">@(T.CurrentLanguage == "fa" ? "ارسال پیام" : "Send Message")</h5>
+
+                        @if (FormSent)
+                        {
+                            <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:16px;text-align:center;">
+                                <i class="bi bi-check-circle" style="font-size:2rem;color:#22c55e;"></i>
+                                <p style="margin-top:8px;font-size:14px;">@(T.CurrentLanguage == "fa" ? "پیام شما با موفقیت ارسال شد" : "Your message has been sent successfully")</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "نام شما" : "Your Name") *</label>
+                                    <input type="text" class="form-control" @bind="FormName" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "ایمیل" : "Email") *</label>
+                                    <input type="email" class="form-control" @bind="FormEmail" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "تلفن" : "Phone")</label>
+                                    <input type="tel" class="form-control" @bind="FormPhone" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "موضوع" : "Subject")</label>
+                                    <input type="text" class="form-control" @bind="FormSubject" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">@(T.CurrentLanguage == "fa" ? "پیام شما" : "Your Message") *</label>
+                                    <textarea class="form-control" rows="4" @bind="FormMessage"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button class="btn btn-primary w-100" @onclick="SubmitForm" disabled="@IsSubmitting">
+                                        @if (IsSubmitting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        <i class="bi bi-send me-1"></i>@(T.CurrentLanguage == "fa" ? "ارسال پیام" : "Send Message")
+                                    </button>
+                                </div>
+                            </div>
+                        }
                     </div>
-                    <div style="margin-bottom:16px;">
-                        <label class="form-label">@T.Text("your_email") *</label>
-                        <input type="email" class="form-control" placeholder="@T.Text("your_email")" />
-                    </div>
-                    <div style="margin-bottom:16px;">
-                        <label class="form-label">@T.Text("subject")</label>
-                        <input type="text" class="form-control" placeholder="@T.Text("subject")" />
-                    </div>
-                    <div style="margin-bottom:16px;">
-                        <label class="form-label">@T.Text("your_message") *</label>
-                        <textarea class="form-control" rows="5" placeholder="@T.Text("your_message")"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">@T.Text("send_message")</button>
-                </form>
+                </AnimatedSection>
             </div>
         </div>
     </div>
@@ -83,11 +108,40 @@
 <CorporateFooter />
 
 @code {
+    string FormName = "", FormEmail = "", FormPhone = "", FormSubject = "", FormMessage = "";
+    bool IsSubmitting = false;
+    bool FormSent = false;
+
+    async Task SubmitForm()
+    {
+        if (string.IsNullOrWhiteSpace(FormName) || string.IsNullOrWhiteSpace(FormEmail) || string.IsNullOrWhiteSpace(FormMessage))
+        {
+            await JS.InvokeVoidAsync("alert", T.CurrentLanguage == "fa" ? "فیلدهای الزامی را پر کنید" : "Please fill required fields");
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            await Comm.PostAsync<object>("api/contact", new
+            {
+                Name = FormName,
+                Email = FormEmail,
+                Phone = FormPhone,
+                Subject = FormSubject,
+                Message = FormMessage
+            });
+            FormSent = true;
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally { IsSubmitting = false; }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
-        }
+        if (firstRender) { try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { } }
     }
 }

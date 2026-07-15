@@ -28,8 +28,7 @@ namespace Pdd.ir.Server.Controllers
             if (!result.Success)
                 return Unauthorized(ApiResponse.Fail(result.Message));
 
-            var user = await _authService.GetUserByIdAsync(
-                (await _authService.GetAllUsersAsync()).FirstOrDefault(u => u.Username == request.Username)?.Id ?? 0);
+            var user = await _authService.GetUserByUsernameAsync(request.Username);
 
             if (user == null)
                 return Unauthorized(ApiResponse.Fail("کاربر یافت نشد"));

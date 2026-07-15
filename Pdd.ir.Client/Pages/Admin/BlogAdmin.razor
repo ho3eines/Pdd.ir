@@ -1,76 +1,78 @@
 @page "/admin/blog"
-@inject HttpClient Http
+@inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("admin_blog") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog") | PDD</PageTitle>
 
-<div class="d-flex align-items-center justify-between mb-4" style="padding-top:24px;">
-    <div>
-        <h1 style="font-size:28px;font-weight:700;">@T.Text("admin_blog")</h1>
-        <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")</p>
+<div class="page-enter">
+    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
+        <div>
+            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog Management")</h1>
+            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenCreateDialog">
+            <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "مقاله جدید" : "New Article")
+        </button>
     </div>
-    <button class="btn btn-primary" @onclick="OpenCreateDialog">
-        <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "مقاله جدید" : "New Article")
-    </button>
-</div>
 
-<section class="section" style="padding-top:0;">
-    <div class="container">
-        <div class="card">
-            @if (_posts == null)
+    @if (IsLoading)
+    {
+        <div class="skeleton skeleton-card" style="height:400px;"></div>
+    }
+    else
+    {
+        <div class="glass-card fade-slide-in" style="padding:20px;">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="flex-grow-1">
+                    <input type="text" class="form-control" placeholder="جستجو..."
+                           value="@SearchText" @oninput="OnSearch" />
+                </div>
+            </div>
+
+            @if (!FilteredItems.Any())
             {
-                @for (int i = 0; i < 3; i++)
-                {
-                    <div class="skeleton skeleton-row mb-2"></div>
-                }
-            }
-            else if (!_posts.Any())
-            {
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-journal" style="font-size:2rem;"></i>
-                    <p class="mt-2">@T.Text("no_data")</p>
+                <div class="text-center py-5" style="color:var(--text-secondary);">
+                    <i class="bi bi-journal" style="font-size:3rem;"></i>
+                    <p class="mt-2">هیچ مقاله‌ای یافت نشد</p>
                 </div>
             }
             else
             {
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
                         <thead>
-                            <tr style="border-bottom:1px solid var(--pdd-border);">
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">#</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "نویسنده" : "Author")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "بازدید" : "Views")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "وضعیت" : "Status")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "عملیات" : "Actions")</th>
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان</th>
+                                <th>نویسنده</th>
+                                <th>بازدید</th>
+                                <th>وضعیت</th>
+                                <th style="width:100px;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var p in _posts)
+                            @foreach (var item in FilteredItems)
                             {
-                                <tr style="border-bottom:1px solid var(--pdd-border);">
-                                    <td style="padding:12px;font-size:14px;">@p.Id</td>
-                                    <td style="padding:12px;font-size:14px;">@p.Title</td>
-                                    <td style="padding:12px;font-size:14px;">@p.Author</td>
-                                    <td style="padding:12px;font-size:14px;">@p.ViewCount</td>
-                                    <td style="padding:12px;">
-                                        @if (p.IsPublished)
-                                        {
-                                            <span style="padding:4px 10px;background:rgba(34,197,94,0.15);color:#22c55e;border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "منتشر شده" : "Published")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="padding:4px 10px;background:rgba(156,163,175,0.15);color:var(--pdd-text-muted);border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "پیش‌نویس" : "Draft")</span>
-                                        }
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td><strong>@item.Title</strong></td>
+                                    <td>@item.Author</td>
+                                    <td>@item.ViewCount</td>
+                                    <td>
+                                        <span class="badge @(item.IsPublished ? "bg-success" : "bg-secondary")">
+                                            @(item.IsPublished ? "منتشر شده" : "پیش‌نویس")
+                                        </span>
                                     </td>
-                                    <td style="padding:12px;">
-                                        <button class="btn btn-sm btn-glass me-1" @onclick="() => OpenEditDialog(p)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-glass" style="color:#ef4444;" @onclick="() => DeleteAsync(p)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEditDialog(item)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -79,63 +81,60 @@
                 </div>
             }
         </div>
-    </div>
-</section>
+    }
+</div>
 
-@if (_showDialog)
+@if (ShowDialog)
 {
-    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);z-index:10000;">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content" style="background:var(--pdd-bg-2);border:1px solid var(--pdd-border);border-radius:var(--pdd-radius-lg);">
-                <div class="modal-header" style="border-bottom:1px solid var(--pdd-border);padding:16px 24px;">
-                    <h5 class="modal-title" style="font-size:18px;font-weight:600;">@(_editId.HasValue ? (T.CurrentLanguage == "fa" ? "ویرایش مقاله" : "Edit Article") : (T.CurrentLanguage == "fa" ? "مقاله جدید" : "New Article"))</h5>
-                    <button type="button" class="btn btn-sm btn-glass" @onclick="CloseDialog"><i class="bi bi-x-lg"></i></button>
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                    <h5 class="modal-title" style="font-size:16px;font-weight:700;">@(IsEdit ? "ویرایش مقاله" : "مقاله جدید")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDialog"></button>
                 </div>
-                <div class="modal-body" style="padding:24px;">
-                    <div style="background:var(--pdd-glass);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+                <div class="modal-body">
+                    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                             <i class="bi bi-info-circle" style="color:var(--pdd-primary);"></i>
-                            <strong style="font-size:0.875rem;">@(T.CurrentLanguage == "fa" ? "راهنما" : "Guide")</strong>
+                            <strong style="font-size:0.875rem;">راهنما</strong>
                         </div>
-                        <p style="margin:0;font-size:0.8125rem;color:var(--pdd-text-muted);">
-                            @(T.CurrentLanguage == "fa" ? "اطلاعات مقاله را وارد کنید. Slug باید منحصربفرد باشد." : "Enter article information. Slug must be unique.")
-                        </p>
+                        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">اطلاعات مقاله را وارد کنید. Slug باید منحصربفرد باشد.</p>
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "عنوان" : "Title") *</label>
-                            <input class="form-control" @bind="_model.Title" />
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">عنوان *</label>
+                            <input type="text" class="form-control" @bind="FormModel.Title" />
                         </div>
-                        <div>
+                        <div class="col-12 col-md-6">
                             <label class="form-label">Slug *</label>
-                            <input class="form-control" @bind="_model.Slug" />
+                            <input type="text" class="form-control" @bind="FormModel.Slug" />
                         </div>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <label class="form-label">@(T.CurrentLanguage == "fa" ? "خلاصه" : "Summary")</label>
-                        <textarea class="form-control" rows="2" @bind="_model.Summary"></textarea>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <label class="form-label">@(T.CurrentLanguage == "fa" ? "محتوا" : "Content")</label>
-                        <textarea class="form-control" rows="6" @bind="_model.Content"></textarea>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "نویسنده" : "Author")</label>
-                            <input class="form-control" @bind="_model.Author" />
+                        <div class="col-12">
+                            <label class="form-label">خلاصه</label>
+                            <textarea class="form-control" rows="2" @bind="FormModel.Summary"></textarea>
                         </div>
-                        <div class="d-flex align-items-end">
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <input type="checkbox" @bind="_model.IsPublished" id="publishCheck" style="width:18px;height:18px;accent-color:var(--pdd-primary);" />
-                                <label for="publishCheck" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "منتشر شده" : "Published")</label>
+                        <div class="col-12">
+                            <label class="form-label">محتوا</label>
+                            <textarea class="form-control" rows="6" @bind="FormModel.Content"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">نویسنده</label>
+                            <input type="text" class="form-control" @bind="FormModel.Author" />
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" @bind="FormModel.IsPublished" id="publishCheck" />
+                                <label class="form-check-label" for="publishCheck">منتشر شده</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--pdd-border);padding:16px 24px;display:flex;gap:10px;justify-content:flex-end;">
-                    <button class="btn btn-glass" @onclick="CloseDialog">@(T.CurrentLanguage == "fa" ? "انصراف" : "Cancel")</button>
-                    <button class="btn btn-primary" @onclick="SaveAsync">
-                        <i class="bi bi-floppy me-1"></i>@T.Text("save")
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseDialog">انصراف</button>
+                    <button class="btn btn-primary" @onclick="SaveItem" disabled="@IsSaving">
+                        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="bi bi-floppy me-1"></i>ذخیره
                     </button>
                 </div>
             </div>
@@ -144,62 +143,77 @@
 }
 
 @code {
-    private List<BlogDto>? _posts;
-    private bool _showDialog;
-    private int? _editId;
-    private BlogCreateRequest _model = new();
+    List<BlogDto> Items = new();
+    List<BlogDto> FilteredItems = new();
+    BlogDto FormModel = new();
+    bool IsLoading = true;
+    bool ShowDialog = false;
+    bool IsEdit = false;
+    bool IsSaving = false;
+    string SearchText = "";
 
     protected override async Task OnInitializedAsync() => await LoadData();
 
-    private async Task LoadData()
+    async Task LoadData()
     {
-        try
-        {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<BlogDto>>>("api/blog/admin");
-            _posts = response?.Data?.ToList();
-        }
-        catch { _posts = new List<BlogDto>(); }
+        IsLoading = true;
+        Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new();
+        Filter();
+        IsLoading = false;
     }
 
-    private void OpenCreateDialog()
+    void Filter()
     {
-        _editId = null;
-        _model = new BlogCreateRequest { Author = "Admin" };
-        _showDialog = true;
+        var q = SearchText.Trim().ToLower();
+        FilteredItems = string.IsNullOrEmpty(q)
+            ? Items
+            : Items.Where(x => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q)).ToList();
     }
 
-    private void OpenEditDialog(BlogDto p)
+    void OnSearch(ChangeEventArgs e) { SearchText = e.Value?.ToString() ?? ""; Filter(); }
+
+    void OpenCreateDialog()
     {
-        _editId = p.Id;
-        _model = new BlogCreateRequest
+        FormModel = new BlogDto { Author = "Admin", IsPublished = false };
+        IsEdit = false;
+        ShowDialog = true;
+    }
+
+    void OpenEditDialog(BlogDto item)
+    {
+        FormModel = new BlogDto
         {
-            Title = p.Title, Slug = p.Slug, Summary = p.Summary, Content = p.Content,
-            ImageUrl = p.ImageUrl, Author = p.Author, IsPublished = p.IsPublished
+            Id = item.Id, Title = item.Title, Slug = item.Slug, Summary = item.Summary,
+            Content = item.Content, ImageUrl = item.ImageUrl, Author = item.Author,
+            IsPublished = item.IsPublished
         };
-        _showDialog = true;
+        IsEdit = true;
+        ShowDialog = true;
     }
 
-    private void CloseDialog() { _showDialog = false; StateHasChanged(); }
+    void CloseDialog() => ShowDialog = false;
 
-    private async Task SaveAsync()
+    async Task SaveItem()
     {
+        IsSaving = true;
         try
         {
-            if (_editId.HasValue)
-                await Http.PutAsJsonAsync($"api/blog/{_editId}", _model);
+            if (IsEdit)
+                await Comm.PutAsync<object>($"api/blog/{FormModel.Id}", FormModel);
             else
-                await Http.PostAsJsonAsync("api/blog", _model);
-            CloseDialog();
+                await Comm.PostAsync<object>("api/blog", FormModel);
             await LoadData();
+            ShowDialog = false;
         }
-        catch { }
+        catch (Exception ex) { await JS.InvokeVoidAsync("alert", $"خطا: {ex.Message}"); }
+        finally { IsSaving = false; }
     }
 
-    private async Task DeleteAsync(BlogDto p)
+    async Task DeleteItem(BlogDto item)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{p.Title}» مطمئن هستید؟");
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{item.Title}» مطمئن هستید؟");
         if (!confirmed) return;
-        await Http.DeleteAsync($"api/blog/{p.Id}");
+        await Comm.DeleteAsync($"api/blog/{item.Id}");
         await LoadData();
     }
 
@@ -215,23 +229,5 @@
         public bool IsPublished { get; set; }
         public int ViewCount { get; set; }
         public DateTime CreatedAt { get; set; }
-    }
-
-    public class BlogCreateRequest
-    {
-        public string Title { get; set; } = "";
-        public string Slug { get; set; } = "";
-        public string Summary { get; set; } = "";
-        public string Content { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Author { get; set; } = "";
-        public bool IsPublished { get; set; }
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public T? Data { get; set; }
     }
 }

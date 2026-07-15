@@ -1,68 +1,133 @@
 @page "/products"
+@inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("products") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "محصولات" : "Products") | PDD</PageTitle>
 
-<PageHeader Title="@T.Text("products")" Subtitle="@(T.CurrentLanguage == "fa" ? "نرم‌افزارهای درمانی طراح داده پیشرو" : "PDD Medical Software")" />
+<PageHeader Title="@(T.CurrentLanguage == "fa" ? "محصولات" : "Products")" Subtitle="@(T.CurrentLanguage == "fa" ? "نرم‌افزارهای درمانی طراح داده پیشرو" : "PDD Medical Software")" />
 
 <section class="section">
     <div class="container">
-        <div class="grid-3">
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
-                    <i class="bi bi-hospital"></i>
-                </div>
-                <h3>HIS</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار جامع مدیریت بیمارستانی — شامل تمامی امکانات مورد نیاز از پذیرش تا ترخیص بیماران بستری. HIS شامل قسمت‌ها و پکیج‌های مختلفی است که نیازهای مراکز درمانی را در زمینه پذیرش، عملیات درمانی و مالی بیماران بستری پوشش خواهد داد. این نرم‌افزار قابلیت ارتباط با سیستم‌های مالی اداری و اتوماسیون را داراست و همچنین قابلیت ارتباط با PACS و دستگاه‌های آزمایشگاهی را دارا می‌باشد." : "Hospital Information System — Includes all required features from admission to discharge of inpatients. HIS covers various departments and packages for admission, treatment and financial operations. It can connect with financial/administrative systems and PACS and laboratory devices.")</p>
+        @if (IsLoading)
+        {
+            <div class="row g-4">
+                @for (int i = 0; i < 6; i++)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="skeleton skeleton-card" style="height:280px;"></div>
+                    </div>
+                }
             </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
-                    <i class="bi bi-clipboard2-pulse"></i>
-                </div>
-                <h3>CIS</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار CIS یا Clinic Information System نرم‌افزاری است برای مدیریت کلینیک‌ها و کلیه مراکز درمانی سرپایی. این نرم‌افزار شما را در مدیریت هر چه بهتر کلینیک و مراکز سرپایی یاری می‌رساند. مدیریت تعرفه‌ها، ارسال نسخ کلیه بیمه‌ها به صورت الکترونیکی، گزارشات متنوع و ... گوشه‌ای از امکانات نرم‌افزار مدیریت کلینیک‌های شرکت طراح داده پیشرو می‌باشد." : "CIS or Clinic Information System is software for managing clinics and all outpatient medical centers. It helps you manage clinics better. Tariff management, electronic submission of all insurance prescriptions, various reports and more are just a glimpse of PDD clinic management software features.")</p>
+        }
+        else if (!ProductList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-box" style="font-size:3rem;color:var(--text-secondary);"></i>
+                <p class="mt-3" style="color:var(--text-secondary);">@(T.CurrentLanguage == "fa" ? "هنوز محصولی ثبت نشده" : "No products yet")</p>
             </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(121,40,202,0.15);color:var(--pdd-purple);">
-                    <i class="bi bi-camera-reels"></i>
-                </div>
-                <h3>RIS</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار RIS یا Radiology Information System نرم‌افزاری است برای مدیریت مراکز تصویربرداری اعم از MRI، سی‌تی اسکن و .... نرم‌افزار تصویربرداری یا RIS این شرکت از کامل‌ترین امکانات جوابدهی برخوردار است. تعریف سرویس‌های خودکار، گزارشات کامل و متنوع و ده‌ها امکان دیگر این نرم‌افزار را به یکی از محبوب‌ترین نرم‌افزارهای تصویربرداری نزد مدیران و کاربران تبدیل کرده است." : "RIS or Radiology Information System is software for managing imaging centers including MRI, CT Scan and more. PDD's RIS has the most complete reporting capabilities. Automatic service definition, comprehensive reports and dozens of other features make it one of the most popular imaging software.")</p>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var p in ProductList)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <AnimatedSection AnimationType="fade-up">
+                            <div class="glass-card hover-lift fade-slide-in p-4" style="height:100%;cursor:pointer;" @onclick="() => ShowDetail(p)">
+                                <div style="width:56px;height:56px;border-radius:14px;background:rgba(13,110,253,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                                    <i class="bi bi-box-seam" style="font-size:24px;color:var(--pdd-primary);"></i>
+                                </div>
+                                <h5 style="font-size:16px;font-weight:700;margin-bottom:8px;">@p.Title</h5>
+                                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">@p.Subtitle</p>
+                                <span class="badge bg-info" style="font-size:10px;">@p.Category</span>
+                            </div>
+                        </AnimatedSection>
+                    </div>
+                }
             </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(80,227,194,0.15);color:var(--pdd-cyan);">
-                    <i class="bi bi-lungs"></i>
+        }
+    </div>
+</section>
+
+@if (SelectedProduct != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.6);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                    <h5 class="modal-title" style="font-size:18px;font-weight:700;">@SelectedProduct.Title</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetail"></button>
                 </div>
-                <h3>LIS</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "نرم‌افزار LIS یا Laboratory Information System نرم‌افزاری است برای مدیریت آزمایشگاه‌ها و پاتولوژی. سرعت بالای نرم‌افزار، زیبایی، امکانات متنوع، رابط کاربری آسان، قابلیت تعریف انواع تعرفه‌ها، پشتیبانی از انواع بیمه‌های پایه و تکمیلی، جواب‌دهی با امکانات بسیار بالا و ... گوشه‌ای از نرم‌افزار محبوب LIS طراح داده پیشرو می‌باشد." : "LIS or Laboratory Information System is software for managing laboratories and pathology. High speed, beauty, diverse features, easy user interface, ability to define various tariffs, support for basic and supplementary insurance, high-capability reporting and more are just a glimpse of PDD's popular LIS software.")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(13,110,253,0.15);color:var(--pdd-primary);">
-                    <i class="bi bi-calculator"></i>
+                <div class="modal-body">
+                    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">@SelectedProduct.Subtitle</p>
+                    @if (!string.IsNullOrEmpty(SelectedProduct.Description))
+                    {
+                        <div style="line-height:1.8;font-size:14px;color:var(--text-secondary);">@((MarkupString)SelectedProduct.Description)</div>
+                    }
+                    @if (!string.IsNullOrEmpty(SelectedProduct.Features))
+                    {
+                        <div class="mt-4">
+                            <h6 style="font-size:13px;font-weight:700;margin-bottom:8px;">@(T.CurrentLanguage == "fa" ? "ویژگی‌ها" : "Features")</h6>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                @foreach (var f in ParseFeatures(SelectedProduct.Features))
+                                {
+                                    <span style="padding:4px 12px;background:rgba(13,110,253,0.08);border:1px solid rgba(13,110,253,0.15);border-radius:100px;font-size:12px;">@f</span>
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
-                <h3>MIS</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "ارتباط میان نرم‌افزارهای درمانی و مالی اداری از مشکلات عدیده مراکز درمانی است که این مهم با وجود نرم‌افزارهای مالی اداری این شرکت برطرف شده است. قابلیت‌های متنوع سیستم‌های حسابداری، انبار، حقوق و دستمزد، خزانه‌داری و اموال کار کردن را به امری لذت‌بخش و راحت برای کاربران تبدیل می‌نماید." : "The connection between medical and financial/administrative software is a major challenge for medical centers, which PDD's financial software solves. Diverse capabilities of accounting, inventory, payroll, treasury and asset systems make working pleasant and easy for users.")</p>
-            </div>
-            <div class="card reveal">
-                <div class="card-icon" style="background:rgba(248,28,229,0.15);color:var(--pdd-pink);">
-                    <i class="bi bi-building"></i>
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <a href="/contact" class="btn btn-primary">
+                        <i class="bi bi-headset me-1"></i>@(T.CurrentLanguage == "fa" ? "مشاوره رایگان" : "Free Consultation")
+                    </a>
                 </div>
-                <h3>@(T.CurrentLanguage == "fa" ? "اتوماسیون اداری" : "Office Automation")</h3>
-                <p>@(T.CurrentLanguage == "fa" ? "یکی از مشکلات سازمان‌ها و مراکز درمانی کشور گردش نامه‌ها و اطلاعات در سازمان است. حجم زیاد نامه‌نگاری‌ها، مشکل در پیگیری آنها، بايگاني غيرقابل كنترل، میزان زیاد کاغذ مصرفی و ..... مشکل دیگر از جمله مسائل و مشکلات سازمان‌هاست که به کمک نرم‌افزار اتوماسیون اداری شرکت طراح داده پیشرو مرتفع خواهد شد." : "One of the problems of organizations and medical centers is document circulation. High volume of correspondence, difficulty in tracking, uncontrollable filing, excessive paper usage and more are problems that PDD's office automation software solves.")</p>
             </div>
         </div>
     </div>
-</section>
+}
 
 <CorporateFooter />
 
 @code {
+    List<ProductDto> ProductList = new();
+    ProductDto? SelectedProduct;
+    bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ProductList = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new();
+        IsLoading = false;
+    }
+
+    void ShowDetail(ProductDto p) => SelectedProduct = p;
+    void CloseDetail() => SelectedProduct = null;
+
+    List<string> ParseFeatures(string json)
+    {
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new();
+        }
+        catch { return new(); }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
-        }
+        if (firstRender) { try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { } }
+    }
+
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Features { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
     }
 }

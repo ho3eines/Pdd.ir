@@ -1,0 +1,114 @@
+@page "/login"
+@layout LoginLayout
+@inject AuthService Auth
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>ورود | PDD</PageTitle>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-primary);padding:20px;">
+    <div class="glass-card fade-slide-in" style="width:100%;max-width:400px;padding:40px;">
+        <div class="text-center mb-4">
+            <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--pdd-primary),var(--pdd-pink));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="bi bi-shield-lock" style="font-size:28px;color:#fff;"></i>
+            </div>
+            <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">ورود به پنل مدیریت</h2>
+            <p style="font-size:13px;color:var(--text-secondary);">نام کاربری و رمز عبور خود را وارد کنید</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#ef4444;">
+                <i class="bi bi-exclamation-triangle me-1"></i>@ErrorMessage
+            </div>
+        }
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">نام کاربری</label>
+                <div style="position:relative;">
+                    <input type="text" class="form-control" @bind="Username" @bind:event="oninput"
+                           style="padding-left:36px;" placeholder="نام کاربری"
+                           @onkeydown="HandleKeydown" />
+                    <i class="bi bi-person" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);"></i>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label">رمز عبور</label>
+                <div style="position:relative;">
+                    <input type="@(ShowPassword ? "text" : "password")" class="form-control" @bind="Password" @bind:event="oninput"
+                           style="padding-left:36px;" placeholder="رمز عبور"
+                           @onkeydown="HandleKeydown" />
+                    <i class="bi @(ShowPassword ? "bi-eye-slash" : "bi-eye")"
+                       style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);cursor:pointer;"
+                       @onclick="() => ShowPassword = !ShowPassword"></i>
+                </div>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary w-100" @onclick="LoginAsync" disabled="@IsLoading" style="padding:10px;">
+                    @if (IsLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-box-arrow-in-right me-1"></i>ورود
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center mt-3" style="font-size:12px;color:var(--text-secondary);">
+            <a href="/" style="color:var(--pdd-primary);text-decoration:none;">
+                <i class="bi bi-arrow-right me-1"></i>بازگشت به سایت
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    string Username = "";
+    string Password = "";
+    string ErrorMessage = "";
+    bool IsLoading = false;
+    bool ShowPassword = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.LoadFromStorageAsync();
+        if (Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/admin", true);
+        }
+    }
+
+    async Task LoginAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessage = "نام کاربری و رمز عبور را وارد کنید";
+            return;
+        }
+
+        IsLoading = true;
+        ErrorMessage = "";
+
+        var success = await Auth.LoginAsync(Username, Password);
+
+        if (success)
+        {
+            Nav.NavigateTo("/admin", true);
+        }
+        else
+        {
+            ErrorMessage = "نام کاربری یا رمز عبور اشتباه است";
+        }
+
+        IsLoading = false;
+    }
+
+    async Task HandleKeydown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoginAsync();
+        }
+    }
+}

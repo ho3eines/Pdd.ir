@@ -62,6 +62,16 @@ else
 
         _isLandingPage = IsLandingPage(Navigation.Uri);
 
+        if (!_isLandingPage)
+        {
+            await Auth.LoadFromStorageAsync();
+            if (!Auth.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+        }
+
         try
         {
             var theme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");

@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System.Data;
 
 namespace Pdd.ir.Data
@@ -8,9 +9,10 @@ namespace Pdd.ir.Data
     {
         private readonly string _connectionString;
 
-        public DbService()
+        public DbService(IConfiguration configuration)
         {
-            _connectionString = Environment.GetEnvironmentVariable("ConnectionString")
+            _connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? Environment.GetEnvironmentVariable("ConnectionString")
                 ?? "workstation id=support;password=123456;packet size=4096;user id=sa;data source=.;persist security info=false;initial catalog=pdd;Encrypt=False";
         }
 

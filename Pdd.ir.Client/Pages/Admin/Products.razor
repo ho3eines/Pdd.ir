@@ -1,74 +1,78 @@
 @page "/admin/products"
-@inject HttpClient Http
+@inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("admin_products") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products") | PDD</PageTitle>
 
-<div class="d-flex align-items-center justify-between mb-4" style="padding-top:24px;">
-    <div>
-        <h1 style="font-size:28px;font-weight:700;">@T.Text("admin_products")</h1>
-        <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد، ویرایش و حذف محصولات" : "Create, edit and delete products")</p>
+<div class="page-enter">
+    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
+        <div>
+            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products")</h1>
+            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد، ویرایش و حذف محصولات" : "Create, edit and delete products")</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenCreateDialog">
+            <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "محصول جدید" : "New Product")
+        </button>
     </div>
-    <button class="btn btn-primary" @onclick="OpenCreateDialog">
-        <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "محصول جدید" : "New Product")
-    </button>
-</div>
 
-<section class="section" style="padding-top:0;">
-    <div class="container">
-        <div class="card">
-            @if (_products == null)
+    @if (IsLoading)
+    {
+        <div class="skeleton skeleton-card" style="height:400px;"></div>
+    }
+    else
+    {
+        <div class="glass-card fade-slide-in" style="padding:20px;">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="flex-grow-1">
+                    <input type="text" class="form-control" placeholder="@(T.CurrentLanguage == "fa" ? "جستجو..." : "Search...")"
+                           value="@SearchText" @oninput="OnSearch" />
+                </div>
+            </div>
+
+            @if (!FilteredItems.Any())
             {
-                @for (int i = 0; i < 3; i++)
-                {
-                    <div class="skeleton skeleton-row mb-2"></div>
-                }
-            }
-            else if (!_products.Any())
-            {
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-box" style="font-size:2rem;"></i>
-                    <p class="mt-2">@T.Text("no_data")</p>
+                <div class="text-center py-5" style="color:var(--text-secondary);">
+                    <i class="bi bi-box" style="font-size:3rem;"></i>
+                    <p class="mt-2">@(T.CurrentLanguage == "fa" ? "هیچ محصولی یافت نشد" : "No products found")</p>
                 </div>
             }
             else
             {
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
                         <thead>
-                            <tr style="border-bottom:1px solid var(--pdd-border);">
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">#</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "دسته‌بندی" : "Category")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "وضعیت" : "Status")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "عملیات" : "Actions")</th>
+                            <tr>
+                                <th>#</th>
+                                <th>@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
+                                <th>@(T.CurrentLanguage == "fa" ? "زیرعنوان" : "Subtitle")</th>
+                                <th>@(T.CurrentLanguage == "fa" ? "دسته" : "Category")</th>
+                                <th>@(T.CurrentLanguage == "fa" ? "وضعیت" : "Status")</th>
+                                <th style="width:100px;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var p in _products)
+                            @foreach (var item in FilteredItems)
                             {
-                                <tr style="border-bottom:1px solid var(--pdd-border);">
-                                    <td style="padding:12px;font-size:14px;">@p.Id</td>
-                                    <td style="padding:12px;font-size:14px;">@p.Title</td>
-                                    <td style="padding:12px;"><span style="padding:4px 10px;background:var(--pdd-primary-glow);color:var(--pdd-primary);border-radius:100px;font-size:12px;font-weight:600;">@p.Category</span></td>
-                                    <td style="padding:12px;">
-                                        @if (p.IsActive)
-                                        {
-                                            <span style="padding:4px 10px;background:rgba(34,197,94,0.15);color:#22c55e;border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "فعال" : "Active")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="padding:4px 10px;background:rgba(156,163,175,0.15);color:var(--pdd-text-muted);border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "غیرفعال" : "Inactive")</span>
-                                        }
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td><strong>@item.Title</strong></td>
+                                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.Subtitle</td>
+                                    <td><span class="badge bg-info">@item.Category</span></td>
+                                    <td>
+                                        <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(item.IsActive ? "فعال" : "غیرفعال")
+                                        </span>
                                     </td>
-                                    <td style="padding:12px;">
-                                        <button class="btn btn-sm btn-glass me-1" @onclick="() => OpenEditDialog(p)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-glass" style="color:#ef4444;" @onclick="() => DeleteAsync(p)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEditDialog(item)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -77,61 +81,62 @@
                 </div>
             }
         </div>
-    </div>
-</section>
+    }
+</div>
 
-@if (_showDialog)
+@if (ShowDialog)
 {
-    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);z-index:10000;">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content" style="background:var(--pdd-bg-2);border:1px solid var(--pdd-border);border-radius:var(--pdd-radius-lg);">
-                <div class="modal-header" style="border-bottom:1px solid var(--pdd-border);padding:16px 24px;">
-                    <h5 class="modal-title" style="font-size:18px;font-weight:600;">@(_editId.HasValue ? (T.CurrentLanguage == "fa" ? "ویرایش محصول" : "Edit Product") : (T.CurrentLanguage == "fa" ? "محصول جدید" : "New Product"))</h5>
-                    <button type="button" class="btn btn-sm btn-glass" @onclick="CloseDialog"><i class="bi bi-x-lg"></i></button>
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                    <h5 class="modal-title" style="font-size:16px;font-weight:700;">@(IsEdit ? "ویرایش محصول" : "محصول جدید")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDialog"></button>
                 </div>
-                <div class="modal-body" style="padding:24px;">
-                    <div style="background:var(--pdd-glass);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+                <div class="modal-body">
+                    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                             <i class="bi bi-info-circle" style="color:var(--pdd-primary);"></i>
-                            <strong style="font-size:0.875rem;">@(T.CurrentLanguage == "fa" ? "راهنما" : "Guide")</strong>
+                            <strong style="font-size:0.875rem;">راهنما</strong>
                         </div>
-                        <p style="margin:0;font-size:0.8125rem;color:var(--pdd-text-muted);">
-                            @(T.CurrentLanguage == "fa" ? "اطلاعات محصول را وارد کنید. پس از ذخیره، محصول در سایت نمایش داده می‌شود." : "Enter product information. After saving, the product will be displayed on the site.")
-                        </p>
+                        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">اطلاعات محصول را وارد کنید.</p>
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr;gap:16px;">
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "عنوان" : "Title") *</label>
-                            <input class="form-control" @bind="_model.Title" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">عنوان *</label>
+                            <input type="text" class="form-control" @bind="FormModel.Title" />
                         </div>
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "زیرعنوان" : "Subtitle")</label>
-                            <input class="form-control" @bind="_model.Subtitle" />
+                        <div class="col-12">
+                            <label class="form-label">زیرعنوان</label>
+                            <input type="text" class="form-control" @bind="FormModel.Subtitle" />
                         </div>
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "توضیحات" : "Description")</label>
-                            <textarea class="form-control" rows="3" @bind="_model.Description"></textarea>
+                        <div class="col-12">
+                            <label class="form-label">توضیحات</label>
+                            <textarea class="form-control" rows="3" @bind="FormModel.Description"></textarea>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                            <div>
-                                <label class="form-label">@(T.CurrentLanguage == "fa" ? "دسته‌بندی" : "Category")</label>
-                                <input class="form-control" @bind="_model.Category" />
-                            </div>
-                            <div>
-                                <label class="form-label">@(T.CurrentLanguage == "fa" ? "ترتیب نمایش" : "Sort Order")</label>
-                                <input type="number" class="form-control" @bind="_model.SortOrder" />
-                            </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">دسته‌بندی</label>
+                            <input type="text" class="form-control" @bind="FormModel.Category" />
                         </div>
-                        <div>
-                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "ویژگی‌ها (JSON)" : "Features (JSON)")</label>
-                            <textarea class="form-control" rows="2" @bind="_model.Features"></textarea>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">ترتیب نمایش</label>
+                            <input type="number" class="form-control" @bind="FormModel.SortOrder" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">ویژگی‌ها (JSON)</label>
+                            <textarea class="form-control" rows="2" @bind="FormModel.Features"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">تصویر URL</label>
+                            <input type="text" class="form-control" @bind="FormModel.ImageUrl" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--pdd-border);padding:16px 24px;display:flex;gap:10px;justify-content:flex-end;">
-                    <button class="btn btn-glass" @onclick="CloseDialog">@(T.CurrentLanguage == "fa" ? "انصراف" : "Cancel")</button>
-                    <button class="btn btn-primary" @onclick="SaveAsync">
-                        <i class="bi bi-floppy me-1"></i>@T.Text("save")
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseDialog">انصراف</button>
+                    <button class="btn btn-primary" @onclick="SaveItem" disabled="@IsSaving">
+                        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="bi bi-floppy me-1"></i>ذخیره
                     </button>
                 </div>
             </div>
@@ -140,65 +145,89 @@
 }
 
 @code {
-    private List<ProductDto>? _products;
-    private bool _showDialog;
-    private int? _editId;
-    private ProductCreateRequest _model = new();
+    List<ProductDto> Items = new();
+    List<ProductDto> FilteredItems = new();
+    ProductDto FormModel = new();
+    bool IsLoading = true;
+    bool ShowDialog = false;
+    bool IsEdit = false;
+    bool IsSaving = false;
+    string SearchText = "";
 
-    protected override async Task OnInitializedAsync() => await LoadData();
-
-    private async Task LoadData()
+    protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
-            _products = response?.Data?.ToList();
-        }
-        catch { _products = new List<ProductDto>(); }
+        await LoadData();
     }
 
-    private void OpenCreateDialog()
+    async Task LoadData()
     {
-        _editId = null;
-        _model = new ProductCreateRequest();
-        _showDialog = true;
+        IsLoading = true;
+        Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new();
+        Filter();
+        IsLoading = false;
     }
 
-    private void OpenEditDialog(ProductDto p)
+    void Filter()
     {
-        _editId = p.Id;
-        _model = new ProductCreateRequest
+        var q = SearchText.Trim().ToLower();
+        FilteredItems = string.IsNullOrEmpty(q)
+            ? Items
+            : Items.Where(x => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q)).ToList();
+    }
+
+    void OnSearch(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? "";
+        Filter();
+    }
+
+    void OpenCreateDialog()
+    {
+        FormModel = new ProductDto { IsActive = true };
+        IsEdit = false;
+        ShowDialog = true;
+    }
+
+    void OpenEditDialog(ProductDto item)
+    {
+        FormModel = new ProductDto
         {
-            Title = p.Title, Subtitle = p.Subtitle, Description = p.Description,
-            Features = p.Features, ImageUrl = p.ImageUrl, Category = p.Category,
-            SortOrder = p.SortOrder, IsActive = p.IsActive
+            Id = item.Id, Title = item.Title, Subtitle = item.Subtitle,
+            Description = item.Description, Features = item.Features,
+            ImageUrl = item.ImageUrl, Category = item.Category,
+            SortOrder = item.SortOrder, IsActive = item.IsActive
         };
-        _showDialog = true;
+        IsEdit = true;
+        ShowDialog = true;
     }
 
-    private void CloseDialog() { _showDialog = false; StateHasChanged(); }
+    void CloseDialog() => ShowDialog = false;
 
-    private async Task SaveAsync()
+    async Task SaveItem()
     {
+        IsSaving = true;
         try
         {
-            if (_editId.HasValue)
-                await Http.PutAsJsonAsync($"api/product/{_editId}", _model);
+            if (IsEdit)
+                await Comm.PutAsync<object>($"api/product/{FormModel.Id}", FormModel);
             else
-                await Http.PostAsJsonAsync("api/product", _model);
+                await Comm.PostAsync<object>("api/product", FormModel);
 
-            CloseDialog();
             await LoadData();
+            ShowDialog = false;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"خطا: {ex.Message}");
+        }
+        finally { IsSaving = false; }
     }
 
-    private async Task DeleteAsync(ProductDto p)
+    async Task DeleteItem(ProductDto item)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{p.Title}» مطمئن هستید؟");
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{item.Title}» مطمئن هستید؟");
         if (!confirmed) return;
-
-        await Http.DeleteAsync($"api/product/{p.Id}");
+        await Comm.DeleteAsync($"api/product/{item.Id}");
         await LoadData();
     }
 
@@ -213,24 +242,5 @@
         public string Category { get; set; } = "";
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
-    }
-
-    public class ProductCreateRequest
-    {
-        public string Title { get; set; } = "";
-        public string Subtitle { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Features { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Category { get; set; } = "";
-        public int SortOrder { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public T? Data { get; set; }
     }
 }

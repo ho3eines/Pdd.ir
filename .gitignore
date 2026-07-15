@@ -41,6 +41,34 @@ bld/
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
+# MiCode agent files
+momo.exe
+agent/
+.agents/
+.claude/
+.mimocode/
+project_agent.md
+stop.txt
+.mcp.json
+AGENTS.md
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

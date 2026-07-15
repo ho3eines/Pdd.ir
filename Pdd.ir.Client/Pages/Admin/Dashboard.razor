@@ -1,142 +1,294 @@
 @page "/admin"
-@inject HttpClient Http
+@inject ICommunicationService Comm
 @inject ITranslateService T
+@inject NavigationManager Nav
 
-<PageTitle>@T.Text("dashboard") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "داشبورد" : "Dashboard") | PDD</PageTitle>
 
-<div class="section-header" style="padding-top:24px;">
-    <h1 class="section-title" style="font-size:28px;">@T.Text("dashboard")</h1>
-    <p class="section-subtitle" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "مدیریت محتوا و محصولات" : "Content and product management")</p>
-</div>
-
-<section class="section" style="padding-top:0;">
-    <div class="container">
-        <div class="grid-4 mb-4">
-            <div class="stat-card">
-                <i class="bi bi-box-seam" style="font-size:24px;color:var(--pdd-primary);"></i>
-                <div class="stat-number" style="font-size:32px;">@(_productCount)</div>
-                <div class="stat-label">@T.Text("products")</div>
-            </div>
-            <div class="stat-card">
-                <i class="bi bi-envelope" style="font-size:24px;color:var(--pdd-cyan);"></i>
-                <div class="stat-number" style="font-size:32px;">@(_messageCount)</div>
-                <div class="stat-label">@T.Text("admin_messages")</div>
-            </div>
-            <div class="stat-card">
-                <i class="bi bi-envelope-exclamation" style="font-size:24px;color:var(--pdd-secondary);"></i>
-                <div class="stat-number" style="font-size:32px;">@(_unreadCount)</div>
-                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "خوانده نشده" : "Unread")</div>
-            </div>
-            <div class="stat-card">
-                <i class="bi bi-file-earmark-text" style="font-size:24px;color:var(--pdd-pink);"></i>
-                <div class="stat-number" style="font-size:32px;">@(_pageCount)</div>
-                <div class="stat-label">@(T.CurrentLanguage == "fa" ? "صفحات" : "Pages")</div>
-            </div>
+<div class="page-enter">
+    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
+        <div>
+            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "داشبورد" : "Dashboard")</h1>
+            <p style="font-size:13px;color:var(--text-secondary);">خوش آمدید @Auth.FullName</p>
         </div>
-
-        <div class="grid-2">
-            <div class="card">
-                <h3 style="margin-bottom:16px;"><i class="bi bi-box-seam me-2"></i>@T.Text("admin_products")</h3>
-                @if (_products != null)
-                {
-                    <div style="overflow-x:auto;">
-                        <table class="table table-hover" style="width:100%;">
-                            <thead>
-                                <tr>
-                                    <th>@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
-                                    <th>@(T.CurrentLanguage == "fa" ? "دسته‌بندی" : "Category")</th>
-                                    <th>@(T.CurrentLanguage == "fa" ? "عملیات" : "Actions")</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var p in _products)
-                                {
-                                    <tr>
-                                        <td>@p.Title</td>
-                                        <td>@p.Category</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-glass" @onclick="() => EditProduct(p)">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-            </div>
-            <div class="card">
-                <h3 style="margin-bottom:16px;"><i class="bi bi-envelope me-2"></i>@(T.CurrentLanguage == "fa" ? "پیام‌های اخیر" : "Recent Messages")</h3>
-                @if (_messages != null)
-                {
-                    @foreach (var msg in _messages.Take(5))
-                    {
-                        <div style="padding:12px;border-bottom:1px solid var(--pdd-border);@(msg.IsRead ? "" : "background:var(--pdd-primary-glow);")">
-                            <div class="d-flex justify-between align-center">
-                                <strong style="font-size:14px;">@msg.Name</strong>
-                                <small class="text-muted">@msg.CreatedAt.ToString("yyyy/MM/dd")</small>
-                            </div>
-                            <p style="font-size:13px;margin-top:4px;">@msg.Subject</p>
-                        </div>
-                    }
-                }
-            </div>
+        <div class="d-flex gap-2">
+            <span class="badge" style="background:var(--pdd-primary);padding:6px 12px;font-size:11px;">
+                <i class="bi bi-clock me-1"></i>@DateTime.Now.ToString("HH:mm")
+            </span>
         </div>
     </div>
-</section>
+
+    @if (IsLoading)
+    {
+        <div class="row g-3 mb-4">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                    <div class="skeleton skeleton-card" style="height:100px;"></div>
+                </div>
+            }
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-lg-8"><div class="skeleton skeleton-card" style="height:300px;"></div></div>
+            <div class="col-12 col-lg-4"><div class="skeleton skeleton-card" style="height:300px;"></div></div>
+        </div>
+    }
+    else
+    {
+        <!-- Stats Grid -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/products" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-primary);cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "محصولات" : "Products")</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--pdd-primary);">@ProductCount</div>
+                            </div>
+                            <i class="bi bi-box-seam" style="font-size:20px;color:var(--pdd-primary);opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/blog" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-cyan);cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "مقالات" : "Blog")</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--pdd-cyan);">@BlogCount</div>
+                            </div>
+                            <i class="bi bi-journal-text" style="font-size:20px;color:var(--pdd-cyan);opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/portfolio" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-pink);cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "نمونه کار" : "Portfolio")</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--pdd-pink);">@PortfolioCount</div>
+                            </div>
+                            <i class="bi bi-images" style="font-size:20px;color:var(--pdd-pink);opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/messages" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-secondary);cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages")</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--pdd-secondary);">@MessageCount</div>
+                            </div>
+                            <i class="bi bi-envelope" style="font-size:20px;color:var(--pdd-secondary);opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/messages" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid #ef4444;cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "خوانده نشده" : "Unread")</div>
+                                <div style="font-size:24px;font-weight:800;color:#ef4444;">@UnreadCount</div>
+                            </div>
+                            <i class="bi bi-envelope-exclamation" style="font-size:20px;color:#ef4444;opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                <a href="/admin/users" style="text-decoration:none;">
+                    <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-purple);cursor:pointer;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "کاربران" : "Users")</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--pdd-purple);">@UserCount</div>
+                            </div>
+                            <i class="bi bi-people" style="font-size:20px;color:var(--pdd-purple);opacity:0.5;"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="glass-card fade-slide-in p-4 mb-4">
+            <h5 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
+                <i class="bi bi-lightning me-1"></i>@(T.CurrentLanguage == "fa" ? "دسترسی سریع" : "Quick Actions")
+            </h5>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="/admin/products" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>محصول جدید
+                </a>
+                <a href="/admin/blog" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>مقاله جدید
+                </a>
+                <a href="/admin/portfolio" class="btn btn-outline-pink btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>نمونه کار جدید
+                </a>
+                <a href="/admin/users" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-person-plus me-1"></i>کاربر جدید
+                </a>
+                <a href="/admin/roles" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-shield-plus me-1"></i>نقش جدید
+                </a>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="row g-3">
+            <!-- Recent Products -->
+            <div class="col-12 col-lg-6">
+                <div class="glass-card fade-slide-in p-4" style="height:100%;">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
+                            @(T.CurrentLanguage == "fa" ? "آخرین محصولات" : "Recent Products")
+                        </h5>
+                        <a href="/admin/products" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                    </div>
+                    @if (Products.Any())
+                    {
+                        @foreach (var p in Products.Take(5))
+                        {
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color);">
+                                <div style="width:36px;height:36px;border-radius:8px;background:rgba(13,110,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-box" style="font-size:16px;color:var(--pdd-primary);"></i>
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@p.Title</div>
+                                    <div style="font-size:11px;color:var(--text-secondary);">@p.Category</div>
+                                </div>
+                                <span class="badge bg-success" style="font-size:10px;">فعال</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">محصولی وجود ندارد</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Messages -->
+            <div class="col-12 col-lg-6">
+                <div class="glass-card fade-slide-in p-4" style="height:100%;">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
+                            @(T.CurrentLanguage == "fa" ? "آخرین پیام‌ها" : "Recent Messages")
+                        </h5>
+                        <a href="/admin/messages" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                    </div>
+                    @if (Messages.Any())
+                    {
+                        @foreach (var m in Messages.Take(5))
+                        {
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color);@(m.IsRead ? "" : "background:rgba(13,110,253,0.03);margin:0 -16px;padding:10px 16px;border-radius:8px;")">
+                                <div style="width:36px;height:36px;border-radius:8px;background:rgba(80,227,194,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="bi bi-envelope" style="font-size:16px;color:var(--pdd-cyan);"></i>
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:600;">@m.Name</div>
+                                    <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@m.Subject</div>
+                                </div>
+                                <div style="text-align:left;flex-shrink:0;">
+                                    <div style="font-size:10px;color:var(--text-secondary);">@m.CreatedAt.ToString("MM/dd")</div>
+                                    @if (!m.IsRead)
+                                    {
+                                        <span style="width:6px;height:6px;border-radius:50%;background:var(--pdd-primary);display:inline-block;"></span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">پیامی وجود ندارد</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Blog -->
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <div class="glass-card fade-slide-in p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
+                            @(T.CurrentLanguage == "fa" ? "آخرین مقالات" : "Recent Articles")
+                        </h5>
+                        <a href="/admin/blog" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                    </div>
+                    @if (BlogPosts.Any())
+                    {
+                        <div class="row g-2">
+                            @foreach (var b in BlogPosts.Take(4))
+                            {
+                                <div class="col-12 col-sm-6 col-md-3">
+                                    <div style="padding:12px;border:1px solid var(--border-color);border-radius:10px;">
+                                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@b.Title</div>
+                                        <div style="font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;">
+                                            <span>@b.Author</span>
+                                            <span>@b.ViewCount بازدید</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3" style="color:var(--text-secondary);font-size:13px;">مقاله‌ای وجود ندارد</div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
 
 @code {
-    private int _productCount;
-    private int _messageCount;
-    private int _unreadCount;
-    private int _pageCount;
-    private List<ProductDto>? _products;
-    private List<ContactDto>? _messages;
+    [Inject] private AuthService Auth { get; set; } = default!;
+
+    bool IsLoading = true;
+    int ProductCount, BlogCount, PortfolioCount, MessageCount, UnreadCount, UserCount;
+    List<ProductDto> Products = new();
+    List<ContactDto> Messages = new();
+    List<BlogDto> BlogPosts = new();
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var productsResponse = await Http.GetFromJsonAsync<ApiResponse<List<ProductDto>>>("api/product");
-            _products = productsResponse?.Data;
-            _productCount = _products?.Count ?? 0;
+        var productsTask = Comm.GetAsync<List<ProductDto>>("api/product");
+        var messagesTask = Comm.GetAsync<List<ContactDto>>("api/contact");
+        var usersTask = Comm.GetAsync<List<UserDto>>("api/user");
+        var blogTask = Comm.GetAsync<List<BlogDto>>("api/blog");
+        var portfolioTask = Comm.GetAsync<List<PortfolioDto>>("api/portfolio");
 
-            var messagesResponse = await Http.GetFromJsonAsync<ApiResponse<List<ContactDto>>>("api/contact");
-            _messages = messagesResponse?.Data;
-            _messageCount = _messages?.Count ?? 0;
-            _unreadCount = _messages?.Count(m => !m.IsRead) ?? 0;
+        await Task.WhenAll(productsTask, messagesTask, usersTask, blogTask, portfolioTask);
 
-            var pagesResponse = await Http.GetFromJsonAsync<ApiResponse<List<object>>>("api/page");
-            _pageCount = pagesResponse?.Data?.Count ?? 0;
-        }
-        catch { }
+        Products = productsTask.Result ?? new();
+        Messages = messagesTask.Result ?? new();
+        var users = usersTask.Result ?? new();
+        BlogPosts = blogTask.Result ?? new();
+        var portfolio = portfolioTask.Result ?? new();
+
+        ProductCount = Products.Count;
+        BlogCount = BlogPosts.Count;
+        PortfolioCount = portfolio.Count;
+        MessageCount = Messages.Count;
+        UnreadCount = Messages.Count(m => !m.IsRead);
+        UserCount = users.Count;
+
+        IsLoading = false;
     }
 
-    private void EditProduct(ProductDto product)
-    {
-    }
-
-    public class ProductDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Category { get; set; } = "";
-    }
-
-    public class ContactDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Subject { get; set; } = "";
-        public bool IsRead { get; set; }
-        public DateTime CreatedAt { get; set; }
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public T? Data { get; set; }
-    }
+    public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Category { get; set; } = ""; }
+    public class ContactDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Subject { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAt { get; set; } }
+    public class UserDto { public int Id { get; set; } }
+    public class BlogDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Author { get; set; } = ""; public int ViewCount { get; set; } }
+    public class PortfolioDto { public int Id { get; set; } }
 }

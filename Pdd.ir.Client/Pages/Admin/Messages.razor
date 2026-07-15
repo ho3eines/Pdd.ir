@@ -1,75 +1,70 @@
 @page "/admin/messages"
-@inject HttpClient Http
+@inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("admin_messages") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages") | PDD</PageTitle>
 
-<div class="d-flex align-items-center justify-between mb-4" style="padding-top:24px;">
-    <div>
-        <h1 style="font-size:28px;font-weight:700;">@T.Text("admin_messages")</h1>
-        <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages received from contact form")</p>
+<div class="page-enter">
+    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
+        <div>
+            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی" : "Messages")</h1>
+            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages from contact form")</p>
+        </div>
     </div>
-</div>
 
-<section class="section" style="padding-top:0;">
-    <div class="container">
-        <div class="card">
-            @if (_messages == null)
+    @if (IsLoading)
+    {
+        <div class="skeleton skeleton-card" style="height:400px;"></div>
+    }
+    else
+    {
+        <div class="glass-card fade-slide-in" style="padding:20px;">
+            @if (!Items.Any())
             {
-                @for (int i = 0; i < 3; i++)
-                {
-                    <div class="skeleton skeleton-row mb-2"></div>
-                }
-            }
-            else if (!_messages.Any())
-            {
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-chat-dots" style="font-size:2rem;"></i>
-                    <p class="mt-2">@T.Text("no_data")</p>
+                <div class="text-center py-5" style="color:var(--text-secondary);">
+                    <i class="bi bi-chat-dots" style="font-size:3rem;"></i>
+                    <p class="mt-2">هیچ پیامی یافت نشد</p>
                 </div>
             }
             else
             {
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
                         <thead>
-                            <tr style="border-bottom:1px solid var(--pdd-border);">
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">#</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "نام" : "Name")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "ایمیل" : "Email")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "موضوع" : "Subject")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "تاریخ" : "Date")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "وضعیت" : "Status")</th>
-                                <th style="padding:12px;text-align:left;font-size:13px;color:var(--pdd-text-muted);">@(T.CurrentLanguage == "fa" ? "عملیات" : "Actions")</th>
+                            <tr>
+                                <th>#</th>
+                                <th>نام</th>
+                                <th>ایمیل</th>
+                                <th>موضوع</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                                <th style="width:100px;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var msg in _messages)
+                            @foreach (var msg in Items)
                             {
-                                <tr style="border-bottom:1px solid var(--pdd-border);@(!msg.IsRead ? "background:var(--pdd-primary-glow);" : "")">
-                                    <td style="padding:12px;font-size:14px;">@msg.Id</td>
-                                    <td style="padding:12px;font-size:14px;">@msg.Name</td>
-                                    <td style="padding:12px;font-size:14px;">@msg.Email</td>
-                                    <td style="padding:12px;font-size:14px;">@msg.Subject</td>
-                                    <td style="padding:12px;font-size:14px;">@msg.CreatedAt.ToString("yyyy/MM/dd")</td>
-                                    <td style="padding:12px;">
-                                        @if (msg.IsRead)
-                                        {
-                                            <span style="padding:4px 10px;background:rgba(156,163,175,0.15);color:var(--pdd-text-muted);border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "خوانده شده" : "Read")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="padding:4px 10px;background:var(--pdd-primary-glow);color:var(--pdd-primary);border-radius:100px;font-size:12px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "جدید" : "New")</span>
-                                        }
+                                <tr style="@(msg.IsRead ? "" : "background:rgba(13,110,253,0.03);")">
+                                    <td>@msg.Id</td>
+                                    <td><strong>@msg.Name</strong></td>
+                                    <td>@msg.Email</td>
+                                    <td>@msg.Subject</td>
+                                    <td>@msg.CreatedAt.ToString("MM/dd HH:mm")</td>
+                                    <td>
+                                        <span class="badge @(msg.IsRead ? "bg-secondary" : "bg-primary")">
+                                            @(msg.IsRead ? "خوانده شده" : "جدید")
+                                        </span>
                                     </td>
-                                    <td style="padding:12px;">
-                                        <button class="btn btn-sm btn-glass me-1" @onclick="() => ViewMessage(msg)">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-glass" style="color:#ef4444;" @onclick="() => DeleteAsync(msg)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-info" @onclick="() => ViewMessage(msg)" title="مشاهده">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(msg)" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -78,29 +73,30 @@
                 </div>
             }
         </div>
-    </div>
-</section>
+    }
+</div>
 
-@if (_selectedMessage != null)
+@if (SelectedMessage != null)
 {
-    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);z-index:10000;">
-        <div class="modal-dialog">
-            <div class="modal-content" style="background:var(--pdd-bg-2);border:1px solid var(--pdd-border);border-radius:var(--pdd-radius-lg);">
-                <div class="modal-header" style="border-bottom:1px solid var(--pdd-border);padding:16px 24px;">
-                    <h5 class="modal-title" style="font-size:18px;font-weight:600;">@(T.CurrentLanguage == "fa" ? "پیام از" : "Message from") @_selectedMessage.Name</h5>
-                    <button type="button" class="btn btn-sm btn-glass" @onclick="CloseMessage"><i class="bi bi-x-lg"></i></button>
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                    <h5 class="modal-title" style="font-size:16px;font-weight:700;">پیام از @SelectedMessage.Name</h5>
+                    <button type="button" class="btn-close" @onclick="CloseMessage"></button>
                 </div>
-                <div class="modal-body" style="padding:24px;">
-                    <div style="display:grid;gap:12px;">
-                        <div><strong>@(T.CurrentLanguage == "fa" ? "ایمیل:" : "Email:")</strong> @_selectedMessage.Email</div>
-                        <div><strong>@(T.CurrentLanguage == "fa" ? "تلفن:" : "Phone:")</strong> @(_selectedMessage.Phone ?? "-")</div>
-                        <div><strong>@(T.CurrentLanguage == "fa" ? "موضوع:" : "Subject:")</strong> @(_selectedMessage.Subject ?? "-")</div>
-                        <hr style="border-color:var(--pdd-border);" />
-                        <p style="line-height:1.8;">@_selectedMessage.Message</p>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3" style="font-size:13px;">
+                        <div class="col-6"><strong>ایمیل:</strong> @SelectedMessage.Email</div>
+                        <div class="col-6"><strong>تلفن:</strong> @(SelectedMessage.Phone ?? "-")</div>
+                        <div class="col-12"><strong>موضوع:</strong> @(SelectedMessage.Subject ?? "-")</div>
+                        <div class="col-12"><strong>تاریخ:</strong> @SelectedMessage.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
                     </div>
+                    <hr style="border-color:var(--border-color);" />
+                    <p style="line-height:1.8;font-size:14px;">@SelectedMessage.Message</p>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--pdd-border);padding:16px 24px;">
-                    <button class="btn btn-glass" @onclick="CloseMessage">@(T.CurrentLanguage == "fa" ? "بستن" : "Close")</button>
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <button class="btn btn-secondary" @onclick="CloseMessage">بستن</button>
                 </div>
             </div>
         </div>
@@ -108,42 +104,36 @@
 }
 
 @code {
-    private List<ContactDto>? _messages;
-    private ContactDto? _selectedMessage;
+    List<ContactDto> Items = new();
+    ContactDto? SelectedMessage;
+    bool IsLoading = true;
 
     protected override async Task OnInitializedAsync() => await LoadData();
 
-    private async Task LoadData()
+    async Task LoadData()
     {
-        try
-        {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<ContactDto>>>("api/contact");
-            _messages = response?.Data?.ToList();
-        }
-        catch { _messages = new List<ContactDto>(); }
+        IsLoading = true;
+        Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new();
+        IsLoading = false;
     }
 
-    private async Task ViewMessage(ContactDto msg)
+    async Task ViewMessage(ContactDto msg)
     {
-        _selectedMessage = msg;
+        SelectedMessage = msg;
         if (!msg.IsRead)
         {
-            try
-            {
-                await Http.PutAsJsonAsync($"api/contact/{msg.Id}/read", new { });
-                msg.IsRead = true;
-            }
-            catch { }
+            await Comm.PutAsync<object>($"api/contact/{msg.Id}/read", new { });
+            msg.IsRead = true;
         }
     }
 
-    private void CloseMessage() { _selectedMessage = null; }
+    void CloseMessage() => SelectedMessage = null;
 
-    private async Task DeleteAsync(ContactDto msg)
+    async Task DeleteItem(ContactDto msg)
     {
         var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف پیام «{msg.Name}» مطمئن هستید؟");
         if (!confirmed) return;
-        await Http.DeleteAsync($"api/contact/{msg.Id}");
+        await Comm.DeleteAsync($"api/contact/{msg.Id}");
         await LoadData();
     }
 
@@ -157,12 +147,5 @@
         public string Message { get; set; } = "";
         public bool IsRead { get; set; }
         public DateTime CreatedAt { get; set; }
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-        public T? Data { get; set; }
     }
 }

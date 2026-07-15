@@ -1,56 +1,58 @@
 @page "/portfolio"
+@inject ICommunicationService Comm
 @inject ITranslateService T
-@inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>@T.Text("portfolio") | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "نمونه کار" : "Portfolio") | PDD</PageTitle>
 
-<PageHeader Title="@T.Text("portfolio")" Subtitle="@(T.CurrentLanguage == "fa" ? "پروژه‌های موفق" : "Successful projects")" />
+<PageHeader Title="@(T.CurrentLanguage == "fa" ? "نمونه کار" : "Portfolio")" Subtitle="@(T.CurrentLanguage == "fa" ? "پروژه‌های موفق ما" : "Our successful projects")" />
 
 <section class="section">
     <div class="container">
-        @if (_items == null)
+        @if (IsLoading)
         {
-            <div class="masonry-grid">
+            <div class="row g-4">
                 @for (int i = 0; i < 6; i++)
                 {
-                    <div class="skeleton" style="height:@(150 + (i % 3) * 50)px;margin-bottom:20px;"></div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="skeleton skeleton-card" style="height:250px;"></div>
+                    </div>
                 }
             </div>
         }
-        else if (!_items.Any())
+        else if (!Items.Any())
         {
             <div class="text-center py-5">
-                <i class="bi bi-images" style="font-size:3rem;color:var(--pdd-text-muted);"></i>
-                <p class="mt-3 text-muted">@(T.CurrentLanguage == "fa" ? "هنوز نمونه کاری ثبت نشده است" : "No portfolio items yet")</p>
+                <i class="bi bi-images" style="font-size:3rem;color:var(--text-secondary);"></i>
+                <p class="mt-3" style="color:var(--text-secondary);">@(T.CurrentLanguage == "fa" ? "هنوز نمونه کاری ثبت نشده" : "No portfolio items yet")</p>
             </div>
         }
         else
         {
-            <div class="masonry-grid">
-                @foreach (var item in _items)
+            <div class="row g-4">
+                @foreach (var item in Items)
                 {
-                    <AnimatedSection AnimationType="fade-up">
-                        <div class="portfolio-card">
-                            <div style="height:@(180 + (item.Id % 3) * 40)px;background:linear-gradient(135deg, @(item.Category == "HIS" ? "var(--pdd-primary)" : "var(--pdd-secondary)") 0%, #8b5cf6 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;">
-                                @if (!string.IsNullOrEmpty(item.ImageUrl))
-                                {
-                                    <img src="@item.ImageUrl" alt="@item.Title" class="portfolio-card-img" />
-                                }
-                                else
-                                {
-                                    <i class="bi @(item.Category == "HIS" ? "bi-hospital" : "bi-calculator")" style="font-size:3rem;color:rgba(255,255,255,0.3);"></i>
-                                }
-                            </div>
-                            <div class="portfolio-card-overlay">
-                                <div>
-                                    <span style="display:inline-block;padding:4px 12px;background:var(--pdd-primary);border-radius:100px;font-size:11px;font-weight:600;color:#fff;margin-bottom:8px;">@item.Category</span>
-                                    <h5 style="color:#fff;margin-bottom:4px;">@item.Title</h5>
-                                    <p style="color:rgba(255,255,255,0.7);font-size:0.85rem;">@item.Description</p>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <AnimatedSection AnimationType="fade-up">
+                            <div class="glass-card hover-lift fade-slide-in" style="overflow:hidden;cursor:pointer;">
+                                <div style="height:180px;background:linear-gradient(135deg,@GetCategoryColor(item.Category) 0%,#8b5cf6 100%);display:flex;align-items:center;justify-content:center;">
+                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                    {
+                                        <img src="@item.ImageUrl" alt="@item.Title" style="width:100%;height:100%;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-folder2-open" style="font-size:3rem;color:rgba(255,255,255,0.3);"></i>
+                                    }
+                                </div>
+                                <div style="padding:16px;">
+                                    <span class="badge bg-primary mb-2" style="font-size:10px;">@item.Category</span>
+                                    <h5 style="font-size:15px;font-weight:700;margin-bottom:6px;">@item.Title</h5>
+                                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">@item.Description</p>
                                 </div>
                             </div>
-                        </div>
-                    </AnimatedSection>
+                        </AnimatedSection>
+                    </div>
                 }
             </div>
         }
@@ -60,26 +62,41 @@
 <CorporateFooter />
 
 @code {
-    private List<PortfolioDto>? _items;
+    List<PortfolioDto> Items = new();
+    bool IsLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        try
+        Items = await Comm.GetAsync<List<PortfolioDto>>("api/portfolio") ?? new();
+        IsLoading = false;
+    }
+
+    string GetCategoryColor(string category)
+    {
+        return category?.ToLower() switch
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<PortfolioDto>>>("api/portfolio");
-            _items = response?.Data?.ToList();
-        }
-        catch
-        {
-            _items = new List<PortfolioDto>();
-        }
+            "his" => "var(--pdd-primary)",
+            "ris" => "var(--pdd-purple)",
+            "lis" => "var(--pdd-cyan)",
+            "cis" => "var(--pdd-pink)",
+            _ => "var(--pdd-primary)"
+        };
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { }
-        }
+        if (firstRender) { try { await JS.InvokeVoidAsync("initScrollAnimations"); } catch { } }
+    }
+
+    public class PortfolioDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string ProjectUrl { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
     }
 }

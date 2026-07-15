@@ -14,5 +14,11 @@ builder.Services.AddScoped<ConnectionService>();
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AnimationService>();
 builder.Services.AddScoped<ITranslateService, TranslateService>();
+builder.Services.AddScoped<ICommunicationService, CommunicationService>();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+var commService = app.Services.GetRequiredService<ICommunicationService>();
+await commService.InitializeAsync();
+
+await app.RunAsync();

@@ -19,6 +19,8 @@ builder.Services.AddScoped<ContactBusinessService>();
 builder.Services.AddScoped<PageBusinessService>();
 builder.Services.AddScoped<BlogBusinessService>();
 builder.Services.AddScoped<PortfolioBusinessService>();
+builder.Services.AddScoped<RoleBusinessService>();
+builder.Services.AddScoped<PermissionBusinessService>();
 
 // Server Services
 builder.Services.AddSingleton<JwtService>();
@@ -66,7 +68,7 @@ app.UseCors();
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
-    AllowedOrigins = { "http://localhost:5000", "http://localhost:5001", "https://localhost:7001" }
+    AllowedOrigins = { "http://localhost:5000", "http://localhost:5001", "https://localhost:7001", "http://localhost:5183", "https://localhost:5183", "https://localhost:7125", "http://localhost:7125" }
 });
 
 app.MapControllers();

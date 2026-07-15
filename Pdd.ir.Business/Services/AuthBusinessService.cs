@@ -59,9 +59,47 @@ namespace Pdd.ir.Business.Services
             return await _db.QueryFirstOrDefaultAsync<User>(UserQueries.GetById, new { Id = id });
         }
 
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            return await _db.QueryFirstOrDefaultAsync<User>(UserQueries.GetByUsername, new { Username = username });
+        }
+
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             return await _db.QueryAsync<User>(UserQueries.GetAll);
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsersAdminAsync()
+        {
+            return await _db.QueryAsync<User>(UserQueries.GetAllAdmin);
+        }
+
+        public async Task<bool> UpdateUserAsync(int id, string email, string fullName, string role)
+        {
+            var rows = await _db.ExecuteAsync(UserQueries.Update, new { Id = id, Email = email, FullName = fullName, Role = role, IsActive = true });
+            return rows > 0;
+        }
+
+        public async Task<bool> UpdateUserPasswordAsync(int id, string newPassword)
+        {
+            var hash = HashPassword(newPassword);
+            var rows = await _db.ExecuteAsync(UserQueries.UpdatePassword, new { Id = id, PasswordHash = hash });
+            return rows > 0;
+        }
+
+        public async Task<bool> ToggleUserActiveAsync(int id)
+        {
+            var user = await _db.QueryFirstOrDefaultAsync<User>(UserQueries.GetById, new { Id = id });
+            if (user == null) return false;
+            var newStatus = !user.IsActive;
+            var rows = await _db.ExecuteAsync(UserQueries.SetActive, new { Id = id, IsActive = newStatus });
+            return rows > 0;
+        }
+
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            var rows = await _db.ExecuteAsync(UserQueries.Delete, new { Id = id });
+            return rows > 0;
         }
 
         public static string HashPassword(string password)
