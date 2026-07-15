@@ -46,7 +46,7 @@ namespace Pdd.ir.Client.Services
                 if (string.IsNullOrEmpty(baseUri)) return;
 
                 var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
-                _wsUrl = wsUri + "ws";
+                _wsUrl = wsUri + "/ws";
 
                 await ConnectAsync();
             }

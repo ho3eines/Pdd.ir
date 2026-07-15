@@ -32,9 +32,9 @@ BEGIN
     );
 
     -- Seed Admin User (password: admin123)
-    -- SHA256 hash of "admin123" = jGl25bVBBNX9QIVjZjEcz1jC0zE5MGfJYV8mBnBMnRI=
+    -- SHA256 hash of "admin123" = JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=
     INSERT INTO Users (Username, PasswordHash, Email, FullName, Role, IsActive, CreatedAt)
-    VALUES (N'admin', N'jGl25bVBBNX9QIVjZjEcz1jC0zE5MGfJYV8mBnBMnRI=', N'admin@pdd.ir', N'مدیر سیستم', N'Admin', 1, GETUTCDATE());
+    VALUES (N'admin', N'JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=', N'admin@pdd.ir', N'مدیر سیستم', N'Admin', 1, GETUTCDATE());
 END
 GO
 
