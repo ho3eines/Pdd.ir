@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.StaticFiles;
 using Pdd.ir.Business.Services;
 using Pdd.ir.Data;
 using Pdd.ir.Server.Services;
@@ -83,7 +84,18 @@ app.Map("/ws", async (HttpContext context) =>
 
 // Serve Blazor WASM static files
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = new FileExtensionContentTypeProvider(new Dictionary<string, string>
+    {
+        { ".wasm", "application/wasm" },
+        { ".blat", "application/octet-stream" },
+        { ".dat", "application/octet-stream" },
+        { ".pdb", "application/octet-stream" },
+        { ".woff", "font/woff" },
+        { ".woff2", "font/woff2" },
+    })
+});
 
 app.MapFallbackToFile("index.html");
 
