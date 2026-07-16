@@ -1444,13 +1444,23 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 32px;
+  padding: 14px 32px;
+  background: var(--pdd-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--pdd-glass-border);
 }
 
 .home-topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .home-logo {
@@ -1519,35 +1529,25 @@ main {
 
 /* ── Theme Pill (Home) ────────────────────────────────── */
 .theme-pill {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border: none;
   border-radius: 50%;
   color: #fff;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 .theme-pill:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
   transform: rotate(30deg) scale(1.1);
-  box-shadow: 0 0 20px rgba(255, 185, 0, 0.3);
 }
 .theme-pill:active {
   transform: rotate(30deg) scale(0.92);
-}
-.theme-pill-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ── Theme Toggle (Toolbar) ────────────────────────────── */
@@ -1602,7 +1602,25 @@ main {
   background: rgba(0, 0, 0, 0.05);
   color: #1F2937;
 }
-[data-theme="light"] .home-topbar { color: #1F2937; }
+[data-theme="light"] .home-topbar {
+  color: #1F2937;
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom-color: rgba(13, 110, 253, 0.1);
+}
+[data-theme="light"] .home-topbar-actions {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .theme-pill {
+  color: #4B5563;
+}
+[data-theme="light"] .theme-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1F2937;
+}
+[data-theme="light"] .theme-pill-icon {
+  color: #6B7280;
+}
 [data-theme="light"] .home-logo-text { color: #0D6EFD; }
 [data-theme="light"] .home-logo-sub { color: #6B7280; }
 [data-theme="light"] .slide-title .gradient-text {
