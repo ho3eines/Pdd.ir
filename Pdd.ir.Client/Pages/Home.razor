@@ -18,26 +18,6 @@
         <div class="home-bg-grain"></div>
     </div>
 
-    <!-- Top bar: Logo + Lang -->
-    <div class="home-topbar">
-        <a href="/" class="home-logo">
-            <span class="home-logo-text">PDD</span>
-            <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
-        </a>
-        <div class="home-topbar-actions">
-            <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
-                <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
-                <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
-            </button>
-            <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
-                <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
-            </button>
-            <a href="/login" class="login-pill" aria-label="Login">
-                <i class="bi bi-box-arrow-in-right"></i>
-            </a>
-        </div>
-    </div>
-
     <!-- Main Content: Center + Right -->
     <div class="home-main">
 
@@ -74,6 +54,26 @@
 
             <div class="slider-progress">
                 <div class="slider-progress-bar" style="width:@(_progress)%"></div>
+            </div>
+
+            <!-- Controls: Logo + Actions -->
+            <div class="home-center-controls">
+                <a href="/" class="home-logo">
+                    <span class="home-logo-text">PDD</span>
+                    <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+                </a>
+                <div class="home-topbar-actions">
+                    <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
+                        <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
+                        <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
+                    </button>
+                    <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
+                        <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
+                    </button>
+                    <a href="/login" class="login-pill" aria-label="Login">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
