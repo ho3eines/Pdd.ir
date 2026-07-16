@@ -18,28 +18,31 @@
         <div class="home-bg-grain"></div>
     </div>
 
-    <!-- Top bar: Logo + Lang -->
-    <div class="home-topbar">
-        <a href="/" class="home-logo">
-            <span class="home-logo-text">PDD</span>
-            <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
-        </a>
-        <div class="home-topbar-actions">
-            <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
-                <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
-                <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
-            </button>
-            <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
-                <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
-            </button>
-        </div>
-    </div>
-
     <!-- Main Content: Center + Right -->
     <div class="home-main">
 
         <!-- Center: Text Slider -->
         <div class="home-center">
+            <!-- Controls: Logo + Actions -->
+            <div class="home-center-topbar">
+                <a href="/" class="home-logo">
+                    <span class="home-logo-text">PDD</span>
+                    <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+                </a>
+                <div class="home-topbar-actions">
+                    <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
+                        <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
+                        <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
+                    </button>
+                    <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
+                        <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
+                    </button>
+                    <a href="/login" class="login-pill" aria-label="Login">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </a>
+                </div>
+            </div>
+
             <div class="text-slider" id="textSlider">
                 @for (int i = 0; i < _slides.Count; i++)
                 {

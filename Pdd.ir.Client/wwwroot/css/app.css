@@ -1435,20 +1435,13 @@ main {
 }
 
 /* â”€â”€ Top Bar â”€â”€ */
-.home-topbar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+.home-center-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 32px;
-  background: var(--pdd-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--pdd-glass-border);
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 10;
 }
 
 .home-topbar-actions {
@@ -1550,6 +1543,43 @@ main {
   transform: rotate(30deg) scale(0.92);
 }
 
+/* ── Login Pill (Home) ────────────────────────────────── */
+.login-pill {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  text-decoration: none;
+}
+.login-pill:hover {
+  background: var(--pdd-primary);
+  border-color: var(--pdd-primary);
+  transform: scale(1.12);
+  box-shadow: 0 0 20px rgba(13, 110, 253, 0.4);
+  color: #fff;
+}
+.login-pill:active {
+  transform: scale(0.92);
+}
+[data-theme="light"] .login-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #4B5563;
+}
+[data-theme="light"] .login-pill:hover {
+  background: #0D6EFD;
+  border-color: #0D6EFD;
+  color: #fff;
+}
+
 /* ── Theme Toggle (Toolbar) ────────────────────────────── */
 .theme-toggle-btn {
   width: 36px;
@@ -1602,10 +1632,8 @@ main {
   background: rgba(0, 0, 0, 0.05);
   color: #1F2937;
 }
-[data-theme="light"] .home-topbar {
+[data-theme="light"] .home-center-topbar {
   color: #1F2937;
-  background: rgba(255, 255, 255, 0.6);
-  border-bottom-color: rgba(13, 110, 253, 0.1);
 }
 [data-theme="light"] .home-topbar-actions {
   background: rgba(0, 0, 0, 0.04);
@@ -2054,7 +2082,7 @@ main {
   .slide-title { font-size: 22px; }
   .slide-desc { font-size: 12px; }
   .mouse-glow { display: none; }
-  .home-topbar { padding: 12px 16px; }
+  .home-center-topbar { margin-bottom: 20px; }
 }
 .clients-label {
   font-size: 9px; font-weight: 700;
@@ -2174,7 +2202,7 @@ main {
   .slide-title { font-size: 22px; }
   .slide-desc { font-size: 12px; }
   .mouse-glow { display: none; }
-  .home-topbar { padding: 12px 16px; }
+  .home-center-topbar { margin-bottom: 20px; }
 
   .home-clients {
     padding: 10px 16px 12px;
@@ -2289,7 +2317,7 @@ main {
 }
 
 /* â”€â”€â”€ HOME PAGE MAGICAL EFFECTS â”€â”€â”€ */
-.home-center, .home-products-panel, .home-topbar {
+.home-center, .home-products-panel {
   position: relative;
   z-index: 5;
 }
