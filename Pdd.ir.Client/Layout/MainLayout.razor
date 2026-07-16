@@ -7,6 +7,9 @@
 @if (_isLandingPage)
 {
     @Body
+    <button class="global-theme-toggle" @onclick="ToggleTheme" title="تغییر تم">
+        <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
+    </button>
 }
 else
 {
@@ -74,7 +77,7 @@ else
 
         try
         {
-            var theme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");
+            var theme = await JS.InvokeAsync<string>("getTheme");
             _isDark = theme != "light";
         }
         catch { }
@@ -109,9 +112,9 @@ else
 
     private async Task ToggleTheme()
     {
-        _isDark = !_isDark;
-        await JS.InvokeVoidAsync("localStorage.setItem", "theme", _isDark ? "dark" : "light");
-        await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme', '{(_isDark ? "dark" : "light")}')");
+        var result = await JS.InvokeAsync<string>("toggleTheme");
+        _isDark = result == "dark";
+        StateHasChanged();
     }
 
     private void ToggleSidebar()
