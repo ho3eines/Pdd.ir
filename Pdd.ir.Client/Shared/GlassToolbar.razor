@@ -19,12 +19,14 @@
         </div>
 
         <div class="toolbar-actions">
-            <button class="theme-toggle-btn" @onclick="ToggleTheme" aria-label="Toggle theme">
-                <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
-            </button>
-            <div class="lang-switcher">
-                <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="SwitchToFa">FA</button>
-                <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="SwitchToEn">EN</button>
+            <div class="toolbar-controls">
+                <button class="theme-toggle-btn" @onclick="ToggleTheme" aria-label="Toggle theme">
+                    <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
+                </button>
+                <div class="lang-switcher">
+                    <button class="lang-btn @(T.CurrentLanguage == "fa" ? "active" : "")" @onclick="SwitchToFa">FA</button>
+                    <button class="lang-btn @(T.CurrentLanguage == "en" ? "active" : "")" @onclick="SwitchToEn">EN</button>
+                </div>
             </div>
             <a href="/contact" class="btn btn-glass btn-sm">@T.Text("contact_us")</a>
             <button class="toolbar-toggle" id="menuToggle" @onclick="ToggleMenu">
