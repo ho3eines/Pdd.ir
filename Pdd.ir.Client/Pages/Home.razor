@@ -18,66 +18,30 @@
         <div class="home-bg-grain"></div>
     </div>
 
-    <!-- Main Content: Center + Right -->
+    <!-- Top bar: Logo + Lang -->
+    <div class="home-topbar">
+        <a href="/" class="home-logo">
+            <span class="home-logo-text">PDD</span>
+            <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+        </a>
+        <div class="home-topbar-actions">
+            <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
+                <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
+                <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
+            </button>
+            <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
+                <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
+            </button>
+            <a href="/login" class="login-pill" aria-label="Login">
+                <i class="bi bi-box-arrow-in-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content: Products + Center -->
     <div class="home-main">
 
-        <!-- Center: Text Slider -->
-        <div class="home-center">
-            <div class="text-slider" id="textSlider">
-                @for (int i = 0; i < _slides.Count; i++)
-                {
-                    var slide = _slides[i];
-                    <div class="text-slide @(_currentSlide == i ? "active" : "") @(_prevSlide == i ? "leaving" : "")">
-                        <div class="slide-badge">
-                            <span class="badge-dot"></span>
-                            @(T.CurrentLanguage == "fa" ? slide.BadgeFa : slide.BadgeEn)
-                        </div>
-                        <h1 class="slide-title">
-                            <span class="gradient-text">@(T.CurrentLanguage == "fa" ? slide.TitleFa : slide.TitleEn)</span>
-                        </h1>
-                        <p class="slide-desc">@(T.CurrentLanguage == "fa" ? slide.DescFa : slide.DescEn)</p>
-                    </div>
-                }
-            </div>
-
-            <div class="slider-controls">
-                <button class="slider-arrow" @onclick="PrevSlide" aria-label="Prev"><i class="bi bi-chevron-left"></i></button>
-                <div class="slider-dots">
-                    @for (int i = 0; i < _slides.Count; i++)
-                    {
-                        var idx = i;
-                        <button class="slider-dot @(_currentSlide == idx ? "active" : "")" @onclick="() => GoToSlide(idx)"></button>
-                    }
-                </div>
-                <button class="slider-arrow" @onclick="NextSlide" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
-            </div>
-
-            <div class="slider-progress">
-                <div class="slider-progress-bar" style="width:@(_progress)%"></div>
-            </div>
-
-            <!-- Controls: Logo + Actions -->
-            <div class="home-center-controls">
-                <a href="/" class="home-logo">
-                    <span class="home-logo-text">PDD</span>
-                    <span class="home-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
-                </a>
-                <div class="home-topbar-actions">
-                    <button class="lang-pill" @onclick="ToggleLang" aria-label="Switch language">
-                        <span class="lang-pill-icon"><i class="bi bi-translate"></i></span>
-                        <span class="lang-pill-text" key="@T.CurrentLanguage">@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
-                    </button>
-                    <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
-                        <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
-                    </button>
-                    <a href="/login" class="login-pill" aria-label="Login">
-                        <i class="bi bi-box-arrow-in-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: Products -->
+        <!-- Left: Products -->
         <div class="home-products-panel">
             <div class="products-header">
                 <span class="products-label">@(T.CurrentLanguage == "fa" ? "محصولات ما" : "Our Products")</span>
@@ -110,6 +74,42 @@
                     <i class="bi bi-headset"></i>
                     @(T.CurrentLanguage == "fa" ? "مشاوره رایگان" : "Free Consultation")
                 </a>
+            </div>
+        </div>
+
+        <!-- Right: Text Slider -->
+        <div class="home-center">
+            <div class="text-slider" id="textSlider">
+                @for (int i = 0; i < _slides.Count; i++)
+                {
+                    var slide = _slides[i];
+                    <div class="text-slide @(_currentSlide == i ? "active" : "") @(_prevSlide == i ? "leaving" : "")">
+                        <div class="slide-badge">
+                            <span class="badge-dot"></span>
+                            @(T.CurrentLanguage == "fa" ? slide.BadgeFa : slide.BadgeEn)
+                        </div>
+                        <h1 class="slide-title">
+                            <span class="gradient-text">@(T.CurrentLanguage == "fa" ? slide.TitleFa : slide.TitleEn)</span>
+                        </h1>
+                        <p class="slide-desc">@(T.CurrentLanguage == "fa" ? slide.DescFa : slide.DescEn)</p>
+                    </div>
+                }
+            </div>
+
+            <div class="slider-controls">
+                <button class="slider-arrow" @onclick="PrevSlide" aria-label="Prev"><i class="bi bi-chevron-left"></i></button>
+                <div class="slider-dots">
+                    @for (int i = 0; i < _slides.Count; i++)
+                    {
+                        var idx = i;
+                        <button class="slider-dot @(_currentSlide == idx ? "active" : "")" @onclick="() => GoToSlide(idx)"></button>
+                    }
+                </div>
+                <button class="slider-arrow" @onclick="NextSlide" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+            </div>
+
+            <div class="slider-progress">
+                <div class="slider-progress-bar" style="width:@(_progress)%"></div>
             </div>
         </div>
     </div>
