@@ -264,7 +264,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AppState.OnStateChanged += Refresh;
+        T.OnLanguageChanged += Refresh;
         var productsTask = Comm.GetAsync<List<ProductDto>>("api/product");
         var messagesTask = Comm.GetAsync<List<ContactDto>>("api/contact");
         var usersTask = Comm.GetAsync<List<UserDto>>("api/user");
@@ -290,7 +290,7 @@
     }
 
     void Refresh() => InvokeAsync(StateHasChanged);
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
 
     public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Category { get; set; } = ""; }
     public class ContactDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Subject { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAt { get; set; } }

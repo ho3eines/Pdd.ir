@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
-@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
@@ -36,10 +35,10 @@
         new() { Title = "تاریخ", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "style", "font-size:12px;"); builder.AddContent(2, DateHelper.ToShamsiWithTime(DateHelper.ToUnix(c.CreatedAt))); builder.CloseElement(); }},
         new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsRead ? "bg-secondary" : "bg-primary")}"); builder.AddContent(2, c.IsRead ? "خوانده شده" : "جدید"); builder.CloseElement(); }}
     };
-    protected override async Task OnInitializedAsync() { AppState.OnStateChanged += Refresh; await Load(); }
+    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new(); IsLoading = false; }
     async Task Delete(ContactDto x) { await Comm.DeleteAsync($"api/contact/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class ContactDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Email { get; set; } = ""; public string Phone { get; set; } = ""; public string Subject { get; set; } = ""; public string Message { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAt { get; set; } }
 }

@@ -74,7 +74,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AppState.OnStateChanged += Refresh;
+        T.OnLanguageChanged += Refresh;
         await Auth.LoadFromStorageAsync();
         if (Auth.IsAuthenticated)
         {
@@ -117,5 +117,5 @@
 
     void GoToHome() => Nav.NavigateTo("/");
     void Refresh() => InvokeAsync(StateHasChanged);
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
 }

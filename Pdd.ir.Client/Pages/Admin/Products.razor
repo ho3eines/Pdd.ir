@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
-@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
@@ -30,40 +29,20 @@
 @code {
     List<ProductDto> Items = new();
     bool IsLoading = true;
-
     List<PddTableColumn<ProductDto>> _columns = new()
     {
         new() { Title = "عنوان", GetValue = x => x.Title },
         new() { Title = "زیرعنوان", GetValue = x => x.Subtitle },
-        new() { Title = "دسته", Template = c => builder =>
-        {
-            builder.OpenElement(0, "span");
-            builder.AddAttribute(1, "class", "badge bg-info");
-            builder.AddContent(2, c.Category);
-            builder.CloseElement();
-        }},
-        new() { Title = "وضعیت", Template = c => builder =>
-        {
-            builder.OpenElement(0, "span");
-            builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}");
-            builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال");
-            builder.CloseElement();
-        }}
+        new() { Title = "دسته", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", "badge bg-info"); builder.AddContent(2, c.Category); builder.CloseElement(); }},
+        new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال"); builder.CloseElement(); }}
     };
-
-    protected override async Task OnInitializedAsync()
-    {
-        AppState.OnStateChanged += Refresh;
-        await Load();
-    }
-
+    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new(); IsLoading = false; }
     bool Search(ProductDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<ProductDialog>(T.Text("product_new"));
     async Task OpenEdit(ProductDto x) => await Modal.Show<ProductDialog>(T.Text("product_edit"), new Dictionary<string, object> { { "Id", x.Id } });
     async Task Delete(ProductDto x) { await Comm.DeleteAsync($"api/product/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
-
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Subtitle { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; }
 }

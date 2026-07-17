@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
-@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
@@ -38,13 +37,13 @@
         new() { Title = "نقش", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.Role == "admin" ? "bg-warning text-dark" : "bg-info")}"); builder.AddContent(2, c.Role); builder.CloseElement(); }},
         new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال"); builder.CloseElement(); }}
     };
-    protected override async Task OnInitializedAsync() { AppState.OnStateChanged += Refresh; await LoadUsers(); }
+    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await LoadUsers(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task LoadUsers() { IsLoading = true; UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new(); IsLoading = false; }
     bool SearchUsers(UserDto u, string q) => (u.Username ?? "").ToLower().Contains(q) || (u.FullName ?? "").ToLower().Contains(q) || (u.Email ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<UserDialog>(T.Text("user_new"));
     async Task OpenEdit(UserDto u) => await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
     async Task DeleteUser(UserDto user) { await Comm.DeleteAsync($"api/user/{user.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await LoadUsers(); }
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class UserDto { public int Id { get; set; } public string Username { get; set; } = ""; public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Role { get; set; } = ""; public bool IsActive { get; set; } }
 }

@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
-@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
@@ -37,13 +36,13 @@
         new() { Title = "ترتیب", GetValue = x => x.SortOrder.ToString() },
         new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال"); builder.CloseElement(); }}
     };
-    protected override async Task OnInitializedAsync() { AppState.OnStateChanged += Refresh; await Load(); }
+    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<PortfolioDto>>("api/portfolio/admin") ?? new(); IsLoading = false; }
     bool Search(PortfolioDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<PortfolioDialog>(T.Text("portfolio_new"));
     async Task OpenEdit(PortfolioDto x) => await Modal.Show<PortfolioDialog>(T.Text("portfolio_edit"), new Dictionary<string, object> { { "Id", x.Id } });
     async Task Delete(PortfolioDto x) { await Comm.DeleteAsync($"api/portfolio/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class PortfolioDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; public string ProjectUrl { get; set; } = ""; }
 }

@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
-@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
@@ -35,13 +34,13 @@
         new() { Title = "نام نقش", GetValue = x => x.Name },
         new() { Title = "توضیحات", GetValue = x => x.Description }
     };
-    protected override async Task OnInitializedAsync() { AppState.OnStateChanged += Refresh; await Load(); }
+    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<RoleDto>>("api/role") ?? new(); IsLoading = false; }
     bool Search(RoleDto x, string q) => (x.Name ?? "").ToLower().Contains(q) || (x.Description ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<RoleDialog>(T.Text("role_new"));
     async Task OpenEdit(RoleDto x) => await Modal.Show<RoleDialog>(T.Text("role_edit"), new Dictionary<string, object> { { "Id", x.Id } });
     async Task Delete(RoleDto x) { await Comm.DeleteAsync($"api/role/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
-    public void Dispose() { AppState.OnStateChanged -= Refresh; }
+    public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class RoleDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Description { get; set; } = ""; }
 }
