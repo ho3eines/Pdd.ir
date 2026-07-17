@@ -61,6 +61,7 @@ else
     private bool _isDark = true;
     private bool _isLandingPage;
     private bool _sidebarOpen;
+    private bool _initialized;
 
     [Inject] private ITranslateService T { get; set; } = default!;
     [Inject] private IAppStateService AppState { get; set; } = default!;
@@ -73,22 +74,36 @@ else
 
         _isLandingPage = IsLandingPage(Navigation.Uri);
 
-        if (!_isLandingPage)
-        {
-            await Auth.LoadFromStorageAsync();
-            if (!Auth.IsAuthenticated)
-            {
-                Navigation.NavigateTo("/login");
-                return;
-            }
-        }
-
         try
         {
             var theme = await JS.InvokeAsync<string>("getTheme");
             _isDark = theme != "light";
         }
         catch { }
+
+        _initialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized) return;
+
+        var wasLanding = _isLandingPage;
+        _isLandingPage = IsLandingPage(Navigation.Uri);
+
+        if (wasLanding != _isLandingPage)
+        {
+            if (!_isLandingPage)
+            {
+                await Auth.LoadFromStorageAsync();
+                if (!Auth.IsAuthenticated)
+                {
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+            }
+            StateHasChanged();
+        }
     }
 
     private bool IsLandingPage(string uri)
