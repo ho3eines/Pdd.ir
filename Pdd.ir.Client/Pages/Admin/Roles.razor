@@ -18,7 +18,7 @@
               CanInsert="true"
               CanEdit="true"
               CanDelete="true"
-              Columns="@_columns"
+              Columns="@GetColumns()"
               SearchFilter="@Search"
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
@@ -29,11 +29,13 @@
 @code {
     List<RoleDto> Items = new();
     bool IsLoading = true;
-    List<PddTableColumn<RoleDto>> _columns = new()
+
+    List<PddTableColumn<RoleDto>> GetColumns() => new()
     {
-        new() { Title = "نام نقش", GetValue = x => x.Name },
-        new() { Title = "توضیحات", GetValue = x => x.Description }
+        new() { Title = "Name", GetValue = x => x.Name },
+        new() { Title = T.Text("description"), GetValue = x => x.Description }
     };
+
     protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<RoleDto>>("api/role") ?? new(); IsLoading = false; }

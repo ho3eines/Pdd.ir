@@ -18,7 +18,7 @@
               CanInsert="true"
               CanEdit="true"
               CanDelete="true"
-              Columns="@_columns"
+              Columns="@GetColumns()"
               SearchFilter="@Search"
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
@@ -29,13 +29,15 @@
 @code {
     List<BlogDto> Items = new();
     bool IsLoading = true;
-    List<PddTableColumn<BlogDto>> _columns = new()
+
+    List<PddTableColumn<BlogDto>> GetColumns() => new()
     {
-        new() { Title = "عنوان", GetValue = x => x.Title },
-        new() { Title = "نویسنده", GetValue = x => x.Author },
-        new() { Title = "بازدید", GetValue = x => x.ViewCount.ToString() },
-        new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsPublished ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsPublished ? "منتشر شده" : "پیش‌نویس"); builder.CloseElement(); }}
+        new() { Title = T.Text("title"), GetValue = x => x.Title },
+        new() { Title = T.Text("author"), GetValue = x => x.Author },
+        new() { Title = T.Text("view_count"), GetValue = x => x.ViewCount.ToString() },
+        new() { Title = T.Text("status"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsPublished ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsPublished ? T.Text("published") : T.Text("draft")); builder.CloseElement(); }}
     };
+
     protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new(); IsLoading = false; }

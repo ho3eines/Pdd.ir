@@ -18,7 +18,7 @@
               CanInsert="true"
               CanEdit="true"
               CanDelete="true"
-              Columns="@_columns"
+              Columns="@GetColumns()"
               SearchFilter="@Search"
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
@@ -29,13 +29,15 @@
 @code {
     List<PortfolioDto> Items = new();
     bool IsLoading = true;
-    List<PddTableColumn<PortfolioDto>> _columns = new()
+
+    List<PddTableColumn<PortfolioDto>> GetColumns() => new()
     {
-        new() { Title = "عنوان", GetValue = x => x.Title },
-        new() { Title = "دسته", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", "badge bg-info"); builder.AddContent(2, c.Category); builder.CloseElement(); }},
-        new() { Title = "ترتیب", GetValue = x => x.SortOrder.ToString() },
-        new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال"); builder.CloseElement(); }}
+        new() { Title = T.Text("title"), GetValue = x => x.Title },
+        new() { Title = T.Text("category"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", "badge bg-info"); builder.AddContent(2, c.Category); builder.CloseElement(); }},
+        new() { Title = T.Text("sort_order"), GetValue = x => x.SortOrder.ToString() },
+        new() { Title = T.Text("status"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? T.Text("active") : T.Text("inactive")); builder.CloseElement(); }}
     };
+
     protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<PortfolioDto>>("api/portfolio/admin") ?? new(); IsLoading = false; }

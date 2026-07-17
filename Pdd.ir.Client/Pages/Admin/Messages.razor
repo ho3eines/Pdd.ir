@@ -19,7 +19,7 @@
               CanInsert="false"
               CanEdit="false"
               CanDelete="true"
-              Columns="@_columns"
+              Columns="@GetColumns()"
               OnDelete="Delete"
               DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
@@ -27,14 +27,16 @@
 @code {
     List<ContactDto> Items = new();
     bool IsLoading = true;
-    List<PddTableColumn<ContactDto>> _columns = new()
+
+    List<PddTableColumn<ContactDto>> GetColumns() => new()
     {
-        new() { Title = "نام", GetValue = x => x.Name },
-        new() { Title = "ایمیل", GetValue = x => x.Email },
-        new() { Title = "موضوع", GetValue = x => x.Subject },
-        new() { Title = "تاریخ", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "style", "font-size:12px;"); builder.AddContent(2, DateHelper.ToShamsiWithTime(DateHelper.ToUnix(c.CreatedAt))); builder.CloseElement(); }},
-        new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsRead ? "bg-secondary" : "bg-primary")}"); builder.AddContent(2, c.IsRead ? "خوانده شده" : "جدید"); builder.CloseElement(); }}
+        new() { Title = T.Text("name"), GetValue = x => x.Name },
+        new() { Title = T.Text("email_field"), GetValue = x => x.Email },
+        new() { Title = T.Text("subject_field"), GetValue = x => x.Subject },
+        new() { Title = T.Text("date"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "style", "font-size:12px;"); builder.AddContent(2, DateHelper.ToShamsiWithTime(DateHelper.ToUnix(c.CreatedAt))); builder.CloseElement(); }},
+        new() { Title = T.Text("status"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsRead ? "bg-secondary" : "bg-primary")}"); builder.AddContent(2, c.IsRead ? T.Text("read") : T.Text("unread")); builder.CloseElement(); }}
     };
+
     protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await Load(); }
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new(); IsLoading = false; }
