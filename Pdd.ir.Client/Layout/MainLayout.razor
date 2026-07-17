@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
+<CascadingValue Value="@AppState">
 @if (_isLandingPage)
 {
     @Body
@@ -56,6 +57,7 @@ else
         </div>
     </div>
 }
+</CascadingValue>
 
 @code {
     private bool _isDark = true;
