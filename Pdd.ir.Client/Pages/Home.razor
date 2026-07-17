@@ -32,9 +32,9 @@
             <button class="theme-pill" @onclick="ToggleTheme" aria-label="Toggle theme">
                 <span class="theme-pill-icon"><i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i></span>
             </button>
-            <a href="/login" class="login-pill" aria-label="Login">
+            <button class="login-pill" aria-label="Login" @onclick="GoToLogin">
                 <i class="bi bi-box-arrow-in-right"></i>
-            </a>
+            </button>
         </div>
     </div>
 
@@ -246,6 +246,8 @@
     }
 
     private void NavigateToProduct(string route) => Navigation.NavigateTo(route);
+
+    private void GoToLogin() => Navigation.NavigateTo("/login");
 
     private async Task ToggleLang()
     {
