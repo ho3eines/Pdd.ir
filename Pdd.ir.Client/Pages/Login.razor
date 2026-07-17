@@ -75,7 +75,7 @@
         await Auth.LoadFromStorageAsync();
         if (Auth.IsAuthenticated)
         {
-            Nav.NavigateTo("/admin", true);
+            Nav.NavigateTo("/admin");
         }
     }
 
@@ -94,7 +94,7 @@
 
         if (success)
         {
-            Nav.NavigateTo("/admin", true);
+            Nav.NavigateTo("/admin");
         }
         else
         {

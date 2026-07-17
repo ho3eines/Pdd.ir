@@ -123,6 +123,8 @@ DateHelper.MiladiToShamsi("2023-04-05")  // "1402/01/15"
 | 🔥 ممنوع | سرویس مشابه نساز |
 | 🔥 ممنوع | از `spinner-border` استفاده نکن (از Skeleton استفاده کن) |
 | 🔥 ممنوع | جدول دستی با `<table>` نساز (از PddTable استفاده کن) |
+| 🔥 ممنوع | از `NavigateTo(url, true)` استفاده نکن — باعث reload کامل صفحه می‌شود |
+| 🔥 ممنوع | از `NavigationManager.NavigateTo` با forceLoad: true استفاده نکن |
 
 ### نمونه استفاده در صفحه
 ```razor

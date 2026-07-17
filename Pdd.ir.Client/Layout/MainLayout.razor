@@ -81,7 +81,7 @@ else
             await Auth.LoadFromStorageAsync();
             if (!Auth.IsAuthenticated)
             {
-                Navigation.NavigateTo("/login", true);
+                Navigation.NavigateTo("/login");
                 return;
             }
         }
