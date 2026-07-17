@@ -82,9 +82,15 @@
     protected override void OnInitialized()
     {
         AppState.OnStateChanged += OnStateChanged;
+        T.OnLanguageChanged += OnLanguageChanged;
     }
 
     void OnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    void OnLanguageChanged()
     {
         InvokeAsync(StateHasChanged);
     }
@@ -97,5 +103,6 @@
     public void Dispose()
     {
         AppState.OnStateChanged -= OnStateChanged;
+        T.OnLanguageChanged -= OnLanguageChanged;
     }
 }

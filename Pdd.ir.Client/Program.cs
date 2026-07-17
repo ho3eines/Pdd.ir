@@ -25,8 +25,8 @@ var app = builder.Build();
 var commService = app.Services.GetRequiredService<ICommunicationService>();
 await commService.InitializeAsync();
 
-// Load saved language
+// Load saved language from localStorage
 var translateService = app.Services.GetRequiredService<ITranslateService>();
-await translateService.LoadLanguageAsync("fa");
+await translateService.InitializeAsync();
 
 await app.RunAsync();

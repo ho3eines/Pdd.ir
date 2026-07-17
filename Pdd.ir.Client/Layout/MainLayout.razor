@@ -70,6 +70,7 @@ else
     {
         Auth.OnAuthStateChanged += OnAuthChanged;
         AppState.OnStateChanged += OnAppStateChanged;
+        T.OnLanguageChanged += OnLanguageChanged;
         Navigation.LocationChanged += OnLocationChanged;
 
         _isLandingPage = IsLandingPage(Navigation.Uri);
@@ -165,10 +166,16 @@ else
         InvokeAsync(StateHasChanged);
     }
 
+    private void OnLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         Auth.OnAuthStateChanged -= OnAuthChanged;
         AppState.OnStateChanged -= OnAppStateChanged;
+        T.OnLanguageChanged -= OnLanguageChanged;
         Navigation.LocationChanged -= OnLocationChanged;
     }
 }
