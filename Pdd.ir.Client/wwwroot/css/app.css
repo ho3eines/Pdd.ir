@@ -273,11 +273,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .admin-sidebar {
   position: fixed;
   top: 0;
-  right: 0;
+  inset-inline-start: 0;
   bottom: 0;
   width: 260px;
   background: var(--pdd-bg-2);
-  border-left: 1px solid var(--pdd-border);
+  border-inline-end: 1px solid var(--pdd-border);
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -400,7 +400,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: none;
   position: fixed;
   top: 14px;
-  right: 16px;
+  inset-inline-end: 16px;
   z-index: 999;
   width: 42px;
   height: 42px;
@@ -442,7 +442,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── Admin Main ───────────────────────────────────────── */
 .admin-main {
   flex: 1;
-  margin-right: 260px;
+  margin-inline-start: 260px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -556,6 +556,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── Admin Responsive ─────────────────────────────────── */
 @media (max-width: 900px) {
   .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  [dir="rtl"] .admin-sidebar {
     transform: translateX(100%);
   }
   .admin-sidebar.show {
@@ -571,7 +574,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .admin-main {
-    margin-right: 0;
+    margin-inline-start: 0;
   }
 
   .admin-topbar {
