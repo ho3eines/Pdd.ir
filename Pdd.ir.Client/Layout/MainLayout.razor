@@ -27,8 +27,8 @@ else
                 <div class="admin-topbar-left">
                     <div class="admin-topbar-actions">
                         <div class="connection-status">
-                            <span class="connection-dot @(_isConnected ? "connected" : "disconnected")"></span>
-                            <span>@(_isConnected ? "WS" : "API")</span>
+                            <span class="connection-dot connected"></span>
+                            <span>WS</span>
                         </div>
                         <button class="admin-topbar-pill" @onclick="ToggleTheme" title="تغییر تم">
                             <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
@@ -59,11 +59,9 @@ else
 
 @code {
     private bool _isDark = true;
-    private bool _isConnected;
     private bool _isLandingPage;
     private bool _sidebarOpen;
 
-    [Inject] private ConnectionService Connection { get; set; } = default!;
     [Inject] private ITranslateService T { get; set; } = default!;
     [Inject] private IAppStateService AppState { get; set; } = default!;
 
@@ -71,7 +69,6 @@ else
     {
         Auth.OnAuthStateChanged += OnAuthChanged;
         AppState.OnStateChanged += OnAppStateChanged;
-        Connection.OnConnectionChanged += OnConnectionChanged;
         Navigation.LocationChanged += OnLocationChanged;
 
         _isLandingPage = IsLandingPage(Navigation.Uri);
@@ -104,12 +101,6 @@ else
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _isLandingPage = IsLandingPage(e.Location);
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnConnectionChanged(bool connected)
-    {
-        _isConnected = connected;
         InvokeAsync(StateHasChanged);
     }
 
@@ -160,7 +151,6 @@ else
     {
         Auth.OnAuthStateChanged -= OnAuthChanged;
         AppState.OnStateChanged -= OnAppStateChanged;
-        Connection.OnConnectionChanged -= OnConnectionChanged;
         Navigation.LocationChanged -= OnLocationChanged;
     }
 }
