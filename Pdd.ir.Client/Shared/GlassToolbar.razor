@@ -1,6 +1,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 @inject ITranslateService T
+@inject IAppStateService AppState
 
 <nav class="glass-toolbar" id="toolbar">
     <div class="toolbar-inner">
@@ -83,7 +84,7 @@
     private async Task SwitchLang(string lang)
     {
         await T.LoadLanguageAsync(lang);
-        StateHasChanged();
+        AppState.NotifyStateChanged();
     }
 
     private async Task SwitchToFa() => await SwitchLang("fa");

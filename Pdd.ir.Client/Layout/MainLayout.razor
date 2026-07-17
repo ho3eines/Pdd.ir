@@ -65,10 +65,12 @@ else
 
     [Inject] private ConnectionService Connection { get; set; } = default!;
     [Inject] private ITranslateService T { get; set; } = default!;
+    [Inject] private IAppStateService AppState { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        Auth.OnAuthStateChanged += StateHasChanged;
+        Auth.OnAuthStateChanged += OnAuthChanged;
+        AppState.OnStateChanged += OnAppStateChanged;
         Connection.OnConnectionChanged += OnConnectionChanged;
         Navigation.LocationChanged += OnLocationChanged;
 
@@ -130,7 +132,7 @@ else
     {
         var lang = T.CurrentLanguage == "fa" ? "en" : "fa";
         await T.LoadLanguageAsync(lang);
-        StateHasChanged();
+        AppState.NotifyStateChanged();
     }
 
     private async Task ToggleSidebar()
@@ -144,9 +146,20 @@ else
         Auth.Logout();
     }
 
+    private void OnAuthChanged()
+    {
+        AppState.NotifyStateChanged();
+    }
+
+    private void OnAppStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
-        Auth.OnAuthStateChanged -= StateHasChanged;
+        Auth.OnAuthStateChanged -= OnAuthChanged;
+        AppState.OnStateChanged -= OnAppStateChanged;
         Connection.OnConnectionChanged -= OnConnectionChanged;
         Navigation.LocationChanged -= OnLocationChanged;
     }
