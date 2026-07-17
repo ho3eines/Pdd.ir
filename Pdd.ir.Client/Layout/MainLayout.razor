@@ -94,7 +94,7 @@ else
     private bool IsLandingPage(string uri)
     {
         var path = new Uri(uri).AbsolutePath.ToLower();
-        var landingPaths = new[] { "/", "/products", "/blog", "/portfolio", "/about", "/contact" };
+        var landingPaths = new[] { "/", "/products", "/blog", "/portfolio", "/about", "/contact", "/login" };
         return landingPaths.Any(p => path == p || path == p + "/");
     }
 
