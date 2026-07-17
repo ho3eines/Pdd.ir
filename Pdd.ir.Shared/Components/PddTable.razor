@@ -5,29 +5,29 @@
 @inject IAlertService Alert
 @inject IJSRuntime JS
 
-<div class="pdd-table-wrapper fade-slide-in">
+<div class="glass-card table-wrapper fade-slide-in">
     @* ── Header: Title + Search + Actions ── *@
-    <div class="pdd-table-header">
-        <div class="pdd-table-header-left">
+    <div class="table-header">
+        <div class="table-header-left">
             @if (!string.IsNullOrEmpty(Title))
             {
-                <h3 class="pdd-table-title">@Title</h3>
+                <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--pdd-text);">@Title</h3>
             }
             @if (!string.IsNullOrEmpty(Subtitle))
             {
-                <p class="pdd-table-subtitle">@Subtitle</p>
+                <p style="margin:4px 0 0;font-size:13px;color:var(--pdd-text-muted);">@Subtitle</p>
             }
         </div>
-        <div class="pdd-table-header-right">
+        <div class="table-header-right">
             @if (ShowSearch)
             {
-                <div class="pdd-table-search">
+                <div class="table-search">
                     <i class="bi bi-search"></i>
                     <input type="text" class="form-control" placeholder="@SearchPlaceholder"
                            value="@_searchText" @oninput="OnSearchInput" />
                     @if (!string.IsNullOrEmpty(_searchText))
                     {
-                        <button class="pdd-search-clear" @onclick="ClearSearch">
+                        <button class="table-search-clear" @onclick="ClearSearch">
                             <i class="bi bi-x"></i>
                         </button>
                     }
@@ -45,7 +45,7 @@
     @* ── Loading Skeleton ── *@
     @if (IsLoading)
     {
-        <div class="pdd-table-skeleton">
+        <div class="table-skeleton">
             @for (int i = 0; i < 5; i++)
             {
                 <div class="skeleton skeleton-table-row"></div>
@@ -55,7 +55,7 @@
     @* ── Empty State ── *@
     else if (!FilteredItems.Any())
     {
-        <div class="pdd-table-empty">
+        <div class="table-empty">
             <i class="@EmptyIcon"></i>
             <p>@EmptyText</p>
         </div>
@@ -64,7 +64,7 @@
     else
     {
         <div class="table-responsive">
-            <table class="table table-hover table-bordered pdd-table">
+            <table class="table table-hover table-bordered">
                 <thead>
                     <tr>
                         @if (ShowRowNumber)
@@ -106,7 +106,7 @@
                             @if (HasActions)
                             {
                                 <td data-label="عملیات">
-                                    <div class="pdd-table-actions">
+                                    <div class="table-actions">
                                         @if (CanEdit)
                                         {
                                             <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(item)" title="ویرایش">
@@ -133,8 +133,8 @@
         </div>
 
         @* ── Footer: Count + Pagination ── *@
-        <div class="pdd-table-footer">
-            <span class="pdd-table-count">
+        <div class="table-footer">
+            <span class="table-count">
                 @FilteredItems.Count رکورد
                 @if (!string.IsNullOrEmpty(_searchText))
                 {
@@ -143,7 +143,7 @@
             </span>
             @if (TotalPages > 1)
             {
-                <div class="pdd-table-pagination">
+                <div class="table-pagination">
                     <button class="btn btn-sm btn-outline-secondary" disabled="@(_currentPage <= 1)" @onclick="PrevPage">
                         <i class="bi bi-chevron-right"></i>
                     </button>
