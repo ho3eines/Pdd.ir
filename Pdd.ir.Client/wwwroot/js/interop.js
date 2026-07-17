@@ -283,6 +283,7 @@ window.getTheme = function () {
 
 window.setTheme = function (theme) {
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('pdd_theme', theme);
 };
 
@@ -290,6 +291,7 @@ window.toggleTheme = function () {
     var current = document.documentElement.getAttribute('data-theme') || 'dark';
     var next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.setAttribute('data-bs-theme', next);
     localStorage.setItem('pdd_theme', next);
     return next;
 };

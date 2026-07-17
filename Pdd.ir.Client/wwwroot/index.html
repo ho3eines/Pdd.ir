@@ -15,8 +15,9 @@
     <base href="/" />
     <script>
         (function() {
-            var t = localStorage.getItem('pdd_theme');
-            if (t) document.documentElement.setAttribute('data-theme', t);
+            var t = localStorage.getItem('pdd_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            document.documentElement.setAttribute('data-bs-theme', t);
         })();
     </script>
     <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
