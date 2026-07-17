@@ -3038,6 +3038,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     padding: 4px 0 !important;
     border: none !important;
     font-size: 13px !important;
+    direction: ltr;
   }
 
   .table tbody td::before {
@@ -3047,6 +3048,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     color: rgba(255,255,255,0.35);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    direction: rtl;
+    text-align: right;
   }
 
   .table-actions {
