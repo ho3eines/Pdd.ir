@@ -8,131 +8,47 @@
 <PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog") | PDD</PageTitle>
 
 <div class="page-enter">
-    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
-        <div>
-            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog Management")</h1>
-            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")</p>
-        </div>
-        <button class="btn btn-primary" @onclick="OpenCreate">
-            <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "مقاله جدید" : "New Article")
-        </button>
-    </div>
-
-    @if (IsLoading)
-    {
-        <div class="skeleton skeleton-card" style="height:400px;"></div>
-    }
-    else
-    {
-        <div class="glass-card fade-slide-in" style="padding:20px;">
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <div class="flex-grow-1">
-                    <input type="text" class="form-control" placeholder="جستجو..."
-                           value="@SearchText" @oninput="OnSearch" />
-                </div>
-            </div>
-
-            @if (!FilteredItems.Any())
-            {
-                <div class="text-center py-5" style="color:var(--text-secondary);">
-                    <i class="bi bi-journal" style="font-size:3rem;"></i>
-                    <p class="mt-2">هیچ مقاله‌ای یافت نشد</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>عنوان</th>
-                                <th>نویسنده</th>
-                                <th>بازدید</th>
-                                <th>وضعیت</th>
-                                <th style="width:100px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in FilteredItems)
-                            {
-                                <tr>
-                                    <td>@item.Id</td>
-                                    <td><strong>@item.Title</strong></td>
-                                    <td>@item.Author</td>
-                                    <td>@item.ViewCount</td>
-                                    <td>
-                                        <span class="badge @(item.IsPublished ? "bg-success" : "bg-secondary")">
-                                            @(item.IsPublished ? "منتشر شده" : "پیش‌نویس")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEdit(item.Id)">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    }
+    <PddTable TItem="BlogDto"
+              Items="@Items"
+              Title="@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog Management")"
+              Subtitle="@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")"
+              IsLoading="@IsLoading"
+              PageSize="10"
+              CanInsert="true"
+              CanEdit="true"
+              CanDelete="true"
+              Columns="@_columns"
+              SearchFilter="@Search"
+              OnInsert="OpenCreate"
+              OnEdit="OpenEdit"
+              OnDelete="Delete"
+              DeleteMessageSelector="@(x => $"آیا از حذف «{x.Title}» مطمئن هستید؟")" />
 </div>
 
 @code {
     List<BlogDto> Items = new();
-    List<BlogDto> FilteredItems = new();
     bool IsLoading = true;
-    string SearchText = "";
 
-    protected override async Task OnInitializedAsync() => await LoadData();
-
-    async Task LoadData()
+    List<PddTableColumn<BlogDto>> _columns = new()
     {
-        IsLoading = true;
-        Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new();
-        Filter();
-        IsLoading = false;
-    }
+        new() { Title = "عنوان", GetValue = x => x.Title },
+        new() { Title = "نویسنده", GetValue = x => x.Author },
+        new() { Title = "بازدید", GetValue = x => x.ViewCount.ToString() },
+        new() { Title = "وضعیت", Template = c => builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", $"badge {(c.IsPublished ? "bg-success" : "bg-secondary")}");
+            builder.AddContent(2, c.IsPublished ? "منتشر شده" : "پیش‌نویس");
+            builder.CloseElement();
+        }}
+    };
 
-    void Filter()
-    {
-        var q = SearchText.Trim().ToLower();
-        FilteredItems = string.IsNullOrEmpty(q) ? Items
-            : Items.Where(x => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q)).ToList();
-    }
+    protected override async Task OnInitializedAsync() => await Load();
+    async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new(); IsLoading = false; }
+    bool Search(BlogDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q);
+    async Task OpenCreate() => await Modal.Show<BlogDialog>("مقاله جدید");
+    async Task OpenEdit(BlogDto x) => await Modal.Show<BlogDialog>("ویرایش مقاله", new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(BlogDto x) { await Comm.DeleteAsync($"api/blog/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
 
-    void OnSearch(ChangeEventArgs e) { SearchText = e.Value?.ToString() ?? ""; Filter(); }
-
-    async Task OpenCreate() { await Modal.Show<BlogDialog>("مقاله جدید"); await LoadData(); }
-    async Task OpenEdit(int id) { await Modal.Show<BlogDialog>("ویرایش مقاله", new Dictionary<string, object> { { "Id", id } }); await LoadData(); }
-
-    async Task DeleteItem(BlogDto item)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{item.Title}» مطمئن هستید؟");
-        if (!confirmed) return;
-        await Comm.DeleteAsync($"api/blog/{item.Id}");
-        await Alert.ShowSuccessAsync("موفق", "حذف شد");
-        await LoadData();
-    }
-
-    public class BlogDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Slug { get; set; } = "";
-        public string Summary { get; set; } = "";
-        public string Content { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Author { get; set; } = "";
-        public bool IsPublished { get; set; }
-        public int ViewCount { get; set; }
-    }
+    public class BlogDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Slug { get; set; } = ""; public string Summary { get; set; } = ""; public string Content { get; set; } = ""; public string Author { get; set; } = ""; public bool IsPublished { get; set; } public int ViewCount { get; set; } }
 }

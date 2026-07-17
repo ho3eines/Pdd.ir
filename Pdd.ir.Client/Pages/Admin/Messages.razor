@@ -4,121 +4,53 @@
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
+@using Pdd.ir.Shared.Helpers
 
 <PageTitle>@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages") | PDD</PageTitle>
 
 <div class="page-enter">
-    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
-        <div>
-            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی" : "Messages")</h1>
-            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages from contact form")</p>
-        </div>
-    </div>
-
-    @if (IsLoading)
-    {
-        <div class="skeleton skeleton-card" style="height:400px;"></div>
-    }
-    else
-    {
-        <div class="glass-card fade-slide-in" style="padding:20px;">
-            @if (!Items.Any())
-            {
-                <div class="text-center py-5" style="color:var(--text-secondary);">
-                    <i class="bi bi-chat-dots" style="font-size:3rem;"></i>
-                    <p class="mt-2">هیچ پیامی یافت نشد</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>نام</th>
-                                <th>ایمیل</th>
-                                <th>موضوع</th>
-                                <th>تاریخ</th>
-                                <th>وضعیت</th>
-                                <th style="width:100px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var msg in Items)
-                            {
-                                <tr style="@(msg.IsRead ? "" : "background:rgba(13,110,253,0.03);")">
-                                    <td>@msg.Id</td>
-                                    <td><strong>@msg.Name</strong></td>
-                                    <td>@msg.Email</td>
-                                    <td>@msg.Subject</td>
-                                    <td>@DateHelper.ToShamsiWithTime(DateHelper.ToUnix(msg.CreatedAt))</td>
-                                    <td>
-                                        <span class="badge @(msg.IsRead ? "bg-secondary" : "bg-primary")">
-                                            @(msg.IsRead ? "خوانده شده" : "جدید")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <button class="btn btn-sm btn-outline-info" @onclick="() => ViewMessage(msg)" title="مشاهده">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(msg)" title="حذف">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    }
+    <PddTable TItem="ContactDto"
+              Items="@Items"
+              Title="@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی" : "Messages")"
+              Subtitle="@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages from contact form")"
+              IsLoading="@IsLoading"
+              PageSize="10"
+              CanInsert="false"
+              CanEdit="false"
+              CanDelete="true"
+              Columns="@_columns"
+              OnDelete="Delete"
+              DeleteMessageSelector="@(x => $"آیا از حذف پیام «{x.Name}» مطمئن هستید؟")" />
 </div>
 
 @code {
     List<ContactDto> Items = new();
     bool IsLoading = true;
 
-    protected override async Task OnInitializedAsync() => await LoadData();
-
-    async Task LoadData()
+    List<PddTableColumn<ContactDto>> _columns = new()
     {
-        IsLoading = true;
-        Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new();
-        IsLoading = false;
-    }
-
-    async Task ViewMessage(ContactDto msg)
-    {
-        if (!msg.IsRead)
+        new() { Title = "نام", GetValue = x => x.Name },
+        new() { Title = "ایمیل", GetValue = x => x.Email },
+        new() { Title = "موضوع", GetValue = x => x.Subject },
+        new() { Title = "تاریخ", Template = c => builder =>
         {
-            await Comm.PutAsync<object>($"api/contact/{msg.Id}/read", new { });
-            msg.IsRead = true;
-        }
-        await Modal.Show<MessageViewDialog>("پیام از " + msg.Name, new Dictionary<string, object> { { "Message", msg } });
-    }
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "style", "font-size:12px;");
+            builder.AddContent(2, DateHelper.ToShamsiWithTime(DateHelper.ToUnix(c.CreatedAt)));
+            builder.CloseElement();
+        }},
+        new() { Title = "وضعیت", Template = c => builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", $"badge {(c.IsRead ? "bg-secondary" : "bg-primary")}");
+            builder.AddContent(2, c.IsRead ? "خوانده شده" : "جدید");
+            builder.CloseElement();
+        }}
+    };
 
-    async Task DeleteItem(ContactDto msg)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف پیام «{msg.Name}» مطمئن هستید؟");
-        if (!confirmed) return;
-        await Comm.DeleteAsync($"api/contact/{msg.Id}");
-        await Alert.ShowSuccessAsync("موفق", "حذف شد");
-        await LoadData();
-    }
+    protected override async Task OnInitializedAsync() => await Load();
+    async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new(); IsLoading = false; }
+    async Task Delete(ContactDto x) { await Comm.DeleteAsync($"api/contact/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
 
-    public class ContactDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string? Phone { get; set; }
-        public string Subject { get; set; } = "";
-        public string Message { get; set; } = "";
-        public bool IsRead { get; set; }
-        public DateTime CreatedAt { get; set; }
-    }
+    public class ContactDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Email { get; set; } = ""; public string Phone { get; set; } = ""; public string Subject { get; set; } = ""; public string Message { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAt { get; set; } }
 }

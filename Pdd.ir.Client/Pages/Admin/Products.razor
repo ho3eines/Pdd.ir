@@ -8,131 +8,53 @@
 <PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products") | PDD</PageTitle>
 
 <div class="page-enter">
-    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
-        <div>
-            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products")</h1>
-            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد، ویرایش و حذف محصولات" : "Create, edit and delete products")</p>
-        </div>
-        <button class="btn btn-primary" @onclick="OpenCreate">
-            <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "محصول جدید" : "New Product")
-        </button>
-    </div>
-
-    @if (IsLoading)
-    {
-        <div class="skeleton skeleton-card" style="height:400px;"></div>
-    }
-    else
-    {
-        <div class="glass-card fade-slide-in" style="padding:20px;">
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <div class="flex-grow-1">
-                    <input type="text" class="form-control" placeholder="@(T.CurrentLanguage == "fa" ? "جستجو..." : "Search...")"
-                           value="@SearchText" @oninput="OnSearch" />
-                </div>
-            </div>
-
-            @if (!FilteredItems.Any())
-            {
-                <div class="text-center py-5" style="color:var(--text-secondary);">
-                    <i class="bi bi-box" style="font-size:3rem;"></i>
-                    <p class="mt-2">@(T.CurrentLanguage == "fa" ? "هیچ محصولی یافت نشد" : "No products found")</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>@(T.CurrentLanguage == "fa" ? "عنوان" : "Title")</th>
-                                <th>@(T.CurrentLanguage == "fa" ? "زیرعنوان" : "Subtitle")</th>
-                                <th>@(T.CurrentLanguage == "fa" ? "دسته" : "Category")</th>
-                                <th>@(T.CurrentLanguage == "fa" ? "وضعیت" : "Status")</th>
-                                <th style="width:100px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in FilteredItems)
-                            {
-                                <tr>
-                                    <td>@item.Id</td>
-                                    <td><strong>@item.Title</strong></td>
-                                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.Subtitle</td>
-                                    <td><span class="badge bg-info">@item.Category</span></td>
-                                    <td>
-                                        <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
-                                            @(item.IsActive ? "فعال" : "غیرفعال")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEdit(item.Id)">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    }
+    <PddTable TItem="ProductDto"
+              Items="@Items"
+              Title="@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products")"
+              Subtitle="@(T.CurrentLanguage == "fa" ? "ایجاد، ویرایش و حذف محصولات" : "Create, edit and delete products")"
+              IsLoading="@IsLoading"
+              PageSize="10"
+              CanInsert="true"
+              CanEdit="true"
+              CanDelete="true"
+              Columns="@_columns"
+              SearchFilter="@Search"
+              OnInsert="OpenCreate"
+              OnEdit="OpenEdit"
+              OnDelete="Delete"
+              DeleteMessageSelector="@(x => $"آیا از حذف «{x.Title}» مطمئن هستید؟")" />
 </div>
 
 @code {
     List<ProductDto> Items = new();
-    List<ProductDto> FilteredItems = new();
     bool IsLoading = true;
-    string SearchText = "";
 
-    protected override async Task OnInitializedAsync() => await LoadData();
-
-    async Task LoadData()
+    List<PddTableColumn<ProductDto>> _columns = new()
     {
-        IsLoading = true;
-        Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new();
-        Filter();
-        IsLoading = false;
-    }
+        new() { Title = "عنوان", GetValue = x => x.Title },
+        new() { Title = "زیرعنوان", GetValue = x => x.Subtitle },
+        new() { Title = "دسته", Template = c => builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "badge bg-info");
+            builder.AddContent(2, c.Category);
+            builder.CloseElement();
+        }},
+        new() { Title = "وضعیت", Template = c => builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}");
+            builder.AddContent(2, c.IsActive ? "فعال" : "غیرفعال");
+            builder.CloseElement();
+        }}
+    };
 
-    void Filter()
-    {
-        var q = SearchText.Trim().ToLower();
-        FilteredItems = string.IsNullOrEmpty(q) ? Items
-            : Items.Where(x => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q)).ToList();
-    }
+    protected override async Task OnInitializedAsync() => await Load();
+    async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new(); IsLoading = false; }
+    bool Search(ProductDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
+    async Task OpenCreate() => await Modal.Show<ProductDialog>("محصول جدید");
+    async Task OpenEdit(ProductDto x) => await Modal.Show<ProductDialog>("ویرایش محصول", new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(ProductDto x) { await Comm.DeleteAsync($"api/product/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
 
-    void OnSearch(ChangeEventArgs e) { SearchText = e.Value?.ToString() ?? ""; Filter(); }
-
-    async Task OpenCreate() { await Modal.Show<ProductDialog>("محصول جدید"); await LoadData(); }
-    async Task OpenEdit(int id) { await Modal.Show<ProductDialog>("ویرایش محصول", new Dictionary<string, object> { { "Id", id } }); await LoadData(); }
-
-    async Task DeleteItem(ProductDto item)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{item.Title}» مطمئن هستید؟");
-        if (!confirmed) return;
-        await Comm.DeleteAsync($"api/product/{item.Id}");
-        await Alert.ShowSuccessAsync("موفق", "حذف شد");
-        await LoadData();
-    }
-
-    public class ProductDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Subtitle { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Features { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Category { get; set; } = "";
-        public int SortOrder { get; set; }
-        public bool IsActive { get; set; }
-    }
+    public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Subtitle { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; }
 }

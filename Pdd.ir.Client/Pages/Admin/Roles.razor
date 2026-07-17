@@ -8,78 +8,39 @@
 <PageTitle>مدیریت نقش‌ها | PDD</PageTitle>
 
 <div class="page-enter">
-    <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
-        <div>
-            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت نقش‌ها و دسترسی‌ها" : "Roles & Permissions")</h1>
-            <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "تعریف نقش‌ها و مدیریت دسترسی‌های هر نقش" : "Define roles and manage their permissions")</p>
-        </div>
-        <button class="btn btn-primary" @onclick="OpenCreate">
-            <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "نقش جدید" : "New Role")
-        </button>
-    </div>
-
-    @if (IsLoading)
-    {
-        <div class="skeleton skeleton-card" style="height:400px;"></div>
-    }
-    else
-    {
-        <div class="row g-3">
-            @foreach (var role in RoleList)
-            {
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                    <div class="glass-card hover-lift fade-slide-in p-4" style="height:100%;">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--pdd-primary),var(--pdd-pink));display:flex;align-items:center;justify-content:center;">
-                                    <i class="bi bi-shield-lock" style="color:#fff;font-size:18px;"></i>
-                                </div>
-                                <div>
-                                    <strong style="font-size:14px;">@role.Name</strong>
-                                    <div style="font-size:11px;color:var(--text-secondary);">@role.Description</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <button class="btn btn-sm btn-outline-primary w-100 mb-2" @onclick="() => OpenEdit(role.Id)">
-                                <i class="bi bi-pencil me-1"></i>ویرایش
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger w-100" @onclick="() => DeleteRole(role)">
-                                <i class="bi bi-trash me-1"></i>حذف
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
+    <PddTable TItem="RoleDto"
+              Items="@Items"
+              Title="@(T.CurrentLanguage == "fa" ? "مدیریت نقش‌ها و دسترسی‌ها" : "Roles & Permissions")"
+              Subtitle="@(T.CurrentLanguage == "fa" ? "تعریف نقش‌ها و مدیریت دسترسی‌های هر نقش" : "Define roles and manage their permissions")"
+              IsLoading="@IsLoading"
+              PageSize="10"
+              CanInsert="true"
+              CanEdit="true"
+              CanDelete="true"
+              Columns="@_columns"
+              SearchFilter="@Search"
+              OnInsert="OpenCreate"
+              OnEdit="OpenEdit"
+              OnDelete="Delete"
+              DeleteMessageSelector="@(x => $"آیا از حذف نقش «{x.Name}» مطمئن هستید؟")" />
 </div>
 
 @code {
-    List<RoleDto> RoleList = new();
+    List<RoleDto> Items = new();
     bool IsLoading = true;
 
-    protected override async Task OnInitializedAsync() => await LoadData();
-
-    async Task LoadData()
+    List<PddTableColumn<RoleDto>> _columns = new()
     {
-        IsLoading = true;
-        RoleList = await Comm.GetAsync<List<RoleDto>>("api/role") ?? new();
-        IsLoading = false;
-    }
+        new() { Title = "نام نقش", GetValue = x => x.Name },
+        new() { Title = "توضیحات", GetValue = x => x.Description }
+    };
 
-    async Task OpenCreate() { await Modal.Show<RoleDialog>("نقش جدید"); await LoadData(); }
-    async Task OpenEdit(int id) { await Modal.Show<RoleDialog>("ویرایش نقش", new Dictionary<string, object> { { "Id", id } }); await LoadData(); }
-
-    async Task DeleteRole(RoleDto role)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف نقش «{role.Name}» مطمئن هستید؟");
-        if (!confirmed) return;
-        await Comm.DeleteAsync($"api/role/{role.Id}");
-        await Alert.ShowSuccessAsync("موفق", "حذف شد");
-        await LoadData();
-    }
+    protected override async Task OnInitializedAsync() => await Load();
+    async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<RoleDto>>("api/role") ?? new(); IsLoading = false; }
+    bool Search(RoleDto x, string q) => (x.Name ?? "").ToLower().Contains(q) || (x.Description ?? "").ToLower().Contains(q);
+    async Task OpenCreate() => await Modal.Show<RoleDialog>("نقش جدید");
+    async Task OpenEdit(RoleDto x) => await Modal.Show<RoleDialog>("ویرایش نقش", new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(RoleDto x) { await Comm.DeleteAsync($"api/role/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
 
     public class RoleDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Description { get; set; } = ""; }
 }
