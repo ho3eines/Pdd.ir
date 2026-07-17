@@ -3032,25 +3032,32 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .table tbody td {
-    display: flex !important;
-    align-items: center;
-    gap: 12px;
     padding: 4px 0 !important;
     border: none !important;
-    font-size: 13px !important;
   }
 
-  [dir="rtl"] .table tbody td { flex-direction: row-reverse; }
-
-  .table tbody td::before {
-    content: attr(data-label);
+  .table tbody td .td-label {
+    display: block;
     font-size: 11px;
     font-weight: 600;
     color: rgba(255,255,255,0.35);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    flex-shrink: 0;
-    min-width: 80px;
+    margin-bottom: 2px;
+  }
+
+  .table tbody td .td-value {
+    display: block;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .table tbody tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    gap: 8px 12px;
   }
 
   .table-actions {
@@ -3095,7 +3102,8 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 [data-theme="light"] .table-search-clear { background: rgba(0,0,0,0.06); color: #6B7280; }
 
 @media (max-width: 768px) {
-  [data-theme="light"] .table tbody td::before { color: rgba(0,0,0,0.4); }
+  [data-theme="light"] .table tbody td .td-label { color: rgba(0,0,0,0.4); }
+  [data-theme="light"] .table tbody td .td-value { color: #1a1a2e; }
 }
 
 /* ═══════════════════════════════════════════════════════════

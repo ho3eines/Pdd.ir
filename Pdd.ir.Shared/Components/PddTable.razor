@@ -88,24 +88,27 @@
                         <tr>
                             @if (ShowRowNumber)
                             {
-                                <td data-label="#">@index</td>
+                                <td>@index</td>
                             }
                             @foreach (var col in Columns)
                             {
-                                <td style="@col.Style" data-label="@col.Title">
-                                    @if (col.Template != null)
-                                    {
-                                        @col.Template(item)
-                                    }
-                                    else
-                                    {
-                                        @col.GetValue(item)
-                                    }
+                                <td style="@col.Style">
+                                    <span class="td-label">@col.Title</span>
+                                    <span class="td-value">
+                                        @if (col.Template != null)
+                                        {
+                                            @col.Template(item)
+                                        }
+                                        else
+                                        {
+                                            @col.GetValue(item)
+                                        }
+                                    </span>
                                 </td>
                             }
                             @if (HasActions)
                             {
-                                <td data-label="عملیات">
+                                <td>
                                     <div class="table-actions">
                                         @if (CanEdit)
                                         {
