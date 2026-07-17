@@ -400,7 +400,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   display: none;
   position: fixed;
   top: 14px;
-  inset-inline-end: 16px;
+  inset-inline-start: 16px;
   z-index: 999;
   width: 42px;
   height: 42px;
