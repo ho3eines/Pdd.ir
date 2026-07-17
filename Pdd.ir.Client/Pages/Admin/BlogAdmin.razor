@@ -10,7 +10,7 @@
 <div class="page-enter">
     <PddTable TItem="BlogDto"
               Items="@Items"
-              Title="@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog Management")"
+              Title="@T.Text("admin_blog")"
               Subtitle="@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")"
               IsLoading="@IsLoading"
               PageSize="10"
@@ -22,7 +22,7 @@
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => $"آیا از حذف «{x.Title}» مطمئن هستید؟")" />
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -46,9 +46,9 @@
     protected override async Task OnInitializedAsync() => await Load();
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new(); IsLoading = false; }
     bool Search(BlogDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q);
-    async Task OpenCreate() => await Modal.Show<BlogDialog>("مقاله جدید");
-    async Task OpenEdit(BlogDto x) => await Modal.Show<BlogDialog>("ویرایش مقاله", new Dictionary<string, object> { { "Id", x.Id } });
-    async Task Delete(BlogDto x) { await Comm.DeleteAsync($"api/blog/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
+    async Task OpenCreate() => await Modal.Show<BlogDialog>(T.Text("blog_new"));
+    async Task OpenEdit(BlogDto x) => await Modal.Show<BlogDialog>(T.Text("blog_edit"), new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(BlogDto x) { await Comm.DeleteAsync($"api/blog/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
 
     public class BlogDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Slug { get; set; } = ""; public string Summary { get; set; } = ""; public string Content { get; set; } = ""; public string Author { get; set; } = ""; public bool IsPublished { get; set; } public int ViewCount { get; set; } }
 }

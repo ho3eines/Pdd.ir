@@ -10,7 +10,7 @@
 <div class="page-enter">
     <PddTable TItem="UserDto"
               Items="@UserList"
-              Title="@(T.CurrentLanguage == "fa" ? "مدیریت کاربران" : "User Management")"
+              Title="@T.Text("admin_users")"
               Subtitle="@(T.CurrentLanguage == "fa" ? "تعریف، ویرایش و مدیریت دسترسی کاربران" : "Create, edit and manage user access")"
               IsLoading="@IsLoading"
               PageSize="10"
@@ -20,9 +20,9 @@
               Columns="@_columns"
               SearchFilter="@SearchUsers"
               OnInsert="OpenCreate"
-              OnDelete="DeleteUser"
               OnEdit="OpenEdit"
-              DeleteMessageSelector="@(u => $"آیا از حذف «{u.Username}» مطمئن هستید؟")" />
+              OnDelete="DeleteUser"
+              DeleteMessageSelector="@(u => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -51,38 +51,11 @@
     };
 
     protected override async Task OnInitializedAsync() => await LoadUsers();
+    async Task LoadUsers() { IsLoading = true; UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new(); IsLoading = false; }
+    bool SearchUsers(UserDto u, string query) { return (u.Username ?? "").ToLower().Contains(query) || (u.FullName ?? "").ToLower().Contains(query) || (u.Email ?? "").ToLower().Contains(query); }
+    async Task OpenCreate() => await Modal.Show<UserDialog>(T.Text("user_new"));
+    async Task OpenEdit(UserDto u) => await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
+    async Task DeleteUser(UserDto user) { await Comm.DeleteAsync($"api/user/{user.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await LoadUsers(); }
 
-    async Task LoadUsers()
-    {
-        IsLoading = true;
-        UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new();
-        IsLoading = false;
-    }
-
-    bool SearchUsers(UserDto u, string query)
-    {
-        return (u.Username ?? "").ToLower().Contains(query)
-            || (u.FullName ?? "").ToLower().Contains(query)
-            || (u.Email ?? "").ToLower().Contains(query);
-    }
-
-    async Task OpenCreate() => await Modal.Show<UserDialog>("کاربر جدید");
-    async Task OpenEdit(UserDto u) => await Modal.Show<UserDialog>("ویرایش کاربر", new Dictionary<string, object> { { "Id", u.Id } });
-
-    async Task DeleteUser(UserDto user)
-    {
-        await Comm.DeleteAsync($"api/user/{user.Id}");
-        await Alert.ShowSuccessAsync("موفق", "حذف شد");
-        await LoadUsers();
-    }
-
-    public class UserDto
-    {
-        public int Id { get; set; }
-        public string Username { get; set; } = "";
-        public string FullName { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Role { get; set; } = "";
-        public bool IsActive { get; set; }
-    }
+    public class UserDto { public int Id { get; set; } public string Username { get; set; } = ""; public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Role { get; set; } = ""; public bool IsActive { get; set; } }
 }

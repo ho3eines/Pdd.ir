@@ -10,7 +10,7 @@
 <div class="page-enter">
     <PddTable TItem="ProductDto"
               Items="@Items"
-              Title="@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products")"
+              Title="@T.Text("admin_products")"
               Subtitle="@(T.CurrentLanguage == "fa" ? "ایجاد، ویرایش و حذف محصولات" : "Create, edit and delete products")"
               IsLoading="@IsLoading"
               PageSize="10"
@@ -22,7 +22,7 @@
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => $"آیا از حذف «{x.Title}» مطمئن هستید؟")" />
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -52,9 +52,9 @@
     protected override async Task OnInitializedAsync() => await Load();
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new(); IsLoading = false; }
     bool Search(ProductDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
-    async Task OpenCreate() => await Modal.Show<ProductDialog>("محصول جدید");
-    async Task OpenEdit(ProductDto x) => await Modal.Show<ProductDialog>("ویرایش محصول", new Dictionary<string, object> { { "Id", x.Id } });
-    async Task Delete(ProductDto x) { await Comm.DeleteAsync($"api/product/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
+    async Task OpenCreate() => await Modal.Show<ProductDialog>(T.Text("product_new"));
+    async Task OpenEdit(ProductDto x) => await Modal.Show<ProductDialog>(T.Text("product_edit"), new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(ProductDto x) { await Comm.DeleteAsync($"api/product/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
 
     public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Subtitle { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; }
 }

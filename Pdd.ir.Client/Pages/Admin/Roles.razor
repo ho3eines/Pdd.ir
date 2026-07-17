@@ -5,7 +5,7 @@
 @inject IAlertService Alert
 @inject IJSRuntime JS
 
-<PageTitle>مدیریت نقش‌ها | PDD</PageTitle>
+<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت نقش‌ها" : "Roles") | PDD</PageTitle>
 
 <div class="page-enter">
     <PddTable TItem="RoleDto"
@@ -22,7 +22,7 @@
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => $"آیا از حذف نقش «{x.Name}» مطمئن هستید؟")" />
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -38,9 +38,9 @@
     protected override async Task OnInitializedAsync() => await Load();
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<RoleDto>>("api/role") ?? new(); IsLoading = false; }
     bool Search(RoleDto x, string q) => (x.Name ?? "").ToLower().Contains(q) || (x.Description ?? "").ToLower().Contains(q);
-    async Task OpenCreate() => await Modal.Show<RoleDialog>("نقش جدید");
-    async Task OpenEdit(RoleDto x) => await Modal.Show<RoleDialog>("ویرایش نقش", new Dictionary<string, object> { { "Id", x.Id } });
-    async Task Delete(RoleDto x) { await Comm.DeleteAsync($"api/role/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
+    async Task OpenCreate() => await Modal.Show<RoleDialog>(T.Text("role_new"));
+    async Task OpenEdit(RoleDto x) => await Modal.Show<RoleDialog>(T.Text("role_edit"), new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(RoleDto x) { await Comm.DeleteAsync($"api/role/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
 
     public class RoleDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Description { get; set; } = ""; }
 }

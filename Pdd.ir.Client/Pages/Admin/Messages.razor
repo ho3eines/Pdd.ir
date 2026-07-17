@@ -6,12 +6,12 @@
 @inject IJSRuntime JS
 @using Pdd.ir.Shared.Helpers
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages") | PDD</PageTitle>
+<PageTitle>@T.Text("admin_messages") | PDD</PageTitle>
 
 <div class="page-enter">
     <PddTable TItem="ContactDto"
               Items="@Items"
-              Title="@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی" : "Messages")"
+              Title="@T.Text("admin_messages")"
               Subtitle="@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages from contact form")"
               IsLoading="@IsLoading"
               PageSize="10"
@@ -20,7 +20,7 @@
               CanDelete="true"
               Columns="@_columns"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => $"آیا از حذف پیام «{x.Name}» مطمئن هستید؟")" />
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -50,7 +50,7 @@
 
     protected override async Task OnInitializedAsync() => await Load();
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new(); IsLoading = false; }
-    async Task Delete(ContactDto x) { await Comm.DeleteAsync($"api/contact/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
+    async Task Delete(ContactDto x) { await Comm.DeleteAsync($"api/contact/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
 
     public class ContactDto { public int Id { get; set; } public string Name { get; set; } = ""; public string Email { get; set; } = ""; public string Phone { get; set; } = ""; public string Subject { get; set; } = ""; public string Message { get; set; } = ""; public bool IsRead { get; set; } public DateTime CreatedAt { get; set; } }
 }

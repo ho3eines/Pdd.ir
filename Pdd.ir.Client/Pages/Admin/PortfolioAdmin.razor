@@ -10,7 +10,7 @@
 <div class="page-enter">
     <PddTable TItem="PortfolioDto"
               Items="@Items"
-              Title="@(T.CurrentLanguage == "fa" ? "مدیریت نمونه کار" : "Portfolio Management")"
+              Title="@T.Text("admin_portfolio")"
               Subtitle="@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت پروژه‌ها" : "Create and manage projects")"
               IsLoading="@IsLoading"
               PageSize="10"
@@ -22,7 +22,7 @@
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => $"آیا از حذف «{x.Title}» مطمئن هستید؟")" />
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
@@ -52,9 +52,9 @@
     protected override async Task OnInitializedAsync() => await Load();
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<PortfolioDto>>("api/portfolio/admin") ?? new(); IsLoading = false; }
     bool Search(PortfolioDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
-    async Task OpenCreate() => await Modal.Show<PortfolioDialog>("نمونه کار جدید");
-    async Task OpenEdit(PortfolioDto x) => await Modal.Show<PortfolioDialog>("ویرایش نمونه کار", new Dictionary<string, object> { { "Id", x.Id } });
-    async Task Delete(PortfolioDto x) { await Comm.DeleteAsync($"api/portfolio/{x.Id}"); await Alert.ShowSuccessAsync("موفق", "حذف شد"); await Load(); }
+    async Task OpenCreate() => await Modal.Show<PortfolioDialog>(T.Text("portfolio_new"));
+    async Task OpenEdit(PortfolioDto x) => await Modal.Show<PortfolioDialog>(T.Text("portfolio_edit"), new Dictionary<string, object> { { "Id", x.Id } });
+    async Task Delete(PortfolioDto x) { await Comm.DeleteAsync($"api/portfolio/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
 
     public class PortfolioDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; public string ProjectUrl { get; set; } = ""; }
 }
