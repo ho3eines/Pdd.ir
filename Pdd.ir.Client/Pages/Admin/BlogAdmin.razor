@@ -1,6 +1,8 @@
 @page "/admin/blog"
 @inject ICommunicationService Comm
 @inject ITranslateService T
+@inject IModalService Modal
+@inject IAlertService Alert
 @inject IJSRuntime JS
 
 <PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog") | PDD</PageTitle>
@@ -11,7 +13,7 @@
             <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog Management")</h1>
             <p class="text-muted" style="font-size:14px;">@(T.CurrentLanguage == "fa" ? "ایجاد و مدیریت مقالات" : "Create and manage articles")</p>
         </div>
-        <button class="btn btn-primary" @onclick="OpenCreateDialog">
+        <button class="btn btn-primary" @onclick="OpenCreate">
             <i class="bi bi-plus-lg me-1"></i>@(T.CurrentLanguage == "fa" ? "مقاله جدید" : "New Article")
         </button>
     </div>
@@ -66,7 +68,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1">
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEditDialog(item)">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenEdit(item.Id)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteItem(item)">
@@ -84,72 +86,10 @@
     }
 </div>
 
-@if (ShowDialog)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
-                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
-                    <h5 class="modal-title" style="font-size:16px;font-weight:700;">@(IsEdit ? "ویرایش مقاله" : "مقاله جدید")</h5>
-                    <button type="button" class="btn-close" @onclick="CloseDialog"></button>
-                </div>
-                <div class="modal-body">
-                    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                            <i class="bi bi-info-circle" style="color:var(--pdd-primary);"></i>
-                            <strong style="font-size:0.875rem;">راهنما</strong>
-                        </div>
-                        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">اطلاعات مقاله را وارد کنید. Slug باید منحصربفرد باشد.</p>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">عنوان *</label>
-                            <input type="text" class="form-control" @bind="FormModel.Title" />
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">Slug *</label>
-                            <input type="text" class="form-control" @bind="FormModel.Slug" />
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">خلاصه</label>
-                            <textarea class="form-control" rows="2" @bind="FormModel.Summary"></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">محتوا</label>
-                            <textarea class="form-control" rows="6" @bind="FormModel.Content"></textarea>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">نویسنده</label>
-                            <input type="text" class="form-control" @bind="FormModel.Author" />
-                        </div>
-                        <div class="col-12 col-md-6 d-flex align-items-end">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" @bind="FormModel.IsPublished" id="publishCheck" />
-                                <label class="form-check-label" for="publishCheck">منتشر شده</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
-                    <button class="btn btn-secondary" @onclick="CloseDialog">انصراف</button>
-                    <button class="btn btn-primary" @onclick="SaveItem" disabled="@IsSaving">
-                        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                        <i class="bi bi-floppy me-1"></i>ذخیره
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 @code {
     List<BlogDto> Items = new();
     List<BlogDto> FilteredItems = new();
-    BlogDto FormModel = new();
     bool IsLoading = true;
-    bool ShowDialog = false;
-    bool IsEdit = false;
-    bool IsSaving = false;
     string SearchText = "";
 
     protected override async Task OnInitializedAsync() => await LoadData();
@@ -165,55 +105,21 @@
     void Filter()
     {
         var q = SearchText.Trim().ToLower();
-        FilteredItems = string.IsNullOrEmpty(q)
-            ? Items
+        FilteredItems = string.IsNullOrEmpty(q) ? Items
             : Items.Where(x => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q)).ToList();
     }
 
     void OnSearch(ChangeEventArgs e) { SearchText = e.Value?.ToString() ?? ""; Filter(); }
 
-    void OpenCreateDialog()
-    {
-        FormModel = new BlogDto { Author = "Admin", IsPublished = false };
-        IsEdit = false;
-        ShowDialog = true;
-    }
-
-    void OpenEditDialog(BlogDto item)
-    {
-        FormModel = new BlogDto
-        {
-            Id = item.Id, Title = item.Title, Slug = item.Slug, Summary = item.Summary,
-            Content = item.Content, ImageUrl = item.ImageUrl, Author = item.Author,
-            IsPublished = item.IsPublished
-        };
-        IsEdit = true;
-        ShowDialog = true;
-    }
-
-    void CloseDialog() => ShowDialog = false;
-
-    async Task SaveItem()
-    {
-        IsSaving = true;
-        try
-        {
-            if (IsEdit)
-                await Comm.PutAsync<object>($"api/blog/{FormModel.Id}", FormModel);
-            else
-                await Comm.PostAsync<object>("api/blog", FormModel);
-            await LoadData();
-            ShowDialog = false;
-        }
-        catch (Exception ex) { await JS.InvokeVoidAsync("alert", $"خطا: {ex.Message}"); }
-        finally { IsSaving = false; }
-    }
+    async Task OpenCreate() { await Modal.Show<BlogDialog>("مقاله جدید"); await LoadData(); }
+    async Task OpenEdit(int id) { await Modal.Show<BlogDialog>("ویرایش مقاله", new Dictionary<string, object> { { "Id", id } }); await LoadData(); }
 
     async Task DeleteItem(BlogDto item)
     {
         var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف «{item.Title}» مطمئن هستید؟");
         if (!confirmed) return;
         await Comm.DeleteAsync($"api/blog/{item.Id}");
+        await Alert.ShowSuccessAsync("موفق", "حذف شد");
         await LoadData();
     }
 
@@ -228,6 +134,5 @@
         public string Author { get; set; } = "";
         public bool IsPublished { get; set; }
         public int ViewCount { get; set; }
-        public DateTime CreatedAt { get; set; }
     }
 }

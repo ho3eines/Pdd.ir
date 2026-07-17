@@ -1,0 +1,103 @@
+@inject IModalService Modal
+@inject IAlertService Alert
+@inject ICommunicationService Comm
+
+<div class="aco-dialog-body">
+    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <i class="bi bi-info-circle" style="color:var(--pdd-primary);"></i>
+            <strong style="font-size:0.875rem;">@(IsEdit ? "ویرایش محصول" : "محصول جدید")</strong>
+        </div>
+        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">اطلاعات محصول را وارد کنید.</p>
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">عنوان *</label>
+            <input type="text" class="form-control" @bind="Model.Title" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">زیرعنوان</label>
+            <input type="text" class="form-control" @bind="Model.Subtitle" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">توضیحات</label>
+            <textarea class="form-control" rows="3" @bind="Model.Description"></textarea>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">دسته‌بندی</label>
+            <input type="text" class="form-control" @bind="Model.Category" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">ترتیب نمایش</label>
+            <BootstrapNumericInput @bind-Value="Model.SortOrder" Placeholder="ترتیب" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">تصویر URL</label>
+            <input type="text" class="form-control" @bind="Model.ImageUrl" />
+        </div>
+    </div>
+</div>
+<div class="aco-dialog-footer">
+    <button class="btn btn-secondary" @onclick="Close">انصراف</button>
+    <button class="btn btn-primary" @onclick="Save" disabled="@IsSaving">
+        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        <i class="bi bi-floppy me-1"></i>ذخیره
+    </button>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+
+    ProductDto Model = new();
+    bool IsEdit => Id > 0;
+    bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEdit)
+        {
+            var item = await Comm.GetAsync<ProductDto>($"api/product/{Id}");
+            if (item != null) Model = item;
+        }
+        else
+        {
+            Model = new ProductDto { IsActive = true };
+        }
+    }
+
+    async Task Save()
+    {
+        IsSaving = true;
+        try
+        {
+            if (IsEdit)
+                await Comm.PutAsync<object>($"api/product/{Model.Id}", Model);
+            else
+                await Comm.PostAsync<object>("api/product", Model);
+
+            await Alert.ShowSuccessAsync("موفق", "محصول ذخیره شد");
+            Modal.Close();
+        }
+        catch (Exception ex)
+        {
+            await Alert.ShowErrorAsync("خطا", ex.Message);
+        }
+        finally { IsSaving = false; }
+    }
+
+    void Close() => Modal.Close();
+
+    public class ProductDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Features { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal SortOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

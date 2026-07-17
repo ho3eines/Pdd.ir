@@ -1,0 +1,45 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
+
+<input type="text"
+       class="@CssClass"
+       value="@_inputText"
+       @oninput="OnInput"
+       @onblur="OnBlur"
+       placeholder="@Placeholder" />
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public string CssClass { get; set; } = "form-control";
+    [Parameter] public string Placeholder { get; set; } = "";
+
+    private string _inputText = "";
+
+    protected override void OnParametersSet()
+    {
+        _inputText = Value.ToString("N0", CultureInfo.InvariantCulture);
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString() ?? "";
+        var newValue = ParseDecimal(input);
+        await ValueChanged.InvokeAsync(newValue);
+    }
+
+    private async Task OnBlur(FocusEventArgs e)
+    {
+        var finalValue = ParseDecimal(_inputText);
+        _inputText = finalValue.ToString("N0", CultureInfo.InvariantCulture);
+        await ValueChanged.InvokeAsync(finalValue);
+        StateHasChanged();
+    }
+
+    private decimal ParseDecimal(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return 0;
+        var cleaned = new string(input.Where(char.IsDigit).ToArray());
+        return decimal.TryParse(cleaned, out var result) ? result : 0;
+    }
+}

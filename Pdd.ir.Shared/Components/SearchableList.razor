@@ -1,0 +1,196 @@
+@using Microsoft.AspNetCore.Components.Web
+@typeparam TItem
+@typeparam TValue
+@implements IAsyncDisposable
+
+<style>
+    .searchable-list-wrapper { position: relative; width: 100%; }
+    .searchable-list-wrapper .form-control { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .searchable-list-wrapper .form-control:focus { transform: translateY(-2px); }
+    .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 9999; display: flex; flex-direction: column; padding: 0.5rem 0; margin: 0.25rem 0 0; background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #dee2e6); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 200px; overflow-y: auto; }
+    .dropdown-item { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-primary, #2c3e50); text-align: inherit; text-decoration: none; white-space: nowrap; background-color: transparent; border: 0; border-radius: 8px; margin: 0.1rem 0.5rem; transition: all 0.2s ease; cursor: pointer; }
+    .dropdown-item:hover, .dropdown-item.highlighted { background: var(--bg-tertiary, #f0f0f0); color: var(--text-primary, #1a1a1a); transform: translateX(-5px); }
+    .no-results { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-secondary, #6c757d); text-align: center; white-space: nowrap; background-color: transparent; border: 0; }
+</style>
+
+<div class="searchable-list-wrapper" @onclick="FocusInput">
+    <input type="text"
+           class="form-control"
+           @bind="displayText"
+           @oninput="OnSearchInput"
+           @onfocus="OpenDropdown"
+           @onblur="OnBlurInput"
+           @onkeydown="OnKeyDown"
+           @onkeydown:preventDefault="@shouldPreventDefault"
+           placeholder="@Placeholder"
+           @ref="inputRef" />
+
+    @if (isDropdownOpen)
+    {
+        <div class="dropdown-list">
+            @if (filteredItems.Any())
+            {
+                @for (int i = 0; i < filteredItems.Count; i++)
+                {
+                    var item = filteredItems[i];
+                    var itemIndex = i;
+                    <div class="dropdown-item @(highlightedIndex == itemIndex ? "highlighted" : "")"
+                         @onclick:stopPropagation
+                         @onclick="@(() => SelectItem(item))"
+                         @onmouseenter="@(() => highlightedIndex = itemIndex)">
+                        @TextSelector(item)
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-results">موردی یافت نشد</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public Func<TItem, string> TextSelector { get; set; } = item => item?.ToString() ?? string.Empty;
+    [Parameter] public Func<TItem, TValue> ValueSelector { get; set; } = null!;
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public TItem? SelectedItem { get; set; }
+    [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "جستجو...";
+    [Parameter] public int DebounceMilliseconds { get; set; } = 300;
+
+    private ElementReference inputRef;
+    private string searchTerm = string.Empty;
+    private string displayText = string.Empty;
+    private List<TItem> filteredItems = new();
+    private bool isDropdownOpen = false;
+    private int highlightedIndex = -1;
+    private bool shouldPreventDefault = false;
+    private Timer? _debounceTimer;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        UpdateDisplayTextFromSelectedItem();
+        FilterItems();
+    }
+
+    private void UpdateDisplayTextFromSelectedItem()
+    {
+        TItem? itemToSync = default;
+        if (Value is not null && ValueSelector is not null)
+            itemToSync = Items.FirstOrDefault(item => EqualityComparer<TValue>.Default.Equals(ValueSelector(item), Value));
+        else if (SelectedItem is not null)
+            itemToSync = SelectedItem;
+
+        displayText = itemToSync is not null ? TextSelector(itemToSync) : string.Empty;
+    }
+
+    private void FilterItems()
+    {
+        filteredItems = string.IsNullOrWhiteSpace(searchTerm)
+            ? Items.ToList()
+            : Items.Where(item => TextSelector(item).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        highlightedIndex = (isDropdownOpen && filteredItems.Any()) ? 0 : -1;
+    }
+
+    private async void DebounceTimerCallback(object? state)
+    {
+        await InvokeAsync(() => { FilterItems(); StateHasChanged(); });
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(DebounceTimerCallback, null, TimeSpan.FromMilliseconds(DebounceMilliseconds), Timeout.InfiniteTimeSpan);
+        if (!isDropdownOpen) OpenDropdown();
+    }
+
+    private async Task FocusInput()
+    {
+        try { await inputRef.FocusAsync(); OpenDropdown(); } catch { }
+    }
+
+    private void OpenDropdown()
+    {
+        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); }
+    }
+
+    private async Task OnBlurInput()
+    {
+        await Task.Delay(200);
+        isDropdownOpen = false;
+        shouldPreventDefault = false;
+        UpdateDisplayTextFromSelectedItem();
+        StateHasChanged();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (!isDropdownOpen && (e.Key == "ArrowDown" || e.Key == "ArrowUp" || e.Key == "Enter"))
+        {
+            shouldPreventDefault = true;
+            OpenDropdown();
+            return;
+        }
+
+        if (!isDropdownOpen) { shouldPreventDefault = false; return; }
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                shouldPreventDefault = true;
+                highlightedIndex = (highlightedIndex + 1) % filteredItems.Count;
+                break;
+            case "ArrowUp":
+                shouldPreventDefault = true;
+                highlightedIndex = highlightedIndex <= 0 ? filteredItems.Count - 1 : highlightedIndex - 1;
+                break;
+            case "Enter":
+                if (highlightedIndex >= 0 && highlightedIndex < filteredItems.Count)
+                {
+                    shouldPreventDefault = true;
+                    _ = SelectItem(filteredItems[highlightedIndex]);
+                }
+                else shouldPreventDefault = false;
+                break;
+            case "Escape":
+            case "Tab":
+                shouldPreventDefault = e.Key == "Escape";
+                isDropdownOpen = false;
+                UpdateDisplayTextFromSelectedItem();
+                break;
+            default:
+                shouldPreventDefault = false;
+                break;
+        }
+    }
+
+    private async Task SelectItem(TItem item)
+    {
+        SelectedItem = item;
+        displayText = TextSelector(item);
+        searchTerm = string.Empty;
+        isDropdownOpen = false;
+        highlightedIndex = -1;
+        shouldPreventDefault = false;
+
+        if (SelectedItemChanged.HasDelegate)
+            await SelectedItemChanged.InvokeAsync(SelectedItem);
+
+        if (ValueChanged.HasDelegate && ValueSelector is not null)
+            await ValueChanged.InvokeAsync(ValueSelector(item));
+
+        try { await inputRef.FocusAsync(); } catch { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+    }
+}

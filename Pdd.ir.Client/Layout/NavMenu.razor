@@ -1,87 +1,84 @@
 @inject AuthService Auth
 @inject ITranslateService T
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">
-            <span style="font-weight:800;color:var(--pdd-primary);">Pdd.ir</span>
+<button class="admin-hamburger" id="adminHamburger" @onclick="ToggleSidebar" aria-label="Toggle menu">
+    <i class="bi bi-list"></i>
+</button>
+
+<div class="admin-sidebar-overlay" id="sidebarOverlay" @onclick="ToggleSidebar"></div>
+
+<div class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-header">
+        <a href="/" class="admin-sidebar-logo">
+            <span class="admin-sidebar-logo-text">PDD</span>
+            <span class="admin-sidebar-logo-sub">@(T.CurrentLanguage == "fa" ? "پنل مدیریت" : "Admin Panel")</span>
+        </a>
+        <button class="admin-sidebar-close" @onclick="ToggleSidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <nav class="admin-sidebar-nav">
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin" Match="NavLinkMatch.All">
+                <span class="admin-nav-icon"><i class="bi bi-speedometer2"></i></span>
+                <span class="admin-nav-text">@T.Text("dashboard")</span>
+            </NavLink>
+        </div>
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/products">
+                <span class="admin-nav-icon"><i class="bi bi-box-seam"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_products")</span>
+            </NavLink>
+        </div>
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/blog">
+                <span class="admin-nav-icon"><i class="bi bi-journal-richtext"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_blog")</span>
+            </NavLink>
+        </div>
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/portfolio">
+                <span class="admin-nav-icon"><i class="bi bi-images"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_portfolio")</span>
+            </NavLink>
+        </div>
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/messages">
+                <span class="admin-nav-icon"><i class="bi bi-chat-dots"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_messages")</span>
+            </NavLink>
+        </div>
+
+        <div class="admin-nav-divider"></div>
+
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/users">
+                <span class="admin-nav-icon"><i class="bi bi-people"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_users")</span>
+            </NavLink>
+        </div>
+        <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/settings">
+                <span class="admin-nav-icon"><i class="bi bi-gear"></i></span>
+                <span class="admin-nav-text">@T.Text("admin_settings")</span>
+            </NavLink>
+        </div>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+        <a href="/" class="admin-sidebar-back">
+            <i class="bi bi-arrow-right"></i>
+            <span>@(T.CurrentLanguage == "fa" ? "بازگشت به سایت" : "Back to Site")</span>
         </a>
     </div>
 </div>
 
-<nav class="flex-column">
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-            <span class="bi bi-house-door-fill" aria-hidden="true"></span> @T.Text("home")
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="products">
-            <span class="bi bi-box-seam" aria-hidden="true"></span> @T.Text("products")
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="blog">
-            <span class="bi bi-journal-richtext" aria-hidden="true"></span> @T.Text("blog")
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="portfolio">
-            <span class="bi bi-images" aria-hidden="true"></span> @T.Text("portfolio")
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="about">
-            <span class="bi bi-info-circle" aria-hidden="true"></span> @T.Text("about")
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="contact">
-            <span class="bi bi-envelope" aria-hidden="true"></span> @T.Text("contact")
-        </NavLink>
-    </div>
-
-    @if (Auth.IsAuthenticated && Auth.HasAnyRole("Admin"))
-    {
-        <hr class="text-secondary mx-3 my-2" style="opacity:0.3;" />
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin">
-                <span class="bi bi-speedometer2" aria-hidden="true"></span> @T.Text("dashboard")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/products">
-                <span class="bi bi-box" aria-hidden="true"></span> @T.Text("admin_products")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/blog">
-                <span class="bi bi-pencil-square" aria-hidden="true"></span> @T.Text("admin_blog")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/portfolio">
-                <span class="bi bi-collection" aria-hidden="true"></span> @T.Text("admin_portfolio")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/messages">
-                <span class="bi bi-chat-dots" aria-hidden="true"></span> @T.Text("admin_messages")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/users">
-                <span class="bi bi-people" aria-hidden="true"></span> @T.Text("admin_users")
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/settings">
-                <span class="bi bi-gear" aria-hidden="true"></span> @T.Text("admin_settings")
-            </NavLink>
-        </div>
-    }
-</nav>
-
 @code {
     [Parameter] public EventCallback OnToggleSidebar { get; set; }
+
+    private async Task ToggleSidebar()
+    {
+        await OnToggleSidebar.InvokeAsync();
+    }
 }

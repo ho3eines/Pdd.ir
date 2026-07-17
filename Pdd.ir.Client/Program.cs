@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Pdd.ir.Client;
 using Pdd.ir.Client.Services;
+using Pdd.ir.Shared;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -15,6 +16,9 @@ builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AnimationService>();
 builder.Services.AddScoped<ITranslateService, TranslateService>();
 builder.Services.AddScoped<ICommunicationService, CommunicationService>();
+
+// Pdd.ir.Shared services
+builder.Services.AddPddSharedServices();
 
 var app = builder.Build();
 

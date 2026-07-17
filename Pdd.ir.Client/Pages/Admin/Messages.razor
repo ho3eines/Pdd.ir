@@ -1,6 +1,8 @@
 @page "/admin/messages"
 @inject ICommunicationService Comm
 @inject ITranslateService T
+@inject IModalService Modal
+@inject IAlertService Alert
 @inject IJSRuntime JS
 
 <PageTitle>@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages") | PDD</PageTitle>
@@ -50,7 +52,7 @@
                                     <td><strong>@msg.Name</strong></td>
                                     <td>@msg.Email</td>
                                     <td>@msg.Subject</td>
-                                    <td>@msg.CreatedAt.ToString("MM/dd HH:mm")</td>
+                                    <td>@DateHelper.ToShamsiWithTime(DateHelper.ToUnix(msg.CreatedAt))</td>
                                     <td>
                                         <span class="badge @(msg.IsRead ? "bg-secondary" : "bg-primary")">
                                             @(msg.IsRead ? "خوانده شده" : "جدید")
@@ -76,36 +78,8 @@
     }
 </div>
 
-@if (SelectedMessage != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="background:var(--bg-secondary);border:1px solid var(--border-color);">
-                <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
-                    <h5 class="modal-title" style="font-size:16px;font-weight:700;">پیام از @SelectedMessage.Name</h5>
-                    <button type="button" class="btn-close" @onclick="CloseMessage"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2 mb-3" style="font-size:13px;">
-                        <div class="col-6"><strong>ایمیل:</strong> @SelectedMessage.Email</div>
-                        <div class="col-6"><strong>تلفن:</strong> @(SelectedMessage.Phone ?? "-")</div>
-                        <div class="col-12"><strong>موضوع:</strong> @(SelectedMessage.Subject ?? "-")</div>
-                        <div class="col-12"><strong>تاریخ:</strong> @SelectedMessage.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                    </div>
-                    <hr style="border-color:var(--border-color);" />
-                    <p style="line-height:1.8;font-size:14px;">@SelectedMessage.Message</p>
-                </div>
-                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
-                    <button class="btn btn-secondary" @onclick="CloseMessage">بستن</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 @code {
     List<ContactDto> Items = new();
-    ContactDto? SelectedMessage;
     bool IsLoading = true;
 
     protected override async Task OnInitializedAsync() => await LoadData();
@@ -119,21 +93,20 @@
 
     async Task ViewMessage(ContactDto msg)
     {
-        SelectedMessage = msg;
         if (!msg.IsRead)
         {
             await Comm.PutAsync<object>($"api/contact/{msg.Id}/read", new { });
             msg.IsRead = true;
         }
+        await Modal.Show<MessageViewDialog>("پیام از " + msg.Name, new Dictionary<string, object> { { "Message", msg } });
     }
-
-    void CloseMessage() => SelectedMessage = null;
 
     async Task DeleteItem(ContactDto msg)
     {
         var confirmed = await JS.InvokeAsync<bool>("confirm", $"آیا از حذف پیام «{msg.Name}» مطمئن هستید؟");
         if (!confirmed) return;
         await Comm.DeleteAsync($"api/contact/{msg.Id}");
+        await Alert.ShowSuccessAsync("موفق", "حذف شد");
         await LoadData();
     }
 

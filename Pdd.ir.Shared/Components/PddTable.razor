@@ -1,0 +1,352 @@
+@using Microsoft.JSInterop
+@using Pdd.ir.Shared.Services
+@typeparam TItem
+@inject IModalService Modal
+@inject IAlertService Alert
+@inject IJSRuntime JS
+
+<div class="pdd-table-wrapper fade-slide-in">
+    @* ── Header: Title + Search + Actions ── *@
+    <div class="pdd-table-header">
+        <div class="pdd-table-header-left">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <h3 class="pdd-table-title">@Title</h3>
+            }
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <p class="pdd-table-subtitle">@Subtitle</p>
+            }
+        </div>
+        <div class="pdd-table-header-right">
+            @if (ShowSearch)
+            {
+                <div class="pdd-table-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" placeholder="@SearchPlaceholder"
+                           value="@_searchText" @oninput="OnSearchInput" />
+                    @if (!string.IsNullOrEmpty(_searchText))
+                    {
+                        <button class="pdd-search-clear" @onclick="ClearSearch">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    }
+                </div>
+            }
+            @if (CanInsert)
+            {
+                <button class="btn btn-primary" @onclick="OnInsertClick">
+                    <i class="bi bi-plus-lg me-1"></i>@InsertButtonText
+                </button>
+            }
+        </div>
+    </div>
+
+    @* ── Loading Skeleton ── *@
+    @if (IsLoading)
+    {
+        <div class="pdd-table-skeleton">
+            @for (int i = 0; i < 5; i++)
+            {
+                <div class="skeleton skeleton-table-row"></div>
+            }
+        </div>
+    }
+    @* ── Empty State ── *@
+    else if (!FilteredItems.Any())
+    {
+        <div class="pdd-table-empty">
+            <i class="@EmptyIcon"></i>
+            <p>@EmptyText</p>
+        </div>
+    }
+    @* ── Table ── *@
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered pdd-table">
+                <thead>
+                    <tr>
+                        @if (ShowRowNumber)
+                        {
+                            <th style="width:50px;">#</th>
+                        }
+                        @foreach (var col in Columns)
+                        {
+                            <th style="@col.HeaderStyle">@col.Title</th>
+                        }
+                        @if (HasActions)
+                        {
+                            <th style="width:@ActionColumnWidth;">@ActionColumnTitle</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in PageItems)
+                    {
+                        var index = (_currentPage - 1) * PageSize + PageItems.IndexOf(item) + 1;
+                        <tr>
+                            @if (ShowRowNumber)
+                            {
+                                <td data-label="#">@index</td>
+                            }
+                            @foreach (var col in Columns)
+                            {
+                                <td style="@col.Style" data-label="@col.Title">
+                                    @if (col.Template != null)
+                                    {
+                                        @col.Template(item)
+                                    }
+                                    else
+                                    {
+                                        @col.GetValue(item)
+                                    }
+                                </td>
+                            }
+                            @if (HasActions)
+                            {
+                                <td data-label="عملیات">
+                                    <div class="pdd-table-actions">
+                                        @if (CanEdit)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(item)" title="ویرایش">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        }
+                                        @if (CanDelete)
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => OnDeleteClick(item)" title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                        @if (RowActions != null)
+                                        {
+                                            @RowActions(item)
+                                        }
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* ── Footer: Count + Pagination ── *@
+        <div class="pdd-table-footer">
+            <span class="pdd-table-count">
+                @FilteredItems.Count رکورد
+                @if (!string.IsNullOrEmpty(_searchText))
+                {
+                    <span class="text-muted"> (از @Items.Count)</span>
+                }
+            </span>
+            @if (TotalPages > 1)
+            {
+                <div class="pdd-table-pagination">
+                    <button class="btn btn-sm btn-outline-secondary" disabled="@(_currentPage <= 1)" @onclick="PrevPage">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNum = i;
+                        <button class="btn btn-sm @(_currentPage == pageNum ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="() => GoToPage(pageNum)">
+                            @pageNum
+                        </button>
+                    }
+                    <button class="btn btn-sm btn-outline-secondary" disabled="@(_currentPage >= TotalPages)" @onclick="NextPage">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    // ═══════════════════════ Parameters ═══════════════════════
+
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public bool IsLoading { get; set; } = true;
+
+    // ── Permissions ──
+    [Parameter] public bool CanInsert { get; set; } = true;
+    [Parameter] public bool CanEdit { get; set; } = true;
+    [Parameter] public bool CanDelete { get; set; } = true;
+
+    // ── Search ──
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public string SearchPlaceholder { get; set; } = "جستجو...";
+    [Parameter] public Func<TItem, string, bool>? SearchFilter { get; set; }
+
+    // ── Pagination ──
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public bool ShowRowNumber { get; set; } = true;
+
+    // ── Empty State ──
+    [Parameter] public string EmptyText { get; set; } = "هیچ داده‌ای یافت نشد";
+    [Parameter] public string EmptyIcon { get; set; } = "bi bi-inbox";
+
+    // ── Insert ──
+    [Parameter] public string InsertButtonText { get; set; } = "جدید";
+    [Parameter] public EventCallback OnInsert { get; set; }
+
+    // ── Edit / Delete (via Modal) ──
+    [Parameter] public Type? EditDialogType { get; set; }
+    [Parameter] public string EditDialogTitle { get; set; } = "ویرایش";
+    [Parameter] public Func<TItem, Dictionary<string, object>>? EditParameters { get; set; }
+
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public Func<TItem, Task>? OnDelete { get; set; }
+    [Parameter] public string DeleteConfirmMessage { get; set; } = "آیا از حذف مطمئن هستید؟";
+    [Parameter] public Func<TItem, string>? DeleteMessageSelector { get; set; }
+
+    // ── Row Actions (custom buttons) ──
+    [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+
+    // ── Columns ──
+    [Parameter] public List<PddTableColumn<TItem>> Columns { get; set; } = new();
+
+    // ── Action Column ──
+    [Parameter] public string ActionColumnTitle { get; set; } = "عملیات";
+    [Parameter] public string ActionColumnWidth { get; set; } = "120px";
+
+    // ═══════════════════════ Events ═══════════════════════
+
+    [Parameter] public EventCallback OnDataChanged { get; set; }
+
+    // ═══════════════════════ State ═══════════════════════
+
+    private string _searchText = "";
+    private int _currentPage = 1;
+    private List<TItem> FilteredItems = new();
+    private List<TItem> PageItems = new();
+    private int TotalPages => (int)Math.Ceiling((double)FilteredItems.Count / PageSize);
+    private bool HasActions => CanEdit || CanDelete || RowActions != null;
+
+    // ═══════════════════════ Lifecycle ═══════════════════════
+
+    protected override void OnParametersSet()
+    {
+        ApplyFilter();
+    }
+
+    // ═══════════════════════ Search ═══════════════════════
+
+    private CancellationTokenSource? _cts;
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString() ?? "";
+        _cts?.Cancel();
+        _cts = new();
+        var token = _cts.Token;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(300, token);
+            _currentPage = 1;
+            await InvokeAsync(() => { ApplyFilter(); StateHasChanged(); });
+        });
+    }
+
+    private void ClearSearch()
+    {
+        _searchText = "";
+        _currentPage = 1;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var q = _searchText.Trim().ToLower();
+
+        FilteredItems = string.IsNullOrEmpty(q) ? Items.ToList()
+            : Items.Where(x => SearchFilter != null ? SearchFilter(x, q) : DefaultSearch(x, q)).ToList();
+
+        PageItems = FilteredItems
+            .Skip((_currentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+    }
+
+    private bool DefaultSearch(TItem item, string query)
+    {
+        if (item == null) return false;
+        var props = typeof(TItem).GetProperties();
+        return props.Any(p =>
+        {
+            var val = p.GetValue(item);
+            return val != null && val.ToString()!.ToLower().Contains(query);
+        });
+    }
+
+    // ═══════════════════════ Pagination ═══════════════════════
+
+    private void NextPage()
+    {
+        if (_currentPage < TotalPages) { _currentPage++; ApplyFilter(); }
+    }
+
+    private void PrevPage()
+    {
+        if (_currentPage > 1) { _currentPage--; ApplyFilter(); }
+    }
+
+    private void GoToPage(int page)
+    {
+        _currentPage = page;
+        ApplyFilter();
+    }
+
+    // ═══════════════════════ Actions ═══════════════════════
+
+    private async Task OnInsertClick()
+    {
+        if (OnInsert.HasDelegate)
+        {
+            await OnInsert.InvokeAsync();
+        }
+        else if (EditDialogType != null)
+        {
+            await Modal.Show(EditDialogType, InsertButtonText);
+            await Refresh();
+        }
+    }
+
+    private async Task OnEditClick(TItem item)
+    {
+        if (OnEdit.HasDelegate)
+        {
+            await OnEdit.InvokeAsync(item);
+        }
+        else if (EditDialogType != null)
+        {
+            var parameters = EditParameters != null ? EditParameters(item) : new();
+            await Modal.Show(EditDialogType, EditDialogTitle, parameters);
+            await Refresh();
+        }
+    }
+
+    private async Task OnDeleteClick(TItem item)
+    {
+        var msg = DeleteMessageSelector != null ? DeleteMessageSelector(item) : DeleteConfirmMessage;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", msg);
+        if (!confirmed) return;
+
+        if (OnDelete != null)
+        {
+            await OnDelete(item);
+            await Refresh();
+        }
+    }
+
+    public async Task Refresh()
+    {
+        ApplyFilter();
+        StateHasChanged();
+        await OnDataChanged.InvokeAsync();
+    }
+}

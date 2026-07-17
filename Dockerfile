@@ -11,6 +11,7 @@ COPY Pdd.ir.Business/Pdd.ir.Business.csproj Pdd.ir.Business/
 COPY Pdd.ir.Client/Pdd.ir.Client.csproj Pdd.ir.Client/
 COPY Pdd.ir.Data/Pdd.ir.Data.csproj Pdd.ir.Data/
 COPY Pdd.ir.Server/Pdd.ir.Server.csproj Pdd.ir.Server/
+COPY Pdd.ir.Shared/Pdd.ir.Shared.csproj Pdd.ir.Shared/
 RUN dotnet nuget locals http-cache --clear 2>/dev/null; \
     dotnet restore --source https://api.nuget.org/v3/index.json
 

@@ -3,4 +3,5 @@
   <Project Path="Pdd.ir.Client/Pdd.ir.Client.csproj" />
   <Project Path="Pdd.ir.Data/Pdd.ir.Data.csproj" />
   <Project Path="Pdd.ir.Server/Pdd.ir.Server.csproj" />
+  <Project Path="Pdd.ir.Shared/Pdd.ir.Shared.csproj" />
 </Solution>

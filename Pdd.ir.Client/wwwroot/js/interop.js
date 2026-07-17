@@ -294,4 +294,27 @@ window.toggleTheme = function () {
     return next;
 };
 
+// ── Admin Sidebar Toggle ──────────────────────────────
+window.toggleAdminSidebar = function (open) {
+    var sidebar = document.getElementById('adminSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) {
+        if (open) {
+            sidebar.classList.add('show');
+            if (overlay) overlay.classList.add('show');
+        } else {
+            sidebar.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+        }
+    }
+};
+
+window.dismissSplash = function () {
+    var splash = document.getElementById('splashOverlay');
+    if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(function () { splash.remove(); }, 500);
+    }
+};
+
 // Customer Showcase — pure CSS marquee, no JS needed

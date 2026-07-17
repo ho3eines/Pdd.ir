@@ -13,40 +13,47 @@
 }
 else
 {
-    <div class="page">
-        <div class="sidebar" id="sidebar">
-            <NavMenu OnToggleSidebar="ToggleSidebar" />
-        </div>
+    <div class="admin-layout">
+        <NavMenu OnToggleSidebar="ToggleSidebar" />
 
-        <main>
-            <div class="top-row px-3 d-flex align-items-center justify-content-between">
-                <button class="btn btn-sm btn-outline-secondary d-md-none" @onclick="ToggleSidebar">
-                    <i class="bi bi-list"></i>
-                </button>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="connection-status">
-                        <span class="connection-dot @(_isConnected ? "connected" : "disconnected")"></span>
-                        <span>@(_isConnected ? "WS" : "API")</span>
-                    </div>
-                    <div class="theme-toggle" @onclick="ToggleTheme" title="تغییر تم">
-                        <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
-                    </div>
-                    @if (Auth.IsAuthenticated)
-                    {
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-secondary" style="font-size:0.85rem;">@Auth.FullName</span>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="Logout">
-                                <i class="bi bi-box-arrow-right"></i>
-                            </button>
+        <div class="admin-main">
+            <div class="admin-topbar">
+                <div class="admin-topbar-right">
+                    <a href="/" class="admin-topbar-logo">
+                        <span class="admin-topbar-logo-text">PDD</span>
+                        <span class="admin-topbar-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+                    </a>
+                </div>
+                <div class="admin-topbar-left">
+                    <div class="admin-topbar-actions">
+                        <div class="connection-status">
+                            <span class="connection-dot @(_isConnected ? "connected" : "disconnected")"></span>
+                            <span>@(_isConnected ? "WS" : "API")</span>
                         </div>
-                    }
+                        <button class="admin-topbar-pill" @onclick="ToggleTheme" title="تغییر تم">
+                            <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
+                        </button>
+                        <button class="admin-topbar-pill lang-pill-mini" @onclick="ToggleLang">
+                            <i class="bi bi-translate"></i>
+                            <span>@(T.CurrentLanguage == "fa" ? "EN" : "FA")</span>
+                        </button>
+                        @if (Auth.IsAuthenticated)
+                        {
+                            <div class="admin-topbar-user">
+                                <span class="admin-topbar-user-name">@Auth.FullName</span>
+                                <button class="admin-topbar-pill" @onclick="Logout" title="خروج">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
 
-            <article class="content px-4">
+            <article class="admin-content">
                 @Body
             </article>
-        </main>
+        </div>
     </div>
 }
 
@@ -54,8 +61,10 @@ else
     private bool _isDark = true;
     private bool _isConnected;
     private bool _isLandingPage;
+    private bool _sidebarOpen;
 
     [Inject] private ConnectionService Connection { get; set; } = default!;
+    [Inject] private ITranslateService T { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -117,8 +126,17 @@ else
         StateHasChanged();
     }
 
-    private void ToggleSidebar()
+    private async Task ToggleLang()
     {
+        var lang = T.CurrentLanguage == "fa" ? "en" : "fa";
+        await T.LoadLanguageAsync(lang);
+        StateHasChanged();
+    }
+
+    private async Task ToggleSidebar()
+    {
+        _sidebarOpen = !_sidebarOpen;
+        await JS.InvokeVoidAsync("toggleAdminSidebar", _sidebarOpen);
     }
 
     private void Logout()

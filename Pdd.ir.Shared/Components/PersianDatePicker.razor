@@ -1,0 +1,224 @@
+@using System.Globalization
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Web
+@using Pdd.ir.Shared.Helpers
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div @ref="RootElement" class="persian-date-picker-wrapper position-relative">
+    <input type="text"
+           class="@CssClass"
+           @bind="inputText"
+           @onfocus="OpenDropdown"
+           @onclick="OpenDropdown"
+           placeholder="@Placeholder"
+           readonly />
+
+    @if (isDropdownOpen)
+    {
+        <div class="dropdown-menu d-block p-3 shadow" style="min-width: 280px;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <button class="btn btn-sm btn-outline-secondary" @onclick="GoToPreviousMonth">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <h6 class="mb-0">@GetMonthName() @GetYear()</h6>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="GoToNextMonth">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <table class="table table-sm table-borderless text-center">
+                <thead>
+                    <tr>
+                        <th>شنبه</th>
+                        <th>۱شنبه</th>
+                        <th>۲شنبه</th>
+                        <th>۳شنبه</th>
+                        <th>۴شنبه</th>
+                        <th>۵شنبه</th>
+                        <th>جمعه</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var week in GetCalendarWeeks())
+                    {
+                        <tr>
+                            @foreach (var dayTimestamp in week)
+                            {
+                                <td>
+                                    @if (dayTimestamp.HasValue)
+                                    {
+                                        var dt = DateHelper.ToMiladi(dayTimestamp.Value).ToLocalTime();
+                                        var persianDay = _pc.GetDayOfMonth(dt);
+                                        var isSelected = IsDateSelected(dayTimestamp.Value);
+                                        var isToday = IsDateToday(dayTimestamp.Value);
+
+                                        <button type="button"
+                                                class="btn btn-sm @(isSelected ? "btn-primary" : "btn-light") @(isToday ? "border border-info" : "")"
+                                                style="width: 32px; height: 32px; padding: 0;"
+                                                @onclick="() => SelectDate(dayTimestamp.Value)">
+                                            @persianDay
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <div style="width: 32px; height: 32px;"></div>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <hr class="my-2" />
+            <button class="btn btn-sm btn-secondary w-100" @onclick="SelectToday">
+                <i class="bi bi-calendar-event me-1"></i>امروز
+            </button>
+        </div>
+    }
+</div>
+
+<style>
+    .persian-date-picker-wrapper .dropdown-menu {
+        z-index: 1050;
+        position: absolute;
+        background: var(--bg-secondary, white);
+        border: 1px solid var(--border-color, #dee2e6);
+    }
+</style>
+
+@code {
+    [Parameter] public long? Value { get; set; }
+    [Parameter] public EventCallback<long?> ValueChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "انتخاب تاریخ";
+    [Parameter] public string CssClass { get; set; } = "form-control";
+
+    private ElementReference RootElement { get; set; }
+    private bool isDropdownOpen = false;
+    private long currentViewTimestamp;
+    private string inputText = string.Empty;
+    private IJSObjectReference? _jsModule;
+    private readonly PersianCalendar _pc = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            currentViewTimestamp = Value ?? DateHelper.Now();
+            UpdateInputText();
+
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Pdd.ir.Shared/js/clickOutside.js");
+            await _jsModule.InvokeVoidAsync("addClickListener", RootElement, DotNetObjectReference.Create(this));
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Value.HasValue) currentViewTimestamp = Value.Value;
+        UpdateInputText();
+    }
+
+    private void UpdateInputText()
+    {
+        inputText = Value.HasValue ? DateHelper.ToShamsi(Value.Value) : string.Empty;
+    }
+
+    private void OpenDropdown() => isDropdownOpen = true;
+
+    private async Task SelectDate(long timestamp)
+    {
+        Value = timestamp;
+        UpdateInputText();
+        isDropdownOpen = false;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task SelectToday()
+    {
+        Value = DateHelper.Now();
+        UpdateInputText();
+        currentViewTimestamp = Value.Value;
+        isDropdownOpen = false;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private void GoToNextMonth()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        m++;
+        if (m > 12) { m = 1; y++; }
+        currentViewTimestamp = DateHelper.ToUnix(_pc.ToDateTime(y, m, 1, 0, 0, 0, 0));
+    }
+
+    private void GoToPreviousMonth()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        m--;
+        if (m < 1) { m = 12; y--; }
+        currentViewTimestamp = DateHelper.ToUnix(_pc.ToDateTime(y, m, 1, 0, 0, 0, 0));
+    }
+
+    private string GetMonthName()
+    {
+        string[] months = { "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند" };
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        return months[_pc.GetMonth(dt) - 1];
+    }
+
+    private int GetYear()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        return _pc.GetYear(dt);
+    }
+
+    private List<List<long?>> GetCalendarWeeks()
+    {
+        var weeks = new List<List<long?>>();
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        int daysInMonth = _pc.GetDaysInMonth(y, m);
+        var firstOfMonth = _pc.ToDateTime(y, m, 1, 0, 0, 0, 0);
+        var startDayOfWeek = ((int)firstOfMonth.DayOfWeek + 1) % 7;
+
+        var currentWeek = new List<long?>();
+        for (int i = 0; i < startDayOfWeek; i++) currentWeek.Add(null);
+
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            currentWeek.Add(DateHelper.ToUnix(_pc.ToDateTime(y, m, day, 0, 0, 0, 0)));
+            if (currentWeek.Count == 7) { weeks.Add(currentWeek); currentWeek = new List<long?>(); }
+        }
+
+        if (currentWeek.Any()) { while (currentWeek.Count < 7) currentWeek.Add(null); weeks.Add(currentWeek); }
+        return weeks;
+    }
+
+    private bool IsDateSelected(long timestamp)
+    {
+        if (!Value.HasValue) return false;
+        return DateHelper.ToMiladi(timestamp).ToLocalTime().Date == DateHelper.ToMiladi(Value.Value).ToLocalTime().Date;
+    }
+
+    private bool IsDateToday(long timestamp)
+        => DateHelper.ToMiladi(timestamp).ToLocalTime().Date == DateTime.Now.Date;
+
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        isDropdownOpen = false;
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("removeClickListener");
+            await _jsModule.DisposeAsync();
+        }
+    }
+}
