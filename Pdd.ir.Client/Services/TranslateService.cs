@@ -38,7 +38,7 @@ public class TranslateService : ITranslateService
             _loaded = true;
         }
 
-        // Save to localStorage
+        // Save to localStorage and set direction
         try
         {
             await _js.InvokeVoidAsync("localStorage.setItem", "app_lang", culture);
