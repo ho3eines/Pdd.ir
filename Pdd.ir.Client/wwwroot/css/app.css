@@ -3034,11 +3034,13 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   .table tbody td {
     display: flex !important;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     padding: 4px 0 !important;
     border: none !important;
     font-size: 13px !important;
   }
+
+  [dir="rtl"] .table tbody td { flex-direction: row-reverse; }
 
   .table tbody td::before {
     content: attr(data-label);
@@ -3048,6 +3050,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
     text-transform: uppercase;
     letter-spacing: 0.5px;
     flex-shrink: 0;
+    min-width: 80px;
   }
 
   .table-actions {
