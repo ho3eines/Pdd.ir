@@ -1,12 +1,13 @@
 @page "/admin/products"
-@inherits PddComponentBase
+@implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
+@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت محصولات" : "Products") | PDD</PageTitle>
+<PageTitle>@T.Text("admin_products") | PDD</PageTitle>
 
 <div class="page-enter">
     <PddTable TItem="ProductDto"
@@ -50,12 +51,19 @@
         }}
     };
 
-    protected override async Task OnInitializedAsync() => await Load();
+    protected override async Task OnInitializedAsync()
+    {
+        AppState.OnStateChanged += Refresh;
+        await Load();
+    }
+
+    void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new(); IsLoading = false; }
     bool Search(ProductDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Category ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<ProductDialog>(T.Text("product_new"));
     async Task OpenEdit(ProductDto x) => await Modal.Show<ProductDialog>(T.Text("product_edit"), new Dictionary<string, object> { { "Id", x.Id } });
     async Task Delete(ProductDto x) { await Comm.DeleteAsync($"api/product/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
+    public void Dispose() { AppState.OnStateChanged -= Refresh; }
 
     public class ProductDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Subtitle { get; set; } = ""; public string Description { get; set; } = ""; public string Category { get; set; } = ""; public int SortOrder { get; set; } public bool IsActive { get; set; } public string ImageUrl { get; set; } = ""; }
 }

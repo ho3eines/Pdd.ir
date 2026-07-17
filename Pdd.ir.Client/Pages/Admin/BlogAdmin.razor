@@ -1,12 +1,13 @@
 @page "/admin/blog"
-@inherits PddComponentBase
+@implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
+@inject IAppStateService AppState
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت بلاگ" : "Blog") | PDD</PageTitle>
+<PageTitle>@T.Text("admin_blog") | PDD</PageTitle>
 
 <div class="page-enter">
     <PddTable TItem="BlogDto"
@@ -29,27 +30,20 @@
 @code {
     List<BlogDto> Items = new();
     bool IsLoading = true;
-
     List<PddTableColumn<BlogDto>> _columns = new()
     {
         new() { Title = "عنوان", GetValue = x => x.Title },
         new() { Title = "نویسنده", GetValue = x => x.Author },
         new() { Title = "بازدید", GetValue = x => x.ViewCount.ToString() },
-        new() { Title = "وضعیت", Template = c => builder =>
-        {
-            builder.OpenElement(0, "span");
-            builder.AddAttribute(1, "class", $"badge {(c.IsPublished ? "bg-success" : "bg-secondary")}");
-            builder.AddContent(2, c.IsPublished ? "منتشر شده" : "پیش‌نویس");
-            builder.CloseElement();
-        }}
+        new() { Title = "وضعیت", Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsPublished ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsPublished ? "منتشر شده" : "پیش‌نویس"); builder.CloseElement(); }}
     };
-
-    protected override async Task OnInitializedAsync() => await Load();
+    protected override async Task OnInitializedAsync() { AppState.OnStateChanged += Refresh; await Load(); }
+    void Refresh() => InvokeAsync(StateHasChanged);
     async Task Load() { IsLoading = true; Items = await Comm.GetAsync<List<BlogDto>>("api/blog/admin") ?? new(); IsLoading = false; }
     bool Search(BlogDto x, string q) => (x.Title ?? "").ToLower().Contains(q) || (x.Author ?? "").ToLower().Contains(q);
     async Task OpenCreate() => await Modal.Show<BlogDialog>(T.Text("blog_new"));
     async Task OpenEdit(BlogDto x) => await Modal.Show<BlogDialog>(T.Text("blog_edit"), new Dictionary<string, object> { { "Id", x.Id } });
     async Task Delete(BlogDto x) { await Comm.DeleteAsync($"api/blog/{x.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await Load(); }
-
+    public void Dispose() { AppState.OnStateChanged -= Refresh; }
     public class BlogDto { public int Id { get; set; } public string Title { get; set; } = ""; public string Slug { get; set; } = ""; public string Summary { get; set; } = ""; public string Content { get; set; } = ""; public string Author { get; set; } = ""; public bool IsPublished { get; set; } public int ViewCount { get; set; } }
 }

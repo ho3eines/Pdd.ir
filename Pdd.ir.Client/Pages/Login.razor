@@ -1,9 +1,10 @@
 @page "/login"
-@inherits PddComponentBase
+@implements IDisposable
 @inject AuthService Auth
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject ITranslateService T
+@inject IAppStateService AppState
 
 <PageTitle>@T.Text("login") | PDD</PageTitle>
 
@@ -73,6 +74,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        AppState.OnStateChanged += Refresh;
         await Auth.LoadFromStorageAsync();
         if (Auth.IsAuthenticated)
         {
@@ -114,4 +116,6 @@
     }
 
     void GoToHome() => Nav.NavigateTo("/");
+    void Refresh() => InvokeAsync(StateHasChanged);
+    public void Dispose() { AppState.OnStateChanged -= Refresh; }
 }
