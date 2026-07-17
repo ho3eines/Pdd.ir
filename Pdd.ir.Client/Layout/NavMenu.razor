@@ -1,5 +1,7 @@
 @inject AuthService Auth
 @inject ITranslateService T
+@inject IAppStateService AppState
+@implements IDisposable
 
 <button class="admin-hamburger" id="adminHamburger" @onclick="ToggleSidebar" aria-label="Toggle menu">
     <i class="bi bi-list"></i>
@@ -77,8 +79,23 @@
 @code {
     [Parameter] public EventCallback OnToggleSidebar { get; set; }
 
+    protected override void OnInitialized()
+    {
+        AppState.OnStateChanged += OnStateChanged;
+    }
+
+    void OnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private async Task ToggleSidebar()
     {
         await OnToggleSidebar.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        AppState.OnStateChanged -= OnStateChanged;
     }
 }
