@@ -20,6 +20,26 @@ public class TranslateService : ITranslateService
         _js = js;
     }
 
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            var saved = await _js.InvokeAsync<string?>("localStorage.getItem", "app_lang");
+            if (!string.IsNullOrEmpty(saved))
+            {
+                await LoadLanguageAsync(saved);
+            }
+            else
+            {
+                await LoadLanguageAsync("fa");
+            }
+        }
+        catch
+        {
+            await LoadLanguageAsync("fa");
+        }
+    }
+
     public async Task LoadLanguageAsync(string culture)
     {
         _currentLanguage = culture;

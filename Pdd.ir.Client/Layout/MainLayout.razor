@@ -74,6 +74,9 @@ else
 
         _isLandingPage = IsLandingPage(Navigation.Uri);
 
+        // Load saved language from localStorage
+        await T.InitializeAsync();
+
         try
         {
             var theme = await JS.InvokeAsync<string>("getTheme");
