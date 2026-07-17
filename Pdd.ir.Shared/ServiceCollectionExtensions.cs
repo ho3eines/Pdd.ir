@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<AppSettings>(configuration.GetSection("Pdd"));
 
+        services.AddSingleton<IAppStateService, AppStateService>();
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<IClientStorageService, ClientStorageService>();
         services.AddScoped<IEncryptionService, EncryptionService>();
@@ -21,6 +22,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddPddSharedServices(this IServiceCollection services)
     {
+        services.AddSingleton<IAppStateService, AppStateService>();
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<IClientStorageService, ClientStorageService>();
         services.AddScoped<IEncryptionService, EncryptionService>();

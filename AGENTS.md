@@ -111,6 +111,7 @@ DateHelper.MiladiToShamsi("2023-04-05")  // "1402/01/15"
 | قانون | توضیح |
 |-------|-------|
 | 🔥 اجباری | `<Pdd.ir.Shared.Components.Modal />` حتماً در `App.razor` باشد |
+| 🔥 اجباری | از `IAppStateService` برای رفرش بدون reload استفاده کن |
 | 🔥 اجباری | از `IModalService` برای مودال استفاده کن |
 | 🔥 اجباری | از `IAlertService` برای Toast استفاده کن |
 | 🔥 اجباری | از `PddTable` برای تمام جدول‌ها استفاده کن |
@@ -123,7 +124,52 @@ DateHelper.MiladiToShamsi("2023-04-05")  // "1402/01/15"
 | 🔥 ممنوع | از `spinner-border` استفاده نکن (از Skeleton استفاده کن) |
 | 🔥 ممنوع | جدول دستی با `<table>` نساز (از PddTable استفاده کن) |
 
-### PddTable — نحوه استفاده
+### نمونه استفاده در صفحه
+```razor
+@inject IModalService Modal
+@inject IAlertService Alert
+@using Pdd.ir.Shared.Helpers
+
+<button @onclick="OpenDialog">مودال جدید</button>
+
+@code {
+    async Task OpenDialog()
+    {
+        await Modal.Show<MyDialogComponent>("عنوان مودال");
+    }
+
+    async Task Save()
+    {
+        // ذخیره...
+        await Alert.ShowSuccessAsync("موفق", "با موفقیت ذخیره شد");
+    }
+}
+```
+
+### IAppStateService — رفرش بدون reload
+```razor
+@inject IAppStateService AppState
+@implements IDisposable
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.OnStateChanged += Refresh;
+    }
+
+    void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        AppState.OnStateChanged -= Refresh;
+    }
+}
+```
+
+```csharp
+// وقتی زبان/تم/داده تغییر کرد — همه صفحات رفرش شوند
+AppState.NotifyStateChanged();
+```
 ```razor
 <PddTable TItem="ProductDto"
           Items="@Items"
