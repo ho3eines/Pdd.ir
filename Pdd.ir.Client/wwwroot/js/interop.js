@@ -312,11 +312,14 @@ window.toggleAdminSidebar = function (open) {
 };
 
 window.dismissSplash = function () {
-    var splash = document.getElementById('splashOverlay');
-    if (splash) {
-        splash.style.opacity = '0';
-        setTimeout(function () { splash.remove(); }, 500);
-    }
+    var splash = document.getElementById('splash-screen');
+    if (!splash || splash.classList.contains('hide')) return;
+    splash.classList.add('dismissing');
+    document.body.style.overflow = 'auto';
+    setTimeout(function () {
+        splash.classList.add('hide');
+        setTimeout(function () { splash.remove(); }, 700);
+    }, 600);
 };
 
 // Customer Showcase — pure CSS marquee, no JS needed

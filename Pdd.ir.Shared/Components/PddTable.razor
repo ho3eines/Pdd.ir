@@ -1,5 +1,6 @@
 @using Microsoft.JSInterop
 @using Pdd.ir.Shared.Services
+@implements IAsyncDisposable
 @typeparam TItem
 @inject IModalService Modal
 @inject IAlertService Alert
@@ -84,8 +85,9 @@
                 <tbody>
                     @foreach (var item in PageItems)
                     {
-                        var index = (_currentPage - 1) * PageSize + PageItems.IndexOf(item) + 1;
-                        <tr>
+                        var capturedItem = item;
+                        var index = (_currentPage - 1) * PageSize + PageItems.IndexOf(capturedItem) + 1;
+                        <tr @key="capturedItem">
                             @if (ShowRowNumber)
                             {
                                 <td>@index</td>
@@ -97,11 +99,11 @@
                                     <span class="td-value">
                                         @if (col.Template != null)
                                         {
-                                            @col.Template(item)
+                                            @col.Template(capturedItem)
                                         }
                                         else
                                         {
-                                            @col.GetValue(item)
+                                            @(col.GetValue?.Invoke(capturedItem) ?? "")
                                         }
                                     </span>
                                 </td>
@@ -112,19 +114,19 @@
                                     <div class="table-actions">
                                         @if (CanEdit)
                                         {
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(item)" title="ویرایش">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(capturedItem)" title="ویرایش">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         }
                                         @if (CanDelete)
                                         {
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => OnDeleteClick(item)" title="حذف">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => OnDeleteClick(capturedItem)" title="حذف">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         }
                                         @if (RowActions != null)
                                         {
-                                            @RowActions(item)
+                                            @RowActions(capturedItem)
                                         }
                                     </div>
                                 </td>
@@ -245,21 +247,31 @@
     {
         _searchText = e.Value?.ToString() ?? "";
         _cts?.Cancel();
-        _cts = new();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
         var token = _cts.Token;
-        _ = Task.Run(async () =>
+        _ = DebounceFilterAsync(token);
+    }
+
+    private async Task DebounceFilterAsync(CancellationToken token)
+    {
+        try
         {
             await Task.Delay(300, token);
             _currentPage = 1;
-            await InvokeAsync(() => { ApplyFilter(); StateHasChanged(); });
-        });
+            ApplyFilter();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException) { }
     }
 
     private void ClearSearch()
     {
+        _cts?.Cancel();
         _searchText = "";
         _currentPage = 1;
         ApplyFilter();
+        StateHasChanged();
     }
 
     private void ApplyFilter()
@@ -308,7 +320,6 @@
 
     private async Task OnInsertClick()
     {
-        await JS.InvokeVoidAsync("console.log", $"[PddTable] OnInsertClick called, HasDelegate={OnInsert.HasDelegate}");
         if (OnInsert.HasDelegate)
         {
             await OnInsert.InvokeAsync();
@@ -352,5 +363,14 @@
         ApplyFilter();
         StateHasChanged();
         await OnDataChanged.InvokeAsync();
+    }
+
+    // ═══════════════════════ Dispose ═══════════════════════
+
+    public ValueTask DisposeAsync()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }

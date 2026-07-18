@@ -9,7 +9,6 @@
 <PageTitle>@T.Text("admin_users") | PDD</PageTitle>
 
 <div class="page-enter">
-    <button class="btn btn-danger" @onclick="@(() => JS.InvokeVoidAsync("alert", "CLICK WORKS!"))" style="margin-bottom:10px;">TEST CLICK</button>
     <PddTable TItem="UserDto"
               Items="@UserList"
               Title="@T.Text("admin_users")"
@@ -19,7 +18,7 @@
               CanInsert="true"
               CanEdit="true"
               CanDelete="true"
-              Columns="@GetColumns()"
+              Columns="@_columns"
               SearchFilter="@SearchUsers"
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
@@ -30,45 +29,76 @@
 @code {
     List<UserDto> UserList = new();
     bool IsLoading = true;
+    List<PddTableColumn<UserDto>> _columns = new();
 
-    List<PddTableColumn<UserDto>> GetColumns() => new()
+    void BuildColumns()
     {
-        new() { Title = T.Text("username"), GetValue = x => x.Username },
-        new() { Title = T.Text("full_name"), GetValue = x => x.FullName },
-        new() { Title = T.Text("email_field"), GetValue = x => x.Email },
-        new() { Title = T.Text("role"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.Role == "admin" ? "bg-warning text-dark" : "bg-info")}"); builder.AddContent(2, c.Role); builder.CloseElement(); }},
-        new() { Title = T.Text("status"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? T.Text("active") : T.Text("inactive")); builder.CloseElement(); }}
-    };
+        _columns = new()
+        {
+            new() { Title = T.Text("username"), GetValue = x => x.Username },
+            new() { Title = T.Text("full_name"), GetValue = x => x.FullName },
+            new() { Title = T.Text("email_field"), GetValue = x => x.Email },
+            new() { Title = T.Text("role"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.Role == "admin" ? "bg-warning text-dark" : "bg-info")}"); builder.AddContent(2, c.Role); builder.CloseElement(); }},
+            new() { Title = T.Text("status"), Template = c => builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}"); builder.AddContent(2, c.IsActive ? T.Text("active") : T.Text("inactive")); builder.CloseElement(); }}
+        };
+    }
 
-    protected override async Task OnInitializedAsync() { T.OnLanguageChanged += Refresh; await LoadUsers(); }
-    void Refresh() => InvokeAsync(StateHasChanged);
-    async Task LoadUsers() { IsLoading = true; UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new(); IsLoading = false; }
-    bool SearchUsers(UserDto u, string q) => (u.Username ?? "").ToLower().Contains(q) || (u.FullName ?? "").ToLower().Contains(q) || (u.Email ?? "").ToLower().Contains(q);
+    protected override async Task OnInitializedAsync()
+    {
+        BuildColumns();
+        T.OnLanguageChanged += OnLangChanged;
+        await LoadUsers();
+    }
+
+    void OnLangChanged()
+    {
+        BuildColumns();
+        InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadUsers()
+    {
+        IsLoading = true;
+        UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new();
+        IsLoading = false;
+    }
+
+    bool SearchUsers(UserDto u, string q) =>
+        (u.Username ?? "").ToLower().Contains(q) ||
+        (u.FullName ?? "").ToLower().Contains(q) ||
+        (u.Email ?? "").ToLower().Contains(q);
+
     async Task OpenCreate()
     {
-        await JS.InvokeVoidAsync("console.log", "[Users] OpenCreate called!");
-        try
-        {
-            await Modal.Show<UserDialog>(T.Text("user_new"));
-        }
-        catch (Exception ex)
-        {
-            await JS.InvokeVoidAsync("console.error", $"[Users] ERROR: {ex.Message}");
-        }
+        await Modal.Show<UserDialog>(T.Text("user_new"));
     }
+
     async Task OpenEdit(UserDto u)
     {
-        await JS.InvokeVoidAsync("console.log", "[Users] OpenEdit called!");
-        try
-        {
-            await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
-        }
-        catch (Exception ex)
-        {
-            await JS.InvokeVoidAsync("console.error", $"[Users] ERROR: {ex.Message}");
-        }
+        await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
     }
-    async Task DeleteUser(UserDto user) { await Comm.DeleteAsync($"api/user/{user.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await LoadUsers(); }
-    public void Dispose() { T.OnLanguageChanged -= Refresh; }
-    public class UserDto { public int Id { get; set; } public string Username { get; set; } = ""; public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Role { get; set; } = ""; public bool IsActive { get; set; } }
+
+    async Task DeleteUser(UserDto user)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", T.Text("are_you_sure_delete"));
+        if (!confirmed) return;
+        await Comm.DeleteAsync($"api/user/{user.Id}");
+        await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
+        await LoadUsers();
+    }
+
+    public void Dispose()
+    {
+        T.OnLanguageChanged -= OnLangChanged;
+    }
+
+    public class UserDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public bool IsActive { get; set; }
+    }
 }
