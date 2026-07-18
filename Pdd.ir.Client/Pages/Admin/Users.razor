@@ -9,6 +9,7 @@
 <PageTitle>@T.Text("admin_users") | PDD</PageTitle>
 
 <div class="page-enter">
+    <button class="btn btn-danger" @onclick="@(() => JS.InvokeVoidAsync("alert", "CLICK WORKS!"))" style="margin-bottom:10px;">TEST CLICK</button>
     <PddTable TItem="UserDto"
               Items="@UserList"
               Title="@T.Text("admin_users")"
@@ -43,8 +44,30 @@
     void Refresh() => InvokeAsync(StateHasChanged);
     async Task LoadUsers() { IsLoading = true; UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new(); IsLoading = false; }
     bool SearchUsers(UserDto u, string q) => (u.Username ?? "").ToLower().Contains(q) || (u.FullName ?? "").ToLower().Contains(q) || (u.Email ?? "").ToLower().Contains(q);
-    async Task OpenCreate() => await Modal.Show<UserDialog>(T.Text("user_new"));
-    async Task OpenEdit(UserDto u) => await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
+    async Task OpenCreate()
+    {
+        await JS.InvokeVoidAsync("console.log", "[Users] OpenCreate called!");
+        try
+        {
+            await Modal.Show<UserDialog>(T.Text("user_new"));
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"[Users] ERROR: {ex.Message}");
+        }
+    }
+    async Task OpenEdit(UserDto u)
+    {
+        await JS.InvokeVoidAsync("console.log", "[Users] OpenEdit called!");
+        try
+        {
+            await Modal.Show<UserDialog>(T.Text("user_edit"), new Dictionary<string, object> { { "Id", u.Id } });
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"[Users] ERROR: {ex.Message}");
+        }
+    }
     async Task DeleteUser(UserDto user) { await Comm.DeleteAsync($"api/user/{user.Id}"); await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully")); await LoadUsers(); }
     public void Dispose() { T.OnLanguageChanged -= Refresh; }
     public class UserDto { public int Id { get; set; } public string Username { get; set; } = ""; public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Role { get; set; } = ""; public bool IsActive { get; set; } }
