@@ -31,8 +31,4 @@
     <Content Include="wwwroot\**\*.*" PackagePath="_content/Pdd.ir.Shared/%(RecursiveDir)%(Filename)%(Extension)" Pack="true" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Components\**\*.razor" />
-  </ItemGroup>
-
 </Project>
