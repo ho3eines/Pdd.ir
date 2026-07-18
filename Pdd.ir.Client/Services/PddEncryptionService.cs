@@ -1,17 +1,17 @@
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
-using Pdd.ir.Shared.Models;
+using Pdd.ir.Client.Models;
 
-namespace Pdd.ir.Shared.Services;
+namespace Pdd.ir.Client.Services;
 
-public class EncryptionService : IEncryptionService, IAsyncDisposable
+public class PddEncryptionService : IEncryptionService, IAsyncDisposable
 {
     private readonly IJSRuntime _jsRuntime;
     private IJSObjectReference? _jsModule;
     private readonly AppSettings _appSettings;
     private bool _isInitialized = false;
 
-    public EncryptionService(IJSRuntime jsRuntime, IOptions<AppSettings> appSettings)
+    public PddEncryptionService(IJSRuntime jsRuntime, IOptions<AppSettings> appSettings)
     {
         _jsRuntime = jsRuntime;
         _appSettings = appSettings.Value;
@@ -21,7 +21,7 @@ public class EncryptionService : IEncryptionService, IAsyncDisposable
     {
         if (!_isInitialized)
         {
-            _jsModule ??= await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Pdd.ir.Shared/js/interop.js");
+            _jsModule ??= await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/interop.js");
             _isInitialized = true;
         }
     }

@@ -1,4 +1,4 @@
-namespace Pdd.ir.Shared.Services;
+﻿namespace Pdd.ir.Client.Services;
 
 public interface IAlertService
 {

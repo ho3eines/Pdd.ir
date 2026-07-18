@@ -1,9 +1,9 @@
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace Pdd.ir.Shared.Services;
+namespace Pdd.ir.Client.Services;
 
 public class ClientStorageService : IClientStorageService
 {

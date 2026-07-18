@@ -1,6 +1,6 @@
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
 
-namespace Pdd.ir.Shared.Services;
+namespace Pdd.ir.Client.Services;
 
 public class AlertService : IAlertService
 {
@@ -18,7 +18,7 @@ public class AlertService : IAlertService
         if (!_isInitialized)
         {
             _jsModule = await _js.InvokeAsync<IJSObjectReference>(
-                "import", "./_content/Pdd.ir.Shared/js/alertManager.js");
+                "import", "./js/alertManager.js");
             await _jsModule.InvokeVoidAsync("initialize");
             _isInitialized = true;
         }

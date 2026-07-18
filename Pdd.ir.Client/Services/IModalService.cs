@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 
-namespace Pdd.ir.Shared.Services;
+namespace Pdd.ir.Client.Services;
 
 public interface IModalService
 {

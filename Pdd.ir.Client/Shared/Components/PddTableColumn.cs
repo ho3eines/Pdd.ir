@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 
-namespace Pdd.ir.Shared.Components;
+namespace Pdd.ir.Client.Shared.Components;
 
 public class PddTableColumn<TItem>
 {

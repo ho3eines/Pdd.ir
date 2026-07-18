@@ -1,6 +1,6 @@
-using System.Globalization;
+﻿using System.Globalization;
 
-namespace Pdd.ir.Shared.Helpers;
+namespace Pdd.ir.Client.Helpers;
 
 public static class DateHelper
 {

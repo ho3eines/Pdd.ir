@@ -1,7 +1,7 @@
-@using System.Globalization
+﻿@using System.Globalization
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components.Web
-@using Pdd.ir.Shared.Helpers
+@using Pdd.ir.Client.Helpers
 
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -109,7 +109,7 @@
             currentViewTimestamp = Value ?? DateHelper.Now();
             UpdateInputText();
 
-            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Pdd.ir.Shared/js/clickOutside.js");
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/clickOutside.js");
             await _jsModule.InvokeVoidAsync("addClickListener", RootElement, DotNetObjectReference.Create(this));
         }
     }

@@ -1,4 +1,4 @@
-namespace Pdd.ir.Shared.Models;
+﻿namespace Pdd.ir.Client.Models;
 
 public class ModalModel
 {

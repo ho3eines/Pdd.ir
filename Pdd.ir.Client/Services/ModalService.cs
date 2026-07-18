@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using Pdd.ir.Shared.Models;
+using Pdd.ir.Client.Models;
 
-namespace Pdd.ir.Shared.Services;
+namespace Pdd.ir.Client.Services;
 
 public class ModalService : IModalService, IAsyncDisposable
 {

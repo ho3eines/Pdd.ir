@@ -23,7 +23,7 @@
               OnInsert="OpenCreate"
               OnEdit="OpenEdit"
               OnDelete="Delete"
-              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
+              DeleteMessageSelector="@(_ => T.Text("are_you_sure_delete"))" />
 </div>
 
 @code {
