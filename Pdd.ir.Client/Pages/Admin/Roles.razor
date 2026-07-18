@@ -6,13 +6,13 @@
 @inject IAlertService Alert
 @inject IJSRuntime JS
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "مدیریت نقش‌ها" : "Roles") | PDD</PageTitle>
+<PageTitle>@T.Text("roles_title") | PDD</PageTitle>
 
 <div class="page-enter">
     <PddTable TItem="RoleDto"
               Items="@Items"
-              Title="@(T.CurrentLanguage == "fa" ? "مدیریت نقش‌ها و دسترسی‌ها" : "Roles & Permissions")"
-              Subtitle="@(T.CurrentLanguage == "fa" ? "تعریف نقش‌ها و مدیریت دسترسی‌های هر نقش" : "Define roles and manage their permissions")"
+              Title="@T.Text("roles_subtitle")"
+              Subtitle="@T.Text("roles_guide")"
               IsLoading="@IsLoading"
               PageSize="10"
               CanInsert="true"

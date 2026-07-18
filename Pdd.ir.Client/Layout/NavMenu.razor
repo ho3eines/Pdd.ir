@@ -13,7 +13,7 @@
     <div class="admin-sidebar-header">
         <a href="/" class="admin-sidebar-logo">
             <span class="admin-sidebar-logo-text">PDD</span>
-            <span class="admin-sidebar-logo-sub">@(T.CurrentLanguage == "fa" ? "پنل مدیریت" : "Admin Panel")</span>
+            <span class="admin-sidebar-logo-sub">@T.Text("admin_panel")</span>
         </a>
         <button class="admin-sidebar-close" @onclick="ToggleSidebar">
             <i class="bi bi-x-lg"></i>
@@ -71,7 +71,7 @@
     <div class="admin-sidebar-footer">
         <a href="/" class="admin-sidebar-back">
             <i class="bi bi-arrow-right"></i>
-            <span>@(T.CurrentLanguage == "fa" ? "بازگشت به سایت" : "Back to Site")</span>
+            <span>@T.Text("back_to_site")</span>
         </a>
     </div>
 </div>

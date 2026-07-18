@@ -2,8 +2,9 @@
 @inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
+@inject IAlertService Alert
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "تنظیمات" : "Settings") | PDD</PageTitle>
+<PageTitle>@T.Text("settings") | PDD</PageTitle>
 
 <div class="page-enter">
     <div class="mb-4" style="padding-top:24px;">
@@ -21,23 +22,23 @@
             <div class="col-12 col-lg-6">
                 <div class="glass-card fade-slide-in p-4">
                     <h5 style="font-size:14px;font-weight:700;margin-bottom:16px;">
-                        <i class="bi bi-building me-2"></i>اطلاعات شرکت
+                        <i class="bi bi-building me-2"></i>@(T.CurrentLanguage == "fa" ? "اطلاعات شرکت" : "Company Info")
                     </h5>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">نام شرکت</label>
+                            <label class="form-label">@(T.CurrentLanguage == "fa" ? "نام شرکت" : "Company Name")</label>
                             <input type="text" class="form-control" @bind="CompanyName" />
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">تلفن</label>
+                            <label class="form-label">@T.Text("phone")</label>
                             <input type="text" class="form-control" @bind="Phone" />
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">ایمیل</label>
+                            <label class="form-label">@T.Text("email")</label>
                             <input type="email" class="form-control" @bind="Email" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label">آدرس</label>
+                            <label class="form-label">@T.Text("address")</label>
                             <textarea class="form-control" rows="2" @bind="Address"></textarea>
                         </div>
                     </div>
@@ -46,23 +47,23 @@
             <div class="col-12 col-lg-6">
                 <div class="glass-card fade-slide-in p-4">
                     <h5 style="font-size:14px;font-weight:700;margin-bottom:16px;">
-                        <i class="bi bi-share me-2"></i>شبکه‌های اجتماعی
+                        <i class="bi bi-share me-2"></i>@(T.CurrentLanguage == "fa" ? "شبکه‌های اجتماعی" : "Social Media")
                     </h5>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">اینستاگرام</label>
+                            <label class="form-label">Instagram</label>
                             <input type="text" class="form-control" @bind="Instagram" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label">لینکدین</label>
+                            <label class="form-label">LinkedIn</label>
                             <input type="text" class="form-control" @bind="LinkedIn" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label">توییتر</label>
+                            <label class="form-label">Twitter</label>
                             <input type="text" class="form-control" @bind="Twitter" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label">تلگرام</label>
+                            <label class="form-label">Telegram</label>
                             <input type="text" class="form-control" @bind="Telegram" />
                         </div>
                     </div>
@@ -73,7 +74,7 @@
         <div class="mt-4">
             <button class="btn btn-primary" @onclick="SaveSettings" disabled="@IsSaving">
                 @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                <i class="bi bi-floppy me-1"></i>ذخیره تنظیمات
+                <i class="bi bi-floppy me-1"></i>@T.Text("save")
             </button>
         </div>
     }
@@ -83,7 +84,7 @@
     string CompanyName = "Pdd.ir";
     string Phone = "021-12345678";
     string Email = "info@pdd.ir";
-    string Address = "تهران، خیابان ولیعصر";
+    string Address = "";
     string Instagram = "";
     string LinkedIn = "";
     string Twitter = "";
@@ -134,9 +135,9 @@
             {
                 await Comm.PutAsync<object>($"api/settings/{kv.Key}", new { Value = kv.Value });
             }
-            await JS.InvokeVoidAsync("alert", "تنظیمات با موفقیت ذخیره شد.");
+            await Alert.ShowSuccessAsync(T.Text("success"), T.Text("saved_successfully"));
         }
-        catch (Exception ex) { await JS.InvokeVoidAsync("alert", $"خطا: {ex.Message}"); }
+        catch (Exception ex) { await Alert.ShowErrorAsync(T.Text("error"), ex.Message); }
         finally { IsSaving = false; }
     }
 

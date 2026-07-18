@@ -126,7 +126,27 @@ public class TranslateService : ITranslateService
         ["view_products"] = "مشاهده محصولات", ["ready_to_start"] = "آماده شروع هستید؟",
         ["contact_description"] = "با ما تماس بگیرید و بهترین راهکار را دریافت کنید",
         ["latest_projects"] = "آخرین پروژه‌های شرکت", ["company_goal"] = "هدف اصلی شرکت",
-        ["customer_growth"] = "سیر صعودی مشتریان شرکت"
+        ["customer_growth"] = "سیر صعودی مشتریان شرکت",
+        ["welcome"] = "خوش آمدید", ["new_product"] = "محصول جدید", ["new_article"] = "مقاله جدید",
+        ["new_portfolio"] = "نمونه کار جدید", ["new_user"] = "کاربر جدید", ["new_role"] = "نقش جدید",
+        ["view_all"] = "مشاهده همه", ["no_products"] = "محصولی وجود ندارد", ["no_messages"] = "پیامی وجود ندارد",
+        ["no_articles"] = "مقاله‌ای وجود ندارد", ["no_permissions"] = "هیچ دسترسی‌ای یافت نشد",
+        ["recent_products"] = "آخرین محصولات", ["recent_messages"] = "آخرین پیام‌ها", ["recent_articles"] = "آخرین مقالات",
+        ["product_guide"] = "اطلاعات محصول را وارد کنید.", ["portfolio_guide"] = "اطلاعات نمونه کار را وارد کنید.",
+        ["blog_guide"] = "اطلاعات مقاله را وارد کنید. Slug باید منحصربفرد باشد.",
+        ["user_guide"] = "اطلاعات کاربر را وارد کنید.", ["role_guide"] = "نام نقش و دسترسی‌های آن را تنظیم کنید.",
+        ["select_role"] = "انتخاب نقش...", ["user_role"] = "کاربر", ["admin_role"] = "ادمین", ["manager_role"] = "مدیر",
+        ["pdd_engineering"] = "طراح داده پیشرو", ["toggle_theme"] = "تغییر تم", ["logout_title"] = "خروج",
+        ["contact_messages_guide"] = "پیام‌های دریافتی از فرم تماس", ["users_guide"] = "تعریف، ویرایش و مدیریت دسترسی کاربران",
+        ["roles_title"] = "مدیریت نقش‌ها", ["roles_subtitle"] = "مدیریت نقش‌ها و دسترسی‌ها",
+        ["roles_guide"] = "تعریف نقش‌ها و مدیریت دسترسی‌های هر نقش",
+        ["site_settings"] = "تنظیمات سایت", ["site_settings_guide"] = "مدیریت تنظیمات کلی سایت",
+        ["company_info"] = "اطلاعات شرکت", ["company_name"] = "نام شرکت",
+        ["social_media"] = "شبکه‌های اجتماعی", ["settings_saved"] = "تنظیمات با موفقیت ذخیره شد.",
+        ["change_password"] = "تغییر رمز عبور", ["new_password_guide"] = "رمز عبور جدید را وارد کنید.",
+        ["new_password"] = "رمز عبور جدید", ["password_changed_msg"] = "رمز عبور تغییر کرد",
+        ["name_label"] = "نام", ["close"] = "بستن", ["no_data_found"] = "داده‌ای موجود نیست",
+        ["confirm_delete"] = "آیا از حذف مطمئن هستید؟"
     };
 
     private Dictionary<string, string> En() => new()
@@ -177,6 +197,26 @@ public class TranslateService : ITranslateService
         ["view_products"] = "View Products", ["ready_to_start"] = "Ready to Get Started?",
         ["contact_description"] = "Contact us and get the best solution",
         ["latest_projects"] = "Latest Company Projects", ["company_goal"] = "Company Main Goal",
-        ["customer_growth"] = "Company Customer Growth"
+        ["customer_growth"] = "Company Customer Growth",
+        ["welcome"] = "Welcome", ["new_product"] = "New Product", ["new_article"] = "New Article",
+        ["new_portfolio"] = "New Portfolio", ["new_user"] = "New User", ["new_role"] = "New Role",
+        ["view_all"] = "View All", ["no_products"] = "No products yet", ["no_messages"] = "No messages yet",
+        ["no_articles"] = "No articles yet", ["no_permissions"] = "No permissions found",
+        ["recent_products"] = "Recent Products", ["recent_messages"] = "Recent Messages", ["recent_articles"] = "Recent Articles",
+        ["product_guide"] = "Enter product information.", ["portfolio_guide"] = "Enter portfolio information.",
+        ["blog_guide"] = "Enter article information. Slug must be unique.",
+        ["user_guide"] = "Enter user information.", ["role_guide"] = "Set role name and its permissions.",
+        ["select_role"] = "Select role...", ["user_role"] = "User", ["admin_role"] = "Admin", ["manager_role"] = "Manager",
+        ["pdd_engineering"] = "PDD Engineering", ["toggle_theme"] = "Toggle Theme", ["logout_title"] = "Logout",
+        ["contact_messages_guide"] = "Messages from contact form", ["users_guide"] = "Create, edit and manage user access",
+        ["roles_title"] = "Roles Management", ["roles_subtitle"] = "Roles & Permissions",
+        ["roles_guide"] = "Define roles and manage their permissions",
+        ["site_settings"] = "Site Settings", ["site_settings_guide"] = "Manage general site settings",
+        ["company_info"] = "Company Info", ["company_name_label"] = "Company Name",
+        ["social_media"] = "Social Media", ["settings_saved"] = "Settings saved successfully.",
+        ["change_password"] = "Change Password", ["new_password_guide"] = "Enter the new password.",
+        ["new_password"] = "New Password", ["password_changed_msg"] = "Password has been changed",
+        ["name_label"] = "Name", ["close"] = "Close", ["no_data_found"] = "No data available",
+        ["confirm_delete"] = "Are you sure you want to delete?"
     };
 }

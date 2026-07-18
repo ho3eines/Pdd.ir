@@ -7,7 +7,7 @@
 @if (_isLandingPage)
 {
     @Body
-    <button class="global-theme-toggle" @onclick="ToggleTheme" title="تغییر تم">
+    <button class="global-theme-toggle" @onclick="ToggleTheme" title="@T.Text("toggle_theme")">
         <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
     </button>
 }
@@ -21,7 +21,7 @@ else
                 <div class="admin-topbar-right">
                     <a href="/" class="admin-topbar-logo">
                         <span class="admin-topbar-logo-text">PDD</span>
-                        <span class="admin-topbar-logo-sub">@(T.CurrentLanguage == "fa" ? "طراح داده پیشرو" : "PDD Engineering")</span>
+                        <span class="admin-topbar-logo-sub">@T.Text("pdd_engineering")</span>
                     </a>
                 </div>
                 <div class="admin-topbar-left">
@@ -30,7 +30,7 @@ else
                             <span class="connection-dot connected"></span>
                             <span>WS</span>
                         </div>
-                        <button class="admin-topbar-pill" @onclick="ToggleTheme" title="تغییر تم">
+                        <button class="admin-topbar-pill" @onclick="ToggleTheme" title="@T.Text("toggle_theme")">
                             <i class="bi @(_isDark ? "bi-sun" : "bi-moon")"></i>
                         </button>
                         <button class="admin-topbar-pill lang-pill-mini" @onclick="ToggleLang">
@@ -41,7 +41,7 @@ else
                         {
                             <div class="admin-topbar-user">
                                 <span class="admin-topbar-user-name">@Auth.FullName</span>
-                                <button class="admin-topbar-pill" @onclick="Logout" title="خروج">
+                                <button class="admin-topbar-pill" @onclick="Logout" title="@T.Text("logout")">
                                     <i class="bi bi-box-arrow-right"></i>
                                 </button>
                             </div>

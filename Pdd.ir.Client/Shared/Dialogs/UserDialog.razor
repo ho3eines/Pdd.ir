@@ -2,51 +2,52 @@
 @inject IAlertService Alert
 @inject ICommunicationService Comm
 @inject IJSRuntime JS
+@inject ITranslateService T
 
 <div class="aco-dialog-body">
     <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
             <i class="bi bi-info-circle" style="color:var(--pdd-primary);"></i>
-            <strong style="font-size:0.875rem;">@(IsEdit ? "ویرایش کاربر" : "کاربر جدید")</strong>
+            <strong style="font-size:0.875rem;">@(IsEdit ? T.Text("user_edit") : T.Text("user_new"))</strong>
         </div>
-        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">اطلاعات کاربر را وارد کنید.</p>
+        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">@T.Text("user_guide")</p>
     </div>
     <div class="row g-3">
         @if (!IsEdit)
         {
             <div class="col-12 col-md-6">
-                <label class="form-label">نام کاربری *</label>
+                <label class="form-label">@T.Text("username") *</label>
                 <input type="text" class="form-control" @bind="Username" />
             </div>
             <div class="col-12 col-md-6">
-                <label class="form-label">رمز عبور *</label>
+                <label class="form-label">@T.Text("password") *</label>
                 <input type="password" class="form-control" @bind="Password" />
             </div>
         }
         <div class="col-12 col-md-6">
-            <label class="form-label">نام کامل</label>
+            <label class="form-label">@T.Text("full_name")</label>
             <input type="text" class="form-control" @bind="Model.FullName" />
         </div>
         <div class="col-12 col-md-6">
-            <label class="form-label">ایمیل</label>
+            <label class="form-label">@T.Text("email_field")</label>
             <input type="email" class="form-control" @bind="Model.Email" />
         </div>
         <div class="col-12 col-md-6">
-            <label class="form-label">نقش</label>
+            <label class="form-label">@T.Text("role")</label>
             <SearchableList TItem="RoleItem" TValue="string"
                 @bind-Value="Model.Role"
                 Items="@_roles"
                 TextSelector="@(r => r.Name)"
                 ValueSelector="@(r => r.Name)"
-                Placeholder="انتخاب نقش..." />
+                Placeholder="@T.Text("select_role")" />
         </div>
     </div>
 </div>
 <div class="aco-dialog-footer">
-    <button class="btn btn-secondary" @onclick="Close">انصراف</button>
+    <button class="btn btn-secondary" @onclick="Close">@T.Text("cancel")</button>
     <button class="btn btn-primary" @onclick="Save" disabled="@IsSaving">
         @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-        <i class="bi bi-floppy me-1"></i>ذخیره
+        <i class="bi bi-floppy me-1"></i>@T.Text("save")
     </button>
 </div>
 
@@ -62,9 +63,9 @@
 
     List<RoleItem> _roles = new()
     {
-        new("User", "کاربر"),
-        new("admin", "ادمین"),
-        new("manager", "مدیر")
+        new("User", "User"),
+        new("admin", "Admin"),
+        new("manager", "Manager")
     };
 
     protected override async Task OnInitializedAsync()
@@ -96,7 +97,7 @@
             {
                 if (string.IsNullOrWhiteSpace(Username))
                 {
-                    await Alert.ShowWarningAsync("هشدار", "نام کاربری الزامی است");
+                    await Alert.ShowWarningAsync(T.Text("warning"), T.Text("username_required"));
                     return;
                 }
                 await Comm.PostAsync<object>("api/user", new
@@ -105,12 +106,12 @@
                 });
             }
 
-            await Alert.ShowSuccessAsync("موفق", "کاربر ذخیره شد");
+            await Alert.ShowSuccessAsync(T.Text("success"), T.Text("user_saved"));
             Modal.Close();
         }
         catch (Exception ex)
         {
-            await Alert.ShowErrorAsync("خطا", ex.Message);
+            await Alert.ShowErrorAsync(T.Text("error"), ex.Message);
         }
         finally { IsSaving = false; }
     }

@@ -5,13 +5,13 @@
 @inject IAppStateService AppState
 @inject NavigationManager Nav
 
-<PageTitle>@(T.CurrentLanguage == "fa" ? "داشبورد" : "Dashboard") | PDD</PageTitle>
+<PageTitle>@T.Text("dashboard") | PDD</PageTitle>
 
 <div class="page-enter">
     <div class="d-flex align-items-center justify-content-between mb-4" style="padding-top:24px;">
         <div>
-            <h1 style="font-size:28px;font-weight:700;">@(T.CurrentLanguage == "fa" ? "داشبورد" : "Dashboard")</h1>
-            <p style="font-size:13px;color:var(--text-secondary);">خوش آمدید @Auth.FullName</p>
+            <h1 style="font-size:28px;font-weight:700;">@T.Text("dashboard")</h1>
+            <p style="font-size:13px;color:var(--text-secondary);">@T.Text("welcome") @Auth.FullName</p>
         </div>
         <div class="d-flex gap-2">
             <span class="badge" style="background:var(--pdd-primary);padding:6px 12px;font-size:11px;">
@@ -44,7 +44,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-primary);cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "محصولات" : "Products")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("products")</div>
                                 <div style="font-size:24px;font-weight:800;color:var(--pdd-primary);">@ProductCount</div>
                             </div>
                             <i class="bi bi-box-seam" style="font-size:20px;color:var(--pdd-primary);opacity:0.5;"></i>
@@ -57,7 +57,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-cyan);cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "مقالات" : "Blog")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("blog")</div>
                                 <div style="font-size:24px;font-weight:800;color:var(--pdd-cyan);">@BlogCount</div>
                             </div>
                             <i class="bi bi-journal-text" style="font-size:20px;color:var(--pdd-cyan);opacity:0.5;"></i>
@@ -70,7 +70,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-pink);cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "نمونه کار" : "Portfolio")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("portfolio")</div>
                                 <div style="font-size:24px;font-weight:800;color:var(--pdd-pink);">@PortfolioCount</div>
                             </div>
                             <i class="bi bi-images" style="font-size:20px;color:var(--pdd-pink);opacity:0.5;"></i>
@@ -83,7 +83,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-secondary);cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "پیام‌ها" : "Messages")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("admin_messages")</div>
                                 <div style="font-size:24px;font-weight:800;color:var(--pdd-secondary);">@MessageCount</div>
                             </div>
                             <i class="bi bi-envelope" style="font-size:20px;color:var(--pdd-secondary);opacity:0.5;"></i>
@@ -96,7 +96,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid #ef4444;cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "خوانده نشده" : "Unread")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("unread")</div>
                                 <div style="font-size:24px;font-weight:800;color:#ef4444;">@UnreadCount</div>
                             </div>
                             <i class="bi bi-envelope-exclamation" style="font-size:20px;color:#ef4444;opacity:0.5;"></i>
@@ -109,7 +109,7 @@
                     <div class="glass-card hover-lift fade-slide-in p-3" style="border-top:3px solid var(--pdd-purple);cursor:pointer;">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@(T.CurrentLanguage == "fa" ? "کاربران" : "Users")</div>
+                                <div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">@T.Text("admin_users")</div>
                                 <div style="font-size:24px;font-weight:800;color:var(--pdd-purple);">@UserCount</div>
                             </div>
                             <i class="bi bi-people" style="font-size:20px;color:var(--pdd-purple);opacity:0.5;"></i>
@@ -126,19 +126,19 @@
             </h5>
             <div class="d-flex flex-wrap gap-2">
                 <a href="/admin/products" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-circle me-1"></i>محصول جدید
+                    <i class="bi bi-plus-circle me-1"></i>@T.Text("new_product")
                 </a>
                 <a href="/admin/blog" class="btn btn-outline-info btn-sm">
-                    <i class="bi bi-plus-circle me-1"></i>مقاله جدید
+                    <i class="bi bi-plus-circle me-1"></i>@T.Text("new_article")
                 </a>
                 <a href="/admin/portfolio" class="btn btn-outline-pink btn-sm">
-                    <i class="bi bi-plus-circle me-1"></i>نمونه کار جدید
+                    <i class="bi bi-plus-circle me-1"></i>@T.Text("new_portfolio")
                 </a>
                 <a href="/admin/users" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-person-plus me-1"></i>کاربر جدید
+                    <i class="bi bi-person-plus me-1"></i>@T.Text("new_user")
                 </a>
                 <a href="/admin/roles" class="btn btn-outline-warning btn-sm">
-                    <i class="bi bi-shield-plus me-1"></i>نقش جدید
+                    <i class="bi bi-shield-plus me-1"></i>@T.Text("new_role")
                 </a>
             </div>
         </div>
@@ -150,9 +150,9 @@
                 <div class="glass-card fade-slide-in p-4" style="height:100%;">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
-                            @(T.CurrentLanguage == "fa" ? "آخرین محصولات" : "Recent Products")
+                            @T.Text("recent_products")
                         </h5>
-                        <a href="/admin/products" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                        <a href="/admin/products" style="font-size:12px;color:var(--pdd-primary);">@T.Text("view_all")</a>
                     </div>
                     @if (Products.Any())
                     {
@@ -166,13 +166,13 @@
                                     <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@p.Title</div>
                                     <div style="font-size:11px;color:var(--text-secondary);">@p.Category</div>
                                 </div>
-                                <span class="badge bg-success" style="font-size:10px;">فعال</span>
+                                <span class="badge bg-success" style="font-size:10px;">@T.Text("active")</span>
                             </div>
                         }
                     }
                     else
                     {
-                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">محصولی وجود ندارد</div>
+                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">@T.Text("no_products")</div>
                     }
                 </div>
             </div>
@@ -182,9 +182,9 @@
                 <div class="glass-card fade-slide-in p-4" style="height:100%;">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
-                            @(T.CurrentLanguage == "fa" ? "آخرین پیام‌ها" : "Recent Messages")
+                            @T.Text("recent_messages")
                         </h5>
-                        <a href="/admin/messages" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                        <a href="/admin/messages" style="font-size:12px;color:var(--pdd-primary);">@T.Text("view_all")</a>
                     </div>
                     @if (Messages.Any())
                     {
@@ -210,7 +210,7 @@
                     }
                     else
                     {
-                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">پیامی وجود ندارد</div>
+                        <div class="text-center py-4" style="color:var(--text-secondary);font-size:13px;">@T.Text("no_messages")</div>
                     }
                 </div>
             </div>
@@ -222,9 +222,9 @@
                 <div class="glass-card fade-slide-in p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
-                            @(T.CurrentLanguage == "fa" ? "آخرین مقالات" : "Recent Articles")
+                            @T.Text("recent_articles")
                         </h5>
-                        <a href="/admin/blog" style="font-size:12px;color:var(--pdd-primary);">مشاهده همه</a>
+                        <a href="/admin/blog" style="font-size:12px;color:var(--pdd-primary);">@T.Text("view_all")</a>
                     </div>
                     @if (BlogPosts.Any())
                     {
@@ -236,7 +236,7 @@
                                         <div style="font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@b.Title</div>
                                         <div style="font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;">
                                             <span>@b.Author</span>
-                                            <span>@b.ViewCount بازدید</span>
+                                            <span>@b.ViewCount @T.Text("view_count")</span>
                                         </div>
                                     </div>
                                 </div>
@@ -245,7 +245,7 @@
                     }
                     else
                     {
-                        <div class="text-center py-3" style="color:var(--text-secondary);font-size:13px;">مقاله‌ای وجود ندارد</div>
+                        <div class="text-center py-3" style="color:var(--text-secondary);font-size:13px;">@T.Text("no_articles")</div>
                     }
                 </div>
             </div>

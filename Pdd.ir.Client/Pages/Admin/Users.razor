@@ -12,7 +12,7 @@
     <PddTable TItem="UserDto"
               Items="@UserList"
               Title="@T.Text("admin_users")"
-              Subtitle="@(T.CurrentLanguage == "fa" ? "تعریف، ویرایش و مدیریت دسترسی کاربران" : "Create, edit and manage user access")"
+              Subtitle="@T.Text("users_guide")"
               IsLoading="@IsLoading"
               PageSize="10"
               CanInsert="true"

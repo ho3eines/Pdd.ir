@@ -1,20 +1,21 @@
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject ICommunicationService Comm
+@inject ITranslateService T
 
 <div class="aco-dialog-body">
     <div class="row g-2 mb-3" style="font-size:13px;">
-        <div class="col-6"><strong>نام:</strong> @Message.Name</div>
-        <div class="col-6"><strong>ایمیل:</strong> @Message.Email</div>
-        <div class="col-6"><strong>تلفن:</strong> @(Message.Phone ?? "-")</div>
-        <div class="col-6"><strong>تاریخ:</strong> @DateHelper.ToShamsiWithTime(DateHelper.ToUnix(Message.CreatedAt))</div>
-        <div class="col-12"><strong>موضوع:</strong> @(Message.Subject ?? "-")</div>
+        <div class="col-6"><strong>@T.Text("name"):</strong> @Message.Name</div>
+        <div class="col-6"><strong>@T.Text("email"):</strong> @Message.Email</div>
+        <div class="col-6"><strong>@T.Text("phone"):</strong> @(Message.Phone ?? "-")</div>
+        <div class="col-6"><strong>@T.Text("date"):</strong> @DateHelper.ToShamsiWithTime(DateHelper.ToUnix(Message.CreatedAt))</div>
+        <div class="col-12"><strong>@T.Text("subject_field"):</strong> @(Message.Subject ?? "-")</div>
     </div>
     <hr style="border-color:var(--border-color);" />
     <p style="line-height:1.8;font-size:14px;">@Message.Message</p>
 </div>
 <div class="aco-dialog-footer">
-    <button class="btn btn-secondary" @onclick="Close">بستن</button>
+    <button class="btn btn-secondary" @onclick="Close">@T.Text("close")</button>
 </div>
 
 @code {

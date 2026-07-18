@@ -13,7 +13,7 @@
     <PddTable TItem="ContactDto"
               Items="@Items"
               Title="@T.Text("admin_messages")"
-              Subtitle="@(T.CurrentLanguage == "fa" ? "پیام‌های دریافتی از فرم تماس" : "Messages from contact form")"
+              Subtitle="@T.Text("contact_messages_guide")"
               IsLoading="@IsLoading"
               PageSize="10"
               CanInsert="false"
