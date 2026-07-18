@@ -3193,6 +3193,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   opacity: 0;
   transform: scale(0.95) translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto !important;
 }
 .modal-dialog.show {
   opacity: 1;

@@ -86,9 +86,9 @@ public class ModalService : IModalService, IAsyncDisposable
         var script = @"window.pddModal={dotNetHelper:null,initialize:function(d){this.dotNetHelper=d}," +
             "setupModalEvents:function(id){" +
             "var b=document.querySelector('.modal-backdrop[data-modal-id=\"'+id+'\"]');" +
-            "if(b)b.onclick=function(){dotNetHelper.invokeMethodAsync('HandleBackdropClick',id)};" +
+            "if(b)b.onclick=function(){pddModal.dotNetHelper.invokeMethodAsync('HandleBackdropClick',id)};" +
             "var c=document.querySelector('.btn-close-rtl[data-modal-id=\"'+id+'\"]');" +
-            "if(c)c.onclick=function(){dotNetHelper.invokeMethodAsync('HandleCloseClick',id)};}," +
+            "if(c)c.onclick=function(){pddModal.dotNetHelper.invokeMethodAsync('HandleCloseClick',id)};}," +
             "removeModalEvents:function(id){" +
             "var b=document.querySelector('.modal-backdrop[data-modal-id=\"'+id+'\"]');" +
             "if(b)b.onclick=null;" +
