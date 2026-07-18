@@ -308,6 +308,7 @@
 
     private async Task OnInsertClick()
     {
+        await JS.InvokeVoidAsync("console.log", $"[PddTable] OnInsertClick called, HasDelegate={OnInsert.HasDelegate}");
         if (OnInsert.HasDelegate)
         {
             await OnInsert.InvokeAsync();
