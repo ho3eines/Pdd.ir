@@ -83,12 +83,12 @@ public class ModalService : IModalService, IAsyncDisposable
 
     private async Task InjectScripts()
     {
-        var script = @"window.pddModal={dotNetHelper:null,initialize:function(d){this.dotNetHelper=d}," +
+        var script = @"window.modal={dotNetHelper:null,initialize:function(d){this.dotNetHelper=d}," +
             "setupModalEvents:function(id){" +
             "var b=document.querySelector('.modal-backdrop[data-modal-id=\"'+id+'\"]');" +
-            "if(b)b.onclick=function(){pddModal.dotNetHelper.invokeMethodAsync('HandleBackdropClick',id)};" +
+            "if(b)b.onclick=function(){modal.dotNetHelper.invokeMethodAsync('HandleBackdropClick',id)};" +
             "var c=document.querySelector('.btn-close-rtl[data-modal-id=\"'+id+'\"]');" +
-            "if(c)c.onclick=function(){pddModal.dotNetHelper.invokeMethodAsync('HandleCloseClick',id)};}," +
+            "if(c)c.onclick=function(){modal.dotNetHelper.invokeMethodAsync('HandleCloseClick',id)};}," +
             "removeModalEvents:function(id){" +
             "var b=document.querySelector('.modal-backdrop[data-modal-id=\"'+id+'\"]');" +
             "if(b)b.onclick=null;" +
@@ -96,7 +96,7 @@ public class ModalService : IModalService, IAsyncDisposable
             "if(c)c.onclick=null;}};";
 
         await _jsRuntime.InvokeVoidAsync("eval", script);
-        await _jsRuntime.InvokeVoidAsync("pddModal.initialize", _dotNetHelper);
+        await _jsRuntime.InvokeVoidAsync("modal.initialize", _dotNetHelper);
     }
 
     public async Task<object?> Show<TComponent>(string title, Dictionary<string, object>? parameters = null, bool closeButton = true, string? modalSize = null) where TComponent : ComponentBase
@@ -119,7 +119,7 @@ public class ModalService : IModalService, IAsyncDisposable
         OnShow?.Invoke(modal);
 
         await Task.Delay(50);
-        await _jsRuntime.InvokeVoidAsync("pddModal.setupModalEvents", modal.Id);
+        await _jsRuntime.InvokeVoidAsync("modal.setupModalEvents", modal.Id);
 
         return await _tcs.Task;
     }
@@ -144,7 +144,7 @@ public class ModalService : IModalService, IAsyncDisposable
         OnShow?.Invoke(modal);
 
         await Task.Delay(50);
-        await _jsRuntime.InvokeVoidAsync("pddModal.setupModalEvents", modal.Id);
+        await _jsRuntime.InvokeVoidAsync("modal.setupModalEvents", modal.Id);
 
         return await _tcs.Task;
     }
@@ -164,7 +164,7 @@ public class ModalService : IModalService, IAsyncDisposable
 
     private async Task CloseModal(string modalId)
     {
-        await _jsRuntime.InvokeVoidAsync("pddModal.removeModalEvents", modalId);
+        await _jsRuntime.InvokeVoidAsync("modal.removeModalEvents", modalId);
         OnClose?.Invoke(modalId);
     }
 
