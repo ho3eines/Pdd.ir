@@ -2,9 +2,11 @@
 @using Pdd.ir.Shared.Services
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 
 @implements IDisposable
 @inject IModalService ModalService
+@inject IJSRuntime JS
 
 @foreach (var modal in _activeModals)
 {

@@ -101,7 +101,13 @@ public class ModalService : IModalService, IAsyncDisposable
 
     public async Task<object?> Show<TComponent>(string title, Dictionary<string, object>? parameters = null, bool closeButton = true, string? modalSize = null) where TComponent : ComponentBase
     {
-        if (!_isInitialized) await InitializeAsync();
+        await _jsRuntime.InvokeVoidAsync("console.log", $"[Modal] Show called, initialized={_isInitialized}");
+
+        if (!_isInitialized)
+        {
+            await _jsRuntime.InvokeVoidAsync("console.log", "[Modal] Calling InitializeAsync...");
+            await InitializeAsync();
+        }
 
         _tcs = new TaskCompletionSource<object?>();
 
@@ -116,9 +122,11 @@ public class ModalService : IModalService, IAsyncDisposable
         };
 
         _currentModalId = modal.Id;
+        await _jsRuntime.InvokeVoidAsync("console.log", $"[Modal] Firing OnShow, subscribers={OnShow.GetInvocationList().Length}");
         OnShow?.Invoke(modal);
 
         await Task.Delay(50);
+        await _jsRuntime.InvokeVoidAsync("console.log", "[Modal] Calling setupModalEvents...");
         await _jsRuntime.InvokeVoidAsync("modal.setupModalEvents", modal.Id);
 
         return await _tcs.Task;
