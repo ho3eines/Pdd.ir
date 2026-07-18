@@ -1,34 +1,40 @@
-﻿@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 
-@inherits InputTextArea
+@implements IDisposable
 @inject IJSRuntime JSRuntime
 
 <textarea @attributes="AdditionalAttributes"
           id="@Id"
           class="form-control @CssClass"
-          value="@CurrentValue"></textarea>
+          value="@Value"
+          @oninput="OnInput"></textarea>
 
 @code {
     string _id = "";
 
-    [Parameter]
-    public string Id
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Id
     {
         get => _id ?? $"CKEditor_{uid}";
         set => _id = value;
     }
-
-    [Parameter]
-    public string? UploadUrl { get; set; }
+    [Parameter] public string? UploadUrl { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     readonly string uid = Guid.NewGuid().ToString().ToLower().Replace("-", "");
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString() ?? "";
+        await ValueChanged.InvokeAsync(Value);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadScripts();
-        await base.OnInitializedAsync();
     }
 
     private async Task LoadScripts()
@@ -37,7 +43,7 @@
             "new Promise((resolve, reject) => {" +
             "  if (typeof CKEDITOR !== 'undefined') resolve();" +
             "  const script = document.createElement('script');" +
-            "  script.src = '/_content/Pdd.ir.Shared/js/ckeditor.js';" +
+            "  script.src = '/js/ckeditor.js';" +
             "  script.onload = () => resolve();" +
             "  script.onerror = () => reject();" +
             "  document.head.appendChild(script);" +
@@ -47,7 +53,7 @@
             "new Promise((resolve, reject) => {" +
             "  if (window.CKEditorInterop) resolve();" +
             "  const script = document.createElement('script');" +
-            "  script.src = '/_content/Pdd.ir.Shared/js/CKEditorInterop.js';" +
+            "  script.src = '/js/CKEditorInterop.js';" +
             "  script.onload = () => resolve();" +
             "  script.onerror = () => reject();" +
             "  document.head.appendChild(script);" +
@@ -57,16 +63,15 @@
     }
 
     [JSInvokable]
-    public Task EditorDataChanged(string data)
+    public async Task EditorDataChanged(string data)
     {
-        CurrentValue = data;
+        Value = data;
+        await ValueChanged.InvokeAsync(Value);
         StateHasChanged();
-        return Task.CompletedTask;
     }
 
-    protected override void Dispose(bool disposing)
+    public void Dispose()
     {
         JSRuntime.InvokeVoidAsync("CKEditorInterop.destroy", Id);
-        base.Dispose(disposing);
     }
 }
