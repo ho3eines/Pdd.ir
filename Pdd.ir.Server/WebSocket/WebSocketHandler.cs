@@ -220,7 +220,7 @@ namespace Pdd.ir.Server.WebSocket
         private async Task<WsResponse> RequiresSession(IServiceScope scope, WsRequest request, string action)
         {
             // Validate session from request data (encrypted { clientId, sessionToken })
-            var sessionService = scope.ServiceProvider.GetRequiredService<ClientSessionService>();
+            var sessionService = scope.ServiceProvider.GetRequiredService<AuthService>();
 
             if (!string.IsNullOrEmpty(request.Auth))
             {
@@ -479,18 +479,18 @@ namespace Pdd.ir.Server.WebSocket
         // ── Auth Handlers ──────────────────────────────────────
         private static async Task<WsResponse> HandleAuthHandshake(IServiceScope scope, string? data)
         {
-            var svc = scope.ServiceProvider.GetRequiredService<ClientSessionService>();
+            var svc = scope.ServiceProvider.GetRequiredService<AuthService>();
             if (string.IsNullOrEmpty(data))
                 return new WsResponse { Action = "auth.handshake", Success = false, Message = "Missing encrypted payload" };
 
-            var (success, encryptedResponse, error) = await svc.HandleHandshakeAsync(data);
+            var result = await svc.HandleHandshakeAsync(data);
             return new WsResponse
             {
                 Action = "auth.handshake",
-                Success = success,
-                Message = error,
-                Data = success && encryptedResponse != null
-                    ? JsonSerializer.SerializeToElement(new { encrypted = true, data = encryptedResponse })
+                Success = result.Success,
+                Message = result.Error,
+                Data = result.Success && result.EncryptedResponse != null
+                    ? JsonSerializer.SerializeToElement(new { encrypted = true, data = result.EncryptedResponse })
                     : null
             };
         }

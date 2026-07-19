@@ -24,7 +24,7 @@ namespace Pdd.ir.Client.Services
     {
         private readonly HttpClient _http;
         private readonly EncryptionService _encryption;
-        private readonly SessionManager _session;
+        private readonly SecurityService _security;
         private readonly ILogger<CommunicationService> _logger;
         private ClientWebSocket? _ws;
         private bool _isConnected;
@@ -42,14 +42,14 @@ namespace Pdd.ir.Client.Services
         private const int WsTimeoutMs = 10000;
 
         public bool IsWebSocketConnected => _isConnected;
-        public bool IsAuthenticated => _session.IsAuthenticated;
+        public bool IsAuthenticated => _security.IsAuthenticated;
         public event Action<bool>? OnConnectionChanged;
 
-        public CommunicationService(HttpClient http, EncryptionService encryption, SessionManager session, ILogger<CommunicationService> logger)
+        public CommunicationService(HttpClient http, EncryptionService encryption, SecurityService security, ILogger<CommunicationService> logger)
         {
             _http = http;
             _encryption = encryption;
-            _session = session;
+            _security = security;
             _logger = logger;
         }
 
@@ -74,12 +74,12 @@ namespace Pdd.ir.Client.Services
         /// </summary>
         public async Task<bool> AuthenticateAsync()
         {
-            var ok = await _session.HandshakeAsync();
+            var ok = await _security.HandshakeAsync();
             if (ok)
             {
                 // Add auth header to HttpClient
                 _http.DefaultRequestHeaders.Remove("X-Auth");
-                var authHeader = await _session.GetAuthHeaderAsync();
+                var authHeader = await _security.GetAuthHeaderAsync();
                 if (!string.IsNullOrEmpty(authHeader))
                     _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
             }
@@ -133,7 +133,7 @@ namespace Pdd.ir.Client.Services
 
             try
             {
-                var clientId = _session.ClientId;
+                var clientId = _security.ClientId;
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 var payload = JsonSerializer.Serialize(new { clientId, timestamp });
                 var encrypted = await _encryption.EncryptAsync(payload);
@@ -312,7 +312,7 @@ namespace Pdd.ir.Client.Services
                     catch { }
                 }
 
-                var authHeader = await _session.GetAuthHeaderAsync();
+                var authHeader = await _security.GetAuthHeaderAsync();
                 var request = new { id = requestId, action, data = sendData, auth = authHeader };
                 var json = JsonSerializer.Serialize(request);
                 var sendBytes = Encoding.UTF8.GetBytes(json);

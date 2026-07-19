@@ -12,9 +12,9 @@ namespace Pdd.ir.Server.Controllers
         private readonly AuthBusinessService _authService;
         private readonly JwtService _jwtService;
         private readonly AesKeyStore _keyStore;
-        private readonly ClientSessionService _sessionService;
+        private readonly Services.AuthService _sessionService;
 
-        public AuthController(AuthBusinessService authService, JwtService jwtService, AesKeyStore keyStore, ClientSessionService sessionService)
+        public AuthController(AuthBusinessService authService, JwtService jwtService, AesKeyStore keyStore, Services.AuthService sessionService)
         {
             _authService = authService;
             _jwtService = jwtService;
@@ -28,12 +28,12 @@ namespace Pdd.ir.Server.Controllers
             if (request == null || string.IsNullOrEmpty(request.Encrypted))
                 return BadRequest(new { message = "Missing encrypted payload" });
 
-            var (success, encryptedResponse, error) = await _sessionService.HandleHandshakeAsync(request.Encrypted);
+            var result = await _sessionService.HandleHandshakeAsync(request.Encrypted);
 
-            if (!success)
-                return Unauthorized(new { message = error });
+            if (!result.Success)
+                return Unauthorized(new { message = result.Error, timeDiff = result.TimeDiff });
 
-            return Ok(new { encrypted = true, data = encryptedResponse });
+            return Ok(new { encrypted = true, data = result.EncryptedResponse });
         }
 
         [HttpPost("login")]

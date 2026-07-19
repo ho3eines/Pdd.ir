@@ -18,7 +18,7 @@ namespace Pdd.ir.Server.Services
                 return;
             }
 
-            var sessionService = context.HttpContext.RequestServices.GetRequiredService<ClientSessionService>();
+            var sessionService = context.HttpContext.RequestServices.GetRequiredService<AuthService>();
 
             if (!context.HttpContext.Request.Headers.TryGetValue(AuthHeaderName, out var encryptedAuth))
             {
