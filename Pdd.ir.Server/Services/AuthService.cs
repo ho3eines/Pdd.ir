@@ -16,8 +16,8 @@ namespace Pdd.ir.Server.Services
         private readonly IConfiguration _config;
         private readonly ILogger<AuthService> _logger;
         private readonly IMemoryCache _nonceCache;
-        private readonly Dictionary<string, int> _rateLimiter = new();
-        private readonly object _rateLock = new();
+        private static readonly Dictionary<string, int> _rateLimiter = new();
+        private static readonly object _rateLock = new();
 
         private string SharedKey => _config["ApiKey"] ?? "";
 
