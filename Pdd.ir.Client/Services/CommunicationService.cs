@@ -11,6 +11,7 @@ namespace Pdd.ir.Client.Services
         bool IsWebSocketConnected { get; }
         bool IsAuthenticated { get; }
         event Action<bool>? OnConnectionChanged;
+        Task InitializationTask { get; }
         Task InitializeAsync();
         Task<bool> AuthenticateAsync();
         Task ReconnectAsync();
@@ -41,6 +42,9 @@ namespace Pdd.ir.Client.Services
         private const int MaxRetryMs = 30000;
         private const int WsTimeoutMs = 10000;
 
+        private readonly TaskCompletionSource _initTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Task InitializationTask => _initTcs.Task;
+
         public bool IsWebSocketConnected => _isConnected;
         public bool IsAuthenticated => _security.IsAuthenticated;
         public event Action<bool>? OnConnectionChanged;
@@ -58,7 +62,7 @@ namespace Pdd.ir.Client.Services
             try
             {
                 var baseUri = _http.BaseAddress?.ToString().TrimEnd('/');
-                if (string.IsNullOrEmpty(baseUri)) return;
+                if (string.IsNullOrEmpty(baseUri)) { _initTcs.TrySetResult(); return; }
 
                 var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
                 _wsUrl = wsUri + "/ws";
@@ -67,6 +71,10 @@ namespace Pdd.ir.Client.Services
                 await AuthenticateAsync();
             }
             catch { }
+            finally
+            {
+                _initTcs.TrySetResult();
+            }
         }
 
         /// <summary>
@@ -245,6 +253,7 @@ namespace Pdd.ir.Client.Services
 
         public async Task<T?> GetAsync<T>(string url)
         {
+            await _initTcs.Task; // Wait for handshake before any API call
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, data) = MapUrlToAction(url);
@@ -256,6 +265,7 @@ namespace Pdd.ir.Client.Services
 
         public async Task<T?> PostAsync<T>(string url, object? data = null)
         {
+            await _initTcs.Task; // Wait for handshake before any API call
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, _) = MapUrlToAction(url);
@@ -268,6 +278,7 @@ namespace Pdd.ir.Client.Services
 
         public async Task<T?> PutAsync<T>(string url, object? data = null)
         {
+            await _initTcs.Task; // Wait for handshake before any API call
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, _) = MapUrlToAction(url);
@@ -280,6 +291,7 @@ namespace Pdd.ir.Client.Services
 
         public async Task<bool> DeleteAsync(string url)
         {
+            await _initTcs.Task; // Wait for handshake before any API call
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, data) = MapUrlToAction(url);
