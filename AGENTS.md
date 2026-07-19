@@ -44,6 +44,8 @@
 | 🔥 پیام commit | انگلیسی، مختصر، توضیحی (مثلاً: `fix: DB connection string for Docker`) |
 | 🔥 docker بعد از push | فقط بعد از push موفق، docker rebuild کن |
 | 🔥 لاگ چک | قبل از گفتن "تمام"، لاگ docker ببین |
+| 🔥 همیشه --no-cache | حتماً `docker compose build --no-cache` — cached build کد جدید رو نمیاره |
+| 🔥 همه سرویس‌ها | هم `app` و هم `nginx` باید rebuild بشن — فقط یکی کافی نیست |
 
 ### ❌ ممنوع
 ```bash
@@ -52,16 +54,24 @@ docker compose up --build -d    # ❌ اول docker
 # ... کار تمام
 git commit -m "..."             # ❌ بعد commit
 git push                        # ❌ بعد push
+
+# این هم اشتباه است (cached build):
+docker compose up --build -d    # ❌ cache داره، کد جدید نمیاره
+
+# این هم اشتباه است (فقط یک سرویس):
+docker compose build --no-cache app  # ❌ nginx هم باید rebuild بشه
 ```
 
 ### ✅ درست
 ```bash
-dotnet build                    # ۱. build
-git add -A                      # ۲. stage
-git commit -m "fix: ..."        # ۳. commit
-git push                        # ۴. push
-docker compose up --build -d    # ۵. docker (فقط بعد از push)
-docker logs pdd-app --tail 20   # ۶. بررسی لاگ
+dotnet build                              # ۱. build
+git add -A                                # ۲. stage
+git commit -m "fix: ..."                  # ۳. commit
+git push                                  # ۴. push
+docker compose down                       # ۵. توقف همه
+docker compose build --no-cache           # ۶. rebuild همه (بدون cache)
+docker compose up -d                      # ۷. اجرا
+docker logs pdd-app --tail 20             # ۸. بررسی لاگ
 ```
 
 ---
