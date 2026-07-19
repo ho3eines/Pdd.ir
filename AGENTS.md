@@ -18,6 +18,54 @@
 
 ---
 
+## 🚨 MANDATORY: Git Workflow (اول commit، بعد docker)
+
+> **قانون اجباری:** ترتیب انجام کار باید دقیقاً این باشد:
+>
+> **۱. کد را تغییر بده → ۲. Build کن → ۳. Commit + Push کن → ۴. Docker rebuild کن**
+
+### ترتیب اجباری
+```
+1. تغییر کد (edit/write)
+2. dotnet build (مطمئن شو compile میشه)
+3. git add -A
+4. git commit -m "پیام توضیحی"
+5. git push
+6. docker compose up --build -d
+7. docker logs بررسی کن
+8. به کاربر بگو "تمام"
+```
+
+### قوانین
+| قانون | توضیح |
+|-------|-------|
+| 🔥 اول commit | هرگز قبل از push، docker اجرا نکن |
+| 🔥 بعد از هر تغییر | فوراً commit + push کن — منتظر نمان |
+| 🔥 پیام commit | انگلیسی، مختصر، توضیحی (مثلاً: `fix: DB connection string for Docker`) |
+| 🔥 docker بعد از push | فقط بعد از push موفق، docker rebuild کن |
+| 🔥 لاگ چک | قبل از گفتن "تمام"، لاگ docker ببین |
+
+### ❌ ممنوع
+```bash
+# این ترتیب اشتباه است:
+docker compose up --build -d    # ❌ اول docker
+# ... کار تمام
+git commit -m "..."             # ❌ بعد commit
+git push                        # ❌ بعد push
+```
+
+### ✅ درست
+```bash
+dotnet build                    # ۱. build
+git add -A                      # ۲. stage
+git commit -m "fix: ..."        # ۳. commit
+git push                        # ۴. push
+docker compose up --build -d    # ۵. docker (فقط بعد از push)
+docker logs pdd-app --tail 20   # ۶. بررسی لاگ
+```
+
+---
+
 ## 🚨 MANDATORY: Docker Testing After Changes
 
 > **قانون اجباری:** پس از هر تغییر کد، پروژه باید در Docker rebuild و تست شود.
