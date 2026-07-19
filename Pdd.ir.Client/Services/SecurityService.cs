@@ -45,21 +45,17 @@ namespace Pdd.ir.Client.Services
 
             try
             {
-                // ── Step 1: Check clock sync ──
-                var clientTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                var response = await _http.PostAsJsonAsync("api/auth/handshake", new { test = true });
-
-                // ── Step 2: Build payload { clientId, timestamp, nonce } ──
+                // ── Build payload { clientId, timestamp, nonce } ──
                 var clientId = ClientId;
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 var nonce = GenerateNonce();
 
                 var payload = JsonSerializer.Serialize(new { clientId, timestamp, nonce });
 
-                // ── Step 3: Encrypt with shared key ──
+                // ── Encrypt with shared key ──
                 var encrypted = await _encryption.EncryptAsync(payload);
 
-                // ── Step 4: Send to server ──
+                // ── Send to server ──
                 var handshakeRequest = new { encrypted };
                 var handshakeResponse = await _http.PostAsJsonAsync("api/auth/handshake", handshakeRequest);
 
@@ -70,7 +66,7 @@ namespace Pdd.ir.Client.Services
                     return false;
                 }
 
-                // ── Step 5: Parse and decrypt response ──
+                // ── Parse and decrypt response ──
                 var responseJson = await handshakeResponse.Content.ReadAsStringAsync();
                 var doc = JsonSerializer.Deserialize<JsonElement>(responseJson);
 

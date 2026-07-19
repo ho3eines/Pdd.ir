@@ -421,6 +421,20 @@ namespace Pdd.ir.Client.Services
             try
             {
                 var response = await _http.GetAsync(url);
+
+                // Handle 401 → re-handshake and retry once
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    if (await _security.HandshakeAsync())
+                    {
+                        _http.DefaultRequestHeaders.Remove("X-Auth");
+                        var authHeader = await _security.GetAuthHeaderAsync();
+                        if (!string.IsNullOrEmpty(authHeader))
+                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
+                        response = await _http.GetAsync(url);
+                    }
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -438,6 +452,21 @@ namespace Pdd.ir.Client.Services
                 var response = data != null
                     ? await _http.PostAsJsonAsync(url, data)
                     : await _http.PostAsync(url, null);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    if (await _security.HandshakeAsync())
+                    {
+                        _http.DefaultRequestHeaders.Remove("X-Auth");
+                        var authHeader = await _security.GetAuthHeaderAsync();
+                        if (!string.IsNullOrEmpty(authHeader))
+                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
+                        response = data != null
+                            ? await _http.PostAsJsonAsync(url, data)
+                            : await _http.PostAsync(url, null);
+                    }
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -455,6 +484,21 @@ namespace Pdd.ir.Client.Services
                 var response = data != null
                     ? await _http.PutAsJsonAsync(url, data)
                     : await _http.PutAsync(url, null);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    if (await _security.HandshakeAsync())
+                    {
+                        _http.DefaultRequestHeaders.Remove("X-Auth");
+                        var authHeader = await _security.GetAuthHeaderAsync();
+                        if (!string.IsNullOrEmpty(authHeader))
+                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
+                        response = data != null
+                            ? await _http.PutAsJsonAsync(url, data)
+                            : await _http.PutAsync(url, null);
+                    }
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -470,6 +514,19 @@ namespace Pdd.ir.Client.Services
             try
             {
                 var response = await _http.DeleteAsync(url);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    if (await _security.HandshakeAsync())
+                    {
+                        _http.DefaultRequestHeaders.Remove("X-Auth");
+                        var authHeader = await _security.GetAuthHeaderAsync();
+                        if (!string.IsNullOrEmpty(authHeader))
+                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
+                        response = await _http.DeleteAsync(url);
+                    }
+                }
+
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }
