@@ -25,23 +25,10 @@ namespace Pdd.ir.Server.Controllers
         [HttpPost("handshake")]
         public async Task<IActionResult> Handshake([FromBody] HandshakeRequest request)
         {
-            // The encrypted payload is in the request body
-            // Client sends: { encrypted: "base64..." }
-            // We need the raw encrypted string
-
-            // Read raw body
-            using var reader = new StreamReader(Request.Body);
-            var body = await reader.ReadToEndAsync();
-            var doc = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(body);
-
-            if (!doc.TryGetProperty("encrypted", out var encProp))
+            if (request == null || string.IsNullOrEmpty(request.Encrypted))
                 return BadRequest(new { message = "Missing encrypted payload" });
 
-            var encryptedPayload = encProp.GetString();
-            if (string.IsNullOrEmpty(encryptedPayload))
-                return BadRequest(new { message = "Empty encrypted payload" });
-
-            var (success, encryptedResponse, error) = await _sessionService.HandleHandshakeAsync(encryptedPayload);
+            var (success, encryptedResponse, error) = await _sessionService.HandleHandshakeAsync(request.Encrypted);
 
             if (!success)
                 return Unauthorized(new { message = error });

@@ -41,7 +41,7 @@ namespace Pdd.ir.Server.Services
                 }
 
                 // 2. Parse { clientId, timestamp }
-                var handshake = System.Text.Json.JsonSerializer.Deserialize<HandshakeRequest>(json, new System.Text.Json.JsonSerializerOptions
+                var handshake = System.Text.Json.JsonSerializer.Deserialize<HandshakePayload>(json, new System.Text.Json.JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
@@ -166,6 +166,11 @@ namespace Pdd.ir.Server.Services
 
     // ── Models ──
     public class HandshakeRequest
+    {
+        public string? Encrypted { get; set; }
+    }
+
+    public class HandshakePayload
     {
         public string ClientId { get; set; } = "";
         public long Timestamp { get; set; }
