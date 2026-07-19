@@ -46,25 +46,12 @@ namespace Pdd.ir.Server.WebSocket
                 return;
             }
 
-            // ── API Key Validation ──
-            var apiKey = context.Request.Query["apiKey"].FirstOrDefault();
-            var configuredApiKey = _config["ApiKey"];
-
-            if (string.IsNullOrEmpty(configuredApiKey) || apiKey != configuredApiKey)
-            {
-                _logger.LogWarning("WS rejected: invalid API key from {Ip}", context.Connection.RemoteIpAddress);
-                context.Response.StatusCode = 401;
-                return;
-            }
-
-            // ── Optional: Extract username from query to map AES key ──
-            var username = context.Request.Query["username"].FirstOrDefault();
-
+            // ── Accept WS connection (auth validated per-message via auth field) ──
             var connectionId = Guid.NewGuid().ToString();
             var socket = await context.WebSockets.AcceptWebSocketAsync();
-            _connectionManager.AddConnection(connectionId, socket, username);
+            _connectionManager.AddConnection(connectionId, socket);
 
-            _logger.LogInformation("WS connected: {Id} (user={User})", connectionId, username ?? "anonymous");
+            _logger.LogInformation("WS connected: {Id}", connectionId);
 
             try
             {

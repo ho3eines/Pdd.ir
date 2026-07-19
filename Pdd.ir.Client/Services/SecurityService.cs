@@ -7,8 +7,8 @@ using System.Text.Json;
 namespace Pdd.ir.Client.Services
 {
     /// <summary>
-    /// Client-side security service: generates handshake, manages session.
-    /// Uses shared key directly for handshake encryption (no AES key dependency).
+    /// Client-side security service: handshake, session, per-request auth headers.
+    /// Each auth header is unique (timestamp + nonce) and can't be reused.
     /// </summary>
     public class SecurityService
     {
@@ -20,12 +20,10 @@ namespace Pdd.ir.Client.Services
 
         private string? _clientId;
         private string? _sessionToken;
-        private string? _authHeader;
         private DateTime? _expiresAt;
         private bool _handshakeInProgress;
 
         public bool IsAuthenticated => !string.IsNullOrEmpty(_sessionToken) && _expiresAt.HasValue && _expiresAt > DateTime.UtcNow;
-        public string? AuthHeader => _authHeader;
         public string ClientId => _clientId ??= GenerateClientId();
 
         public SecurityService(IJSRuntime js, HttpClient http, ILogger<SecurityService> logger)
@@ -45,17 +43,13 @@ namespace Pdd.ir.Client.Services
 
             try
             {
-                // ── Build payload { clientId, timestamp, nonce } ──
                 var clientId = ClientId;
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 var nonce = GenerateNonce();
 
                 var payload = JsonSerializer.Serialize(new { clientId, timestamp, nonce });
+                var encrypted = await EncryptAsync(payload);
 
-                // ── Encrypt with shared key via JS (CryptoUtils) ──
-                var encrypted = await _js.InvokeAsync<string>("CryptoUtils.encryptData", payload, SharedKey);
-
-                // ── Send to server ──
                 var handshakeRequest = new { encrypted };
                 var handshakeResponse = await _http.PostAsJsonAsync("api/auth/handshake", handshakeRequest);
 
@@ -66,7 +60,6 @@ namespace Pdd.ir.Client.Services
                     return false;
                 }
 
-                // ── Parse and decrypt response ──
                 var responseJson = await handshakeResponse.Content.ReadAsStringAsync();
                 var doc = JsonSerializer.Deserialize<JsonElement>(responseJson);
 
@@ -77,8 +70,7 @@ namespace Pdd.ir.Client.Services
                 if (string.IsNullOrEmpty(encryptedData))
                     return false;
 
-                // Decrypt response with shared key
-                var decrypted = await _js.InvokeAsync<string>("CryptoUtils.decryptData", encryptedData, SharedKey);
+                var decrypted = await DecryptAsync(encryptedData);
                 var responseDoc = JsonSerializer.Deserialize<JsonElement>(decrypted);
 
                 if (responseDoc.TryGetProperty("sessionToken", out var tokenProp) &&
@@ -88,10 +80,6 @@ namespace Pdd.ir.Client.Services
                     var expiresStr = expiresProp.GetString();
                     if (DateTime.TryParse(expiresStr, out var expires))
                         _expiresAt = expires;
-
-                    // Build encrypted auth header for subsequent requests
-                    var authPayload = JsonSerializer.Serialize(new { clientId, sessionToken = _sessionToken });
-                    _authHeader = await _js.InvokeAsync<string>("CryptoUtils.encryptData", authPayload, SharedKey);
 
                     _logger.LogInformation("Session established: ClientId={ClientId}, Expires={Expires}", clientId, _expiresAt);
                     return true;
@@ -111,7 +99,8 @@ namespace Pdd.ir.Client.Services
         }
 
         /// <summary>
-        /// Get auth header for requests. Auto-handshake if needed.
+        /// Generate FRESH auth header for each request (timestamp + nonce + HMAC).
+        /// Each header is unique and can't be replayed.
         /// </summary>
         public async Task<string?> GetAuthHeaderAsync()
         {
@@ -121,7 +110,33 @@ namespace Pdd.ir.Client.Services
                 if (!ok) return null;
             }
 
-            return _authHeader;
+            try
+            {
+                var clientId = ClientId;
+                var sessionToken = _sessionToken!;
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var nonce = GenerateNonce();
+
+                // ── HMAC signature for tamper-proof ──
+                var dataToSign = $"{clientId}:{sessionToken}:{timestamp}:{nonce}";
+                var hmac = ComputeHmac(dataToSign);
+
+                var authPayload = JsonSerializer.Serialize(new
+                {
+                    clientId,
+                    sessionToken,
+                    timestamp,
+                    nonce,
+                    hmac
+                });
+
+                return await EncryptAsync(authPayload);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate auth header");
+                return null;
+            }
         }
 
         /// <summary>
@@ -130,14 +145,13 @@ namespace Pdd.ir.Client.Services
         public void ClearSession()
         {
             _sessionToken = null;
-            _authHeader = null;
             _expiresAt = null;
         }
 
         /// <summary>
         /// Encrypt data with SharedKey via JS CryptoUtils
         /// </summary>
-        public async Task<string?> EncryptDataAsync(string plainText)
+        public async Task<string?> EncryptAsync(string plainText)
         {
             try
             {
@@ -149,13 +163,24 @@ namespace Pdd.ir.Client.Services
         /// <summary>
         /// Decrypt data with SharedKey via JS CryptoUtils
         /// </summary>
-        public async Task<string?> DecryptDataAsync(string ciphertext)
+        public async Task<string?> DecryptAsync(string ciphertext)
         {
             try
             {
                 return await _js.InvokeAsync<string>("CryptoUtils.decryptData", ciphertext, SharedKey);
             }
             catch { return null; }
+        }
+
+        /// <summary>
+        /// Compute HMAC-SHA256 for tamper-proof auth header
+        /// </summary>
+        private string ComputeHmac(string data)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(SharedKey);
+            using var hmac = new HMACSHA256(keyBytes);
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+            return Convert.ToBase64String(hash);
         }
 
         private static string GenerateNonce()

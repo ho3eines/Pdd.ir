@@ -184,7 +184,7 @@ namespace Pdd.ir.Server.Services
         }
 
         /// <summary>
-        /// Validate encrypted auth header: decrypt → { ClientId, SessionToken } → check DB
+        /// Validate encrypted auth header: decrypt → verify HMAC → check timestamp → check nonce → check session
         /// </summary>
         public async Task<bool> ValidateAuthHeaderAsync(string? encryptedAuth)
         {
@@ -202,6 +202,36 @@ namespace Pdd.ir.Server.Services
                 if (auth == null || string.IsNullOrEmpty(auth.ClientId) || string.IsNullOrEmpty(auth.SessionToken))
                     return false;
 
+                // ── Verify HMAC (tamper-proof) ──
+                var dataToVerify = $"{auth.ClientId}:{auth.SessionToken}:{auth.Timestamp}:{auth.Nonce}";
+                var expectedHmac = ComputeHmac(dataToVerify);
+                if (!CryptographicOperations.FixedTimeEquals(
+                    Convert.FromBase64String(auth.Hmac),
+                    Convert.FromBase64String(expectedHmac)))
+                {
+                    _logger.LogWarning("HMAC verification failed: ClientId={ClientId}", auth.ClientId);
+                    return false;
+                }
+
+                // ── Verify timestamp (≤30s) ──
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var timeDiff = Math.Abs(now - auth.Timestamp);
+                if (timeDiff > 30)
+                {
+                    _logger.LogWarning("Auth header expired: ClientId={ClientId}, Diff={Diff}s", auth.ClientId, timeDiff);
+                    return false;
+                }
+
+                // ── Check nonce (anti-replay) ──
+                var nonceKey = $"auth:{auth.ClientId}:{auth.Nonce}";
+                if (!_usedNonces.TryAdd(nonceKey, 0))
+                {
+                    _logger.LogWarning("Auth replay detected: ClientId={ClientId}, Nonce={Nonce}", auth.ClientId, auth.Nonce);
+                    return false;
+                }
+                _ = Task.Delay(TimeSpan.FromSeconds(60)).ContinueWith(_ => { byte removed; _usedNonces.TryRemove(nonceKey, out removed); });
+
+                // ── Validate session in DB ──
                 return await ValidateSessionAsync(auth.ClientId, auth.SessionToken);
             }
             catch
@@ -233,6 +263,17 @@ namespace Pdd.ir.Server.Services
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(bytes);
         }
+
+        /// <summary>
+        /// Compute HMAC-SHA256 for tamper-proof auth header verification
+        /// </summary>
+        private string ComputeHmac(string data)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(SharedKey);
+            using var hmac = new HMACSHA256(keyBytes);
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+            return Convert.ToBase64String(hash);
+        }
     }
 
     // ── Models ──
@@ -260,5 +301,8 @@ namespace Pdd.ir.Server.Services
     {
         public string ClientId { get; set; } = "";
         public string SessionToken { get; set; } = "";
+        public long Timestamp { get; set; }
+        public string Nonce { get; set; } = "";
+        public string Hmac { get; set; } = "";
     }
 }

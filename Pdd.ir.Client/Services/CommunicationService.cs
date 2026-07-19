@@ -67,8 +67,11 @@ namespace Pdd.ir.Client.Services
                 var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
                 _wsUrl = wsUri + "/ws";
 
-                // Auto-authenticate
+                // ── Step 1: HTTP Handshake (get session token) ──
                 await AuthenticateAsync();
+
+                // ── Step 2: Connect WebSocket ──
+                await ConnectAsync();
             }
             catch { }
             finally
@@ -572,12 +575,12 @@ namespace Pdd.ir.Client.Services
 
         private async Task<string?> TryEncryptAsync(string plainText)
         {
-            return await _security.EncryptDataAsync(plainText);
+            return await _security.EncryptAsync(plainText);
         }
 
         private async Task<string?> TryDecryptAsync(string ciphertext)
         {
-            return await _security.DecryptDataAsync(ciphertext);
+            return await _security.DecryptAsync(ciphertext);
         }
 
         private T? DecryptHttpResponse<T>(string json)
