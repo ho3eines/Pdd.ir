@@ -1,8 +1,8 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Caching.Memory;
 using Pdd.ir.Data;
 using Pdd.ir.Server.Models;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -15,19 +15,22 @@ namespace Pdd.ir.Server.Services
         private readonly CryptoJsService _crypto;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthService> _logger;
-        private readonly IMemoryCache _nonceCache;
+
+        // ── Atomic nonce store — TryAdd is lock-free and thread-safe ──
+        private static readonly ConcurrentDictionary<string, byte> _usedNonces = new();
+
+        // ── Rate limiter ──
         private static readonly Dictionary<string, int> _rateLimiter = new();
         private static readonly object _rateLock = new();
 
         private string SharedKey => _config["ApiKey"] ?? "";
 
-        public AuthService(IDbService db, CryptoJsService crypto, IConfiguration config, ILogger<AuthService> logger, IMemoryCache nonceCache)
+        public AuthService(IDbService db, CryptoJsService crypto, IConfiguration config, ILogger<AuthService> logger)
         {
             _db = db;
             _crypto = crypto;
             _config = config;
             _logger = logger;
-            _nonceCache = nonceCache;
         }
 
         /// <summary>
@@ -75,19 +78,16 @@ namespace Pdd.ir.Server.Services
                     return new HandshakeResult { Success = false, Error = $"Request expired ({timeDiff}s > 60s). Please sync your system clock to UTC.", TimeDiff = timeDiff };
                 }
 
-                // ── Step 4: Anti-Replay — check Nonce bound to ClientId + Timestamp (atomic) ──
-                var nonceKey = $"{payload.ClientId}:{payload.Nonce}:{payload.Timestamp}";
-                lock (_rateLock)
+                // ── Step 4: Anti-Replay — atomic check+set with ConcurrentDictionary ──
+                var nonceKey = $"{payload.ClientId}:{payload.Nonce}";
+                if (!_usedNonces.TryAdd(nonceKey, 0))
                 {
-                    if (_nonceCache.TryGetValue(nonceKey, out _))
-                    {
-                        _logger.LogWarning("Replay attack detected: ClientId={ClientId}, Nonce={Nonce}", payload.ClientId, payload.Nonce);
-                        return new HandshakeResult { Success = false, Error = "Duplicate request — replay attack blocked" };
-                    }
-
-                    // Store nonce atomically within lock
-                    _nonceCache.Set(nonceKey, true, TimeSpan.FromMinutes(2));
+                    _logger.LogWarning("Replay attack detected: ClientId={ClientId}, Nonce={Nonce}", payload.ClientId, payload.Nonce);
+                    return new HandshakeResult { Success = false, Error = "Duplicate request — replay attack blocked" };
                 }
+
+                // Schedule cleanup after 2 minutes
+                _ = Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ => { byte removed; _usedNonces.TryRemove(nonceKey, out removed); });
 
                 // ── Step 5: Rate Limiting (max 10 handshakes per minute per ClientId) ──
                 lock (_rateLock)

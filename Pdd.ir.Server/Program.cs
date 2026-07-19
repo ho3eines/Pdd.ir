@@ -34,7 +34,6 @@ builder.Services.AddSingleton<AesKeyStore>();
 builder.Services.AddSingleton<ConnectionManager>();
 builder.Services.AddScoped<ScriptExecutor>();
 builder.Services.AddSingleton<WebSocketHandler>();
-builder.Services.AddMemoryCache();
 builder.Services.AddScoped<AuthService>();
 
 // CORS
