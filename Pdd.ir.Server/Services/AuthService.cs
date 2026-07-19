@@ -19,11 +19,8 @@ namespace Pdd.ir.Server.Services
         // ── Atomic nonce store — TryAdd is lock-free and thread-safe ──
         private static readonly ConcurrentDictionary<string, byte> _usedNonces = new();
 
-        // ── Rate limiter: sliding window per ClientId (timestamps list) ──
-        private static readonly ConcurrentDictionary<string, List<DateTime>> _rateWindow = new();
-        private static readonly object _rateLock = new();
-        private const int MaxPerSecond = 5;
-        private const int MaxPerMinute = 30;
+        // ── Token Bucket per ClientId — atomic, thread-safe ──
+        private static readonly ConcurrentDictionary<string, TokenBucket> _buckets = new();
 
         private string SharedKey => _config["ApiKey"] ?? "";
 
@@ -91,31 +88,12 @@ namespace Pdd.ir.Server.Services
                 // Schedule cleanup after 2 minutes
                 _ = Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ => { byte removed; _usedNonces.TryRemove(nonceKey, out removed); });
 
-                // ── Step 5: Rate Limiting — sliding window per ClientId ──
-                lock (_rateLock)
+                // ── Step 5: Rate Limiting — Token Bucket per ClientId ──
+                var bucket = _buckets.GetOrAdd(payload.ClientId, _ => new TokenBucket(capacity: 5, refillRate: 1.0));
+                if (!bucket.TryConsume())
                 {
-                    var timestamps = _rateWindow.GetOrAdd(payload.ClientId, _ => new List<DateTime>());
-                    var nowUtc = DateTime.UtcNow;
-
-                    // Remove timestamps older than 1 minute
-                    timestamps.RemoveAll(t => (nowUtc - t).TotalSeconds > 60);
-
-                    // Check per-second burst (max 5/sec)
-                    var perSecond = timestamps.Count(t => (nowUtc - t).TotalSeconds <= 1);
-                    if (perSecond >= MaxPerSecond)
-                    {
-                        _logger.LogWarning("Burst rate limit: ClientId={ClientId}, {Count}/sec", payload.ClientId, perSecond);
-                        return new HandshakeResult { Success = false, Error = $"Burst rate limit exceeded (max {MaxPerSecond}/sec)" };
-                    }
-
-                    // Check per-minute limit (max 30/min)
-                    if (timestamps.Count >= MaxPerMinute)
-                    {
-                        _logger.LogWarning("Minute rate limit: ClientId={ClientId}, {Count}/min", payload.ClientId, timestamps.Count);
-                        return new HandshakeResult { Success = false, Error = $"Rate limit exceeded (max {MaxPerMinute}/min)" };
-                    }
-
-                    timestamps.Add(nowUtc);
+                    _logger.LogWarning("Token bucket empty: ClientId={ClientId}, Tokens={Tokens:F1}", payload.ClientId, bucket.AvailableTokens);
+                    return new HandshakeResult { Success = false, Error = "Rate limit exceeded — try again later" };
                 }
 
                 // ── Step 6: Generate Session Token ──
