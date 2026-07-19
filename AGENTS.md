@@ -1683,6 +1683,76 @@ var data = await Comm.GetAsync<List<ProductDto>>("api/product");
 
 ---
 
+## 🚨 MANDATORY: Security Authentication System (Session-Based)
+
+> **قانون اجباری:** تمام ارتباطات با سرور باید از سیستم احراز هویت session-based استفاده کنند. **ارسال API Token مستقیم ممنوع است.**
+
+### Flow امنیتی
+```
+1. Client: encrypt { clientId, timestamp, nonce } → Shared Key (AES-256-CBC)
+2. Server: decrypt → validate timestamp (≤60s, reject future >5s) → anti-replay nonce → rate limit
+3. Server: generate token → store SHA256 hash in DB → encrypt response → return
+4. Client: store sessionToken → send encrypted { clientId, sessionToken } in X-Auth header
+5. Server: validate hash + expiry on every request
+```
+
+### ساختار فایل‌ها
+| فایل | سمت | توضیح |
+|------|-----|-------|
+| `Services/AuthService.cs` | Server | Handshake handler: decrypt, validate, anti-replay, rate limit, create session |
+| `Services/SessionAuthAttribute.cs` | Server | فیلتر احراز هویت — validates encrypted auth header |
+| `Models/AuthSession.cs` | Server | مدل دیتابیس |
+| `Controllers/AuthController.cs` | Server | endpoint `/api/auth/handshake` |
+| `Services/SecurityService.cs` | Client | Handshake client: generates clientId, timestamp, nonce, encrypts |
+| `Services/CommunicationService.cs` | Client | WS-first + HTTP fallback با encrypted auth |
+
+### Shared Key
+- **Key**: `pdd-ir-ws-2026-secure-key` (hardcoded در هر دو سمت)
+- **Client**: XOR-encoded در `SecurityService.cs`
+- **Server**: plaintext در `appsettings.json` → `ApiKey`
+
+### قوانین امنیتی
+| قانون | توضیح |
+|-------|-------|
+| 🔹 API Token مستقیم | ❌ ممنوع — فقط session-based |
+| 🔹 Token خام در DB | ❌ ممنوع — فقط SHA256 hash |
+| 🔹 Timestamp expiry | ≤60s — بیشتر reject میشه |
+| 🔹 Future timestamp | >5s reject میشه |
+| 🔹 Nonce anti-replay | `ConcurrentDictionary.TryAdd` (atomic) |
+| 🔹 Rate limiting | 10 handshake/min per ClientId |
+| 🔹 Token theft | Token به ClientId bind شده |
+| 🔹 Encrypted comms | AES-256-CBC روی تمام درخواست‌ها |
+| 🔹 WS-first | اول WebSocket، fallback HTTP |
+
+### Handshake Request/Response
+```json
+// Request (encrypted)
+{ "clientId": "pdd-abc123", "timestamp": 1784493000, "nonce": "base64..." }
+
+// Response (encrypted)
+{ "sessionToken": "base64...", "expiresAt": "2026-07-19T20:50:00Z" }
+```
+
+### Auth Header (درخواست‌های بعدی)
+```json
+// X-Auth header (encrypted)
+{ "clientId": "pdd-abc123", "sessionToken": "base64..." }
+```
+
+### DB Schema
+```sql
+CREATE TABLE AuthSessions (
+    Id INT IDENTITY PRIMARY KEY,
+    ClientId NVARCHAR(64) NOT NULL,
+    TokenHash NVARCHAR(256) NOT NULL,  -- SHA256 hash, NOT raw token
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    ExpiresAt DATETIME2 NOT NULL,
+    IsActive BIT DEFAULT 1
+);
+```
+
+---
+
 ## 🚨 MANDATORY: WebSocket Handler Pattern (Server-Side)
 
 > **قانون اجباری:** سمت سرور باید WebSocket handler روی مسیر `/ws` باشد و تمام action ها در یک `switch` expression مدیریت شوند.
