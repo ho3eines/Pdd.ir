@@ -203,54 +203,11 @@ namespace Pdd.ir.Server.WebSocket
             {
                 return action switch
                 {
-                    // ── Product ──
-                    "product.list" => await HandleProductList(scope),
-                    "product.get" => await HandleProductGet(scope, request.Data),
-                    "product.category" => await HandleProductCategory(scope, request.Data),
+                    // ── Auth (no session required) ──
+                    "auth.handshake" => await HandleAuthHandshake(scope, request.Data),
 
-                    // ── Blog ──
-                    "blog.list" => await HandleBlogList(scope),
-                    "blog.get" => await HandleBlogGet(scope, request.Data),
-                    "blog.admin" => await HandleBlogAdmin(scope),
-
-                    // ── Portfolio ──
-                    "portfolio.list" => await HandlePortfolioList(scope),
-                    "portfolio.get" => await HandlePortfolioGet(scope, request.Data),
-                    "portfolio.admin" => await HandlePortfolioAdmin(scope),
-
-                    // ── Contact ──
-                    "contact.list" => await HandleContactList(scope),
-                    "contact.unread" => await HandleContactUnread(scope),
-                    "contact.count" => await HandleContactCount(scope),
-                    "contact.submit" => await HandleContactSubmit(scope, request.Data),
-                    "contact.markread" => await HandleContactMarkRead(scope, request.Data),
-                    "contact.delete" => await HandleContactDelete(scope, request.Data),
-
-                    // ── Page ──
-                    "page.list" => await HandlePageList(scope),
-                    "page.get" => await HandlePageGet(scope, request.Data),
-                    "page.id" => await HandlePageById(scope, request.Data),
-
-                    // ── User ──
-                    "user.list" => await HandleUserList(scope),
-                    "user.get" => await HandleUserGet(scope, request.Data),
-                    "user.admin" => await HandleUserAdmin(scope),
-
-                    // ── Role ──
-                    "role.list" => await HandleRoleList(scope),
-                    "role.get" => await HandleRoleGet(scope, request.Data),
-
-                    // ── Permission ──
-                    "permission.list" => await HandlePermissionList(scope),
-                    "permission.role" => await HandlePermissionByRole(scope, request.Data),
-
-                    // ── Auth ──
-                    "auth.login" => await HandleAuthLogin(scope, request.Data),
-
-                    // ── Ping ──
-                    "ping" => new WsResponse { Action = "ping", Success = true, Data = JsonSerializer.SerializeToElement("pong") },
-
-                    _ => new WsResponse { Action = action, Success = false, Message = $"Unknown action: {action}" }
+                    // ── All other actions require valid session ──
+                    _ => await RequiresSession(scope, request, action)
                 };
             }
             catch (Exception ex)
@@ -258,6 +215,71 @@ namespace Pdd.ir.Server.WebSocket
                 _logger.LogError(ex, "WS action error: {Action}", action);
                 return new WsResponse { Action = action, Success = false, Message = ex.Message };
             }
+        }
+
+        private async Task<WsResponse> RequiresSession(IServiceScope scope, WsRequest request, string action)
+        {
+            // Validate session from request data (encrypted { clientId, sessionToken })
+            var sessionService = scope.ServiceProvider.GetRequiredService<ClientSessionService>();
+
+            if (!string.IsNullOrEmpty(request.Auth))
+            {
+                var valid = await sessionService.ValidateAuthHeaderAsync(request.Auth);
+                if (!valid)
+                    return new WsResponse { Action = action, Success = false, Message = "Invalid or expired session" };
+            }
+
+            return action switch
+            {
+                // ── Product ──
+                "product.list" => await HandleProductList(scope),
+                "product.get" => await HandleProductGet(scope, request.Data),
+                "product.category" => await HandleProductCategory(scope, request.Data),
+
+                // ── Blog ──
+                "blog.list" => await HandleBlogList(scope),
+                "blog.get" => await HandleBlogGet(scope, request.Data),
+                "blog.admin" => await HandleBlogAdmin(scope),
+
+                // ── Portfolio ──
+                "portfolio.list" => await HandlePortfolioList(scope),
+                "portfolio.get" => await HandlePortfolioGet(scope, request.Data),
+                "portfolio.admin" => await HandlePortfolioAdmin(scope),
+
+                // ── Contact ──
+                "contact.list" => await HandleContactList(scope),
+                "contact.unread" => await HandleContactUnread(scope),
+                "contact.count" => await HandleContactCount(scope),
+                "contact.submit" => await HandleContactSubmit(scope, request.Data),
+                "contact.markread" => await HandleContactMarkRead(scope, request.Data),
+                "contact.delete" => await HandleContactDelete(scope, request.Data),
+
+                // ── Page ──
+                "page.list" => await HandlePageList(scope),
+                "page.get" => await HandlePageGet(scope, request.Data),
+                "page.id" => await HandlePageById(scope, request.Data),
+
+                // ── User ──
+                "user.list" => await HandleUserList(scope),
+                "user.get" => await HandleUserGet(scope, request.Data),
+                "user.admin" => await HandleUserAdmin(scope),
+
+                // ── Role ──
+                "role.list" => await HandleRoleList(scope),
+                "role.get" => await HandleRoleGet(scope, request.Data),
+
+                // ── Permission ──
+                "permission.list" => await HandlePermissionList(scope),
+                "permission.role" => await HandlePermissionByRole(scope, request.Data),
+
+                // ── Auth ──
+                "auth.login" => await HandleAuthLogin(scope, request.Data),
+
+                // ── Ping ──
+                "ping" => new WsResponse { Action = "ping", Success = true, Data = JsonSerializer.SerializeToElement("pong") },
+
+                _ => new WsResponse { Action = action, Success = false, Message = $"Unknown action: {action}" }
+            };
         }
 
         // ── Product Handlers ──────────────────────────────────
@@ -454,7 +476,25 @@ namespace Pdd.ir.Server.WebSocket
             return new WsResponse { Action = "user.admin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
         }
 
-        // ── Auth Handler ──────────────────────────────────────
+        // ── Auth Handlers ──────────────────────────────────────
+        private static async Task<WsResponse> HandleAuthHandshake(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientSessionService>();
+            if (string.IsNullOrEmpty(data))
+                return new WsResponse { Action = "auth.handshake", Success = false, Message = "Missing encrypted payload" };
+
+            var (success, encryptedResponse, error) = await svc.HandleHandshakeAsync(data);
+            return new WsResponse
+            {
+                Action = "auth.handshake",
+                Success = success,
+                Message = error,
+                Data = success && encryptedResponse != null
+                    ? JsonSerializer.SerializeToElement(new { encrypted = true, data = encryptedResponse })
+                    : null
+            };
+        }
+
         private static async Task<WsResponse> HandleAuthLogin(IServiceScope scope, string? data)
         {
             var svc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
@@ -472,6 +512,7 @@ namespace Pdd.ir.Server.WebSocket
         public string? Id { get; set; }
         public string Action { get; set; } = string.Empty;
         public string? Data { get; set; }
+        public string? Auth { get; set; }
     }
 
     public class WsResponse

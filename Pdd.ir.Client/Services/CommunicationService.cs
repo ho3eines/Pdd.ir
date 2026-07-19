@@ -9,8 +9,10 @@ namespace Pdd.ir.Client.Services
     public interface ICommunicationService
     {
         bool IsWebSocketConnected { get; }
+        bool IsAuthenticated { get; }
         event Action<bool>? OnConnectionChanged;
         Task InitializeAsync();
+        Task<bool> AuthenticateAsync();
         Task ReconnectAsync();
         Task<T?> GetAsync<T>(string url);
         Task<T?> PostAsync<T>(string url, object? data = null);
@@ -22,6 +24,7 @@ namespace Pdd.ir.Client.Services
     {
         private readonly HttpClient _http;
         private readonly EncryptionService _encryption;
+        private readonly SessionManager _session;
         private readonly ILogger<CommunicationService> _logger;
         private ClientWebSocket? _ws;
         private bool _isConnected;
@@ -39,12 +42,14 @@ namespace Pdd.ir.Client.Services
         private const int WsTimeoutMs = 10000;
 
         public bool IsWebSocketConnected => _isConnected;
+        public bool IsAuthenticated => _session.IsAuthenticated;
         public event Action<bool>? OnConnectionChanged;
 
-        public CommunicationService(HttpClient http, EncryptionService encryption, ILogger<CommunicationService> logger)
+        public CommunicationService(HttpClient http, EncryptionService encryption, SessionManager session, ILogger<CommunicationService> logger)
         {
             _http = http;
             _encryption = encryption;
+            _session = session;
             _logger = logger;
         }
 
@@ -58,9 +63,27 @@ namespace Pdd.ir.Client.Services
                 var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
                 _wsUrl = wsUri + "/ws";
 
-                await ConnectAsync();
+                // Auto-authenticate
+                await AuthenticateAsync();
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Perform handshake with server to get session token
+        /// </summary>
+        public async Task<bool> AuthenticateAsync()
+        {
+            var ok = await _session.HandshakeAsync();
+            if (ok)
+            {
+                // Add auth header to HttpClient
+                _http.DefaultRequestHeaders.Remove("X-Auth");
+                var authHeader = await _session.GetAuthHeaderAsync();
+                if (!string.IsNullOrEmpty(authHeader))
+                    _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
+            }
+            return ok;
         }
 
         public async Task ReconnectAsync()
@@ -83,20 +106,17 @@ namespace Pdd.ir.Client.Services
                 _ws = new ClientWebSocket();
 
                 var url = _wsUrl;
-                var apiKey = SecureApiKey.GetKey();
-                if (!string.IsNullOrEmpty(apiKey))
-                    url += $"?apiKey={Uri.EscapeDataString(apiKey)}";
-
-                _logger.LogInformation("WS connecting to: {Url}", _wsUrl);
                 await _ws.ConnectAsync(new Uri(url), CancellationToken.None);
                 _isConnected = true;
                 _reconnectAttempts = 0;
                 OnConnectionChanged?.Invoke(true);
-                _logger.LogInformation("WS connected successfully");
 
                 _receiveCts?.Cancel();
                 _receiveCts = new CancellationTokenSource();
                 _ = ReceiveLoopAsync(_receiveCts.Token);
+
+                // Send handshake over WS
+                _ = SendHandshakeAsync();
             }
             catch (Exception ex)
             {
@@ -105,6 +125,34 @@ namespace Pdd.ir.Client.Services
                 OnConnectionChanged?.Invoke(false);
                 ScheduleReconnect();
             }
+        }
+
+        private async Task SendHandshakeAsync()
+        {
+            if (!IsAuthenticated || _ws?.State != WebSocketState.Open) return;
+
+            try
+            {
+                var clientId = _session.ClientId;
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var payload = JsonSerializer.Serialize(new { clientId, timestamp });
+                var encrypted = await _encryption.EncryptAsync(payload);
+
+                var request = new { id = Guid.NewGuid().ToString("N"), action = "auth.handshake", data = encrypted };
+                var json = JsonSerializer.Serialize(request);
+                var sendBytes = Encoding.UTF8.GetBytes(json);
+
+                await _wsLock.WaitAsync();
+                try
+                {
+                    await _ws!.SendAsync(new ArraySegment<byte>(sendBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+                finally
+                {
+                    _wsLock.Release();
+                }
+            }
+            catch { }
         }
 
         private void ScheduleReconnect()
@@ -165,7 +213,7 @@ namespace Pdd.ir.Client.Services
 
                 if (response == null) return;
 
-                // ── Decrypt incoming data if it's an encrypted string ──
+                // Decrypt incoming data if encrypted
                 if (response.Success && response.Data.HasValue && response.Data.Value.ValueKind == JsonValueKind.String)
                 {
                     var encryptedStr = response.Data.Value.GetString();
@@ -176,10 +224,7 @@ namespace Pdd.ir.Client.Services
                             var decrypted = _encryption.DecryptAsync(encryptedStr).GetAwaiter().GetResult();
                             response.DecryptedData = decrypted;
                         }
-                        catch
-                        {
-                            // Not encrypted or invalid key — use raw
-                        }
+                        catch { }
                     }
                 }
 
@@ -196,7 +241,7 @@ namespace Pdd.ir.Client.Services
             }
         }
 
-        // ── Public API Methods (backward compatible with URL-based calls) ──
+        // ── Public API Methods ──
 
         public async Task<T?> GetAsync<T>(string url)
         {
@@ -244,7 +289,7 @@ namespace Pdd.ir.Client.Services
             return await HttpDeleteAsync(url);
         }
 
-        // ── WS Send with Request ID Correlation ──
+        // ── WS Send with Auth + Request ID Correlation ──
 
         private async Task<T?> SendWsAsync<T>(string action, string? data = null)
         {
@@ -256,7 +301,6 @@ namespace Pdd.ir.Client.Services
 
             try
             {
-                // ── Encrypt data with AES key if available ──
                 var sendData = data;
                 if (!string.IsNullOrEmpty(data) && _encryption.HasKey)
                 {
@@ -265,10 +309,11 @@ namespace Pdd.ir.Client.Services
                         var encrypted = await _encryption.EncryptAsync(data);
                         sendData = encrypted;
                     }
-                    catch { /* send unencrypted */ }
+                    catch { }
                 }
 
-                var request = new { id = requestId, action, data = sendData };
+                var authHeader = await _session.GetAuthHeaderAsync();
+                var request = new { id = requestId, action, data = sendData, auth = authHeader };
                 var json = JsonSerializer.Serialize(request);
                 var sendBytes = Encoding.UTF8.GetBytes(json);
 
@@ -450,7 +495,6 @@ namespace Pdd.ir.Client.Services
             }
             catch { }
 
-            // Not encrypted — parse as-is
             return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true

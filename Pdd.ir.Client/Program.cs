@@ -8,17 +8,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// ── HttpClient with API Key header ──
-builder.Services.AddScoped(sp =>
-{
-    var http = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
-    var apiKey = SecureApiKey.GetKey();
-    if (!string.IsNullOrEmpty(apiKey))
-        http.DefaultRequestHeaders.Add("X-API-Key", apiKey);
-    return http;
-});
+// ── HttpClient ──
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 builder.Services.AddScoped<EncryptionService>();
+builder.Services.AddScoped<SessionManager>();
 builder.Services.AddScoped<ICommunicationService, CommunicationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ConnectionService>();

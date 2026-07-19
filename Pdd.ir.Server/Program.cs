@@ -10,7 +10,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 // ── Services ──────────────────────────────────────────────
 builder.Services.AddControllers(options =>
 {
-    options.Filters.Add<ApiKeyAttribute>();
+    options.Filters.Add<SessionAuthAttribute>();
 });
 builder.Services.AddEndpointsApiExplorer();
 
@@ -34,6 +34,7 @@ builder.Services.AddSingleton<AesKeyStore>();
 builder.Services.AddSingleton<ConnectionManager>();
 builder.Services.AddScoped<ScriptExecutor>();
 builder.Services.AddSingleton<WebSocketHandler>();
+builder.Services.AddScoped<ClientSessionService>();
 
 // CORS
 builder.Services.AddCors(options =>

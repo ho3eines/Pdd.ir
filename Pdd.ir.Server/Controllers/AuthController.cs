@@ -12,12 +12,41 @@ namespace Pdd.ir.Server.Controllers
         private readonly AuthBusinessService _authService;
         private readonly JwtService _jwtService;
         private readonly AesKeyStore _keyStore;
+        private readonly ClientSessionService _sessionService;
 
-        public AuthController(AuthBusinessService authService, JwtService jwtService, AesKeyStore keyStore)
+        public AuthController(AuthBusinessService authService, JwtService jwtService, AesKeyStore keyStore, ClientSessionService sessionService)
         {
             _authService = authService;
             _jwtService = jwtService;
             _keyStore = keyStore;
+            _sessionService = sessionService;
+        }
+
+        [HttpPost("handshake")]
+        public async Task<IActionResult> Handshake([FromBody] HandshakeRequest request)
+        {
+            // The encrypted payload is in the request body
+            // Client sends: { encrypted: "base64..." }
+            // We need the raw encrypted string
+
+            // Read raw body
+            using var reader = new StreamReader(Request.Body);
+            var body = await reader.ReadToEndAsync();
+            var doc = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(body);
+
+            if (!doc.TryGetProperty("encrypted", out var encProp))
+                return BadRequest(new { message = "Missing encrypted payload" });
+
+            var encryptedPayload = encProp.GetString();
+            if (string.IsNullOrEmpty(encryptedPayload))
+                return BadRequest(new { message = "Empty encrypted payload" });
+
+            var (success, encryptedResponse, error) = await _sessionService.HandleHandshakeAsync(encryptedPayload);
+
+            if (!success)
+                return Unauthorized(new { message = error });
+
+            return Ok(new { encrypted = true, data = encryptedResponse });
         }
 
         [HttpPost("login")]
