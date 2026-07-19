@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.JSInterop;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -6,12 +7,12 @@ using System.Text.Json;
 namespace Pdd.ir.Client.Services
 {
     /// <summary>
-    /// Client-side security service: generates handshake, manages session, handles encryption.
-    /// Flow: encrypt { clientId, timestamp, nonce } → send → receive encrypted { sessionToken }
+    /// Client-side security service: generates handshake, manages session.
+    /// Uses shared key directly for handshake encryption (no AES key dependency).
     /// </summary>
     public class SecurityService
     {
-        private readonly EncryptionService _encryption;
+        private readonly IJSRuntime _js;
         private readonly HttpClient _http;
         private readonly ILogger<SecurityService> _logger;
 
@@ -27,16 +28,15 @@ namespace Pdd.ir.Client.Services
         public string? AuthHeader => _authHeader;
         public string ClientId => _clientId ??= GenerateClientId();
 
-        public SecurityService(EncryptionService encryption, HttpClient http, ILogger<SecurityService> logger)
+        public SecurityService(IJSRuntime js, HttpClient http, ILogger<SecurityService> logger)
         {
-            _encryption = encryption;
+            _js = js;
             _http = http;
             _logger = logger;
         }
 
         /// <summary>
         /// Perform full handshake with server.
-        /// Returns true if session established successfully.
         /// </summary>
         public async Task<bool> HandshakeAsync()
         {
@@ -52,8 +52,8 @@ namespace Pdd.ir.Client.Services
 
                 var payload = JsonSerializer.Serialize(new { clientId, timestamp, nonce });
 
-                // ── Encrypt with shared key ──
-                var encrypted = await _encryption.EncryptAsync(payload);
+                // ── Encrypt with shared key via JS (CryptoUtils) ──
+                var encrypted = await _js.InvokeAsync<string>("CryptoUtils.encryptData", payload, SharedKey);
 
                 // ── Send to server ──
                 var handshakeRequest = new { encrypted };
@@ -77,7 +77,8 @@ namespace Pdd.ir.Client.Services
                 if (string.IsNullOrEmpty(encryptedData))
                     return false;
 
-                var decrypted = await _encryption.DecryptAsync(encryptedData);
+                // Decrypt response with shared key
+                var decrypted = await _js.InvokeAsync<string>("CryptoUtils.decryptData", encryptedData, SharedKey);
                 var responseDoc = JsonSerializer.Deserialize<JsonElement>(decrypted);
 
                 if (responseDoc.TryGetProperty("sessionToken", out var tokenProp) &&
@@ -89,7 +90,8 @@ namespace Pdd.ir.Client.Services
                         _expiresAt = expires;
 
                     // Build encrypted auth header for subsequent requests
-                    _authHeader = await _encryption.EncryptAsync(JsonSerializer.Serialize(new { clientId, sessionToken = _sessionToken }));
+                    var authPayload = JsonSerializer.Serialize(new { clientId, sessionToken = _sessionToken });
+                    _authHeader = await _js.InvokeAsync<string>("CryptoUtils.encryptData", authPayload, SharedKey);
 
                     _logger.LogInformation("Session established: ClientId={ClientId}, Expires={Expires}", clientId, _expiresAt);
                     return true;
