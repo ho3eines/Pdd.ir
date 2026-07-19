@@ -75,16 +75,19 @@ namespace Pdd.ir.Server.Services
                     return new HandshakeResult { Success = false, Error = $"Request expired ({timeDiff}s > 60s). Please sync your system clock to UTC.", TimeDiff = timeDiff };
                 }
 
-                // ── Step 4: Anti-Replay — check Nonce bound to ClientId + Timestamp ──
+                // ── Step 4: Anti-Replay — check Nonce bound to ClientId + Timestamp (atomic) ──
                 var nonceKey = $"{payload.ClientId}:{payload.Nonce}:{payload.Timestamp}";
-                if (_nonceCache.TryGetValue(nonceKey, out _))
+                lock (_rateLock)
                 {
-                    _logger.LogWarning("Replay attack detected: ClientId={ClientId}, Nonce={Nonce}", payload.ClientId, payload.Nonce);
-                    return new HandshakeResult { Success = false, Error = "Duplicate request — replay attack blocked" };
-                }
+                    if (_nonceCache.TryGetValue(nonceKey, out _))
+                    {
+                        _logger.LogWarning("Replay attack detected: ClientId={ClientId}, Nonce={Nonce}", payload.ClientId, payload.Nonce);
+                        return new HandshakeResult { Success = false, Error = "Duplicate request — replay attack blocked" };
+                    }
 
-                // Store nonce with 2-minute TTL
-                _nonceCache.Set(nonceKey, true, TimeSpan.FromMinutes(2));
+                    // Store nonce atomically within lock
+                    _nonceCache.Set(nonceKey, true, TimeSpan.FromMinutes(2));
+                }
 
                 // ── Step 5: Rate Limiting (max 10 handshakes per minute per ClientId) ──
                 lock (_rateLock)
