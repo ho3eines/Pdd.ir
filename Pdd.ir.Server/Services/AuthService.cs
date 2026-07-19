@@ -19,9 +19,11 @@ namespace Pdd.ir.Server.Services
         // ── Atomic nonce store — TryAdd is lock-free and thread-safe ──
         private static readonly ConcurrentDictionary<string, byte> _usedNonces = new();
 
-        // ── Rate limiter ──
-        private static readonly Dictionary<string, int> _rateLimiter = new();
+        // ── Rate limiter: sliding window per ClientId (timestamps list) ──
+        private static readonly ConcurrentDictionary<string, List<DateTime>> _rateWindow = new();
         private static readonly object _rateLock = new();
+        private const int MaxPerSecond = 5;
+        private const int MaxPerMinute = 30;
 
         private string SharedKey => _config["ApiKey"] ?? "";
 
@@ -89,30 +91,31 @@ namespace Pdd.ir.Server.Services
                 // Schedule cleanup after 2 minutes
                 _ = Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ => { byte removed; _usedNonces.TryRemove(nonceKey, out removed); });
 
-                // ── Step 5: Rate Limiting (max 10 handshakes per minute per ClientId) ──
+                // ── Step 5: Rate Limiting — sliding window per ClientId ──
                 lock (_rateLock)
                 {
-                    if (_rateLimiter.TryGetValue(payload.ClientId, out var count))
+                    var timestamps = _rateWindow.GetOrAdd(payload.ClientId, _ => new List<DateTime>());
+                    var nowUtc = DateTime.UtcNow;
+
+                    // Remove timestamps older than 1 minute
+                    timestamps.RemoveAll(t => (nowUtc - t).TotalSeconds > 60);
+
+                    // Check per-second burst (max 5/sec)
+                    var perSecond = timestamps.Count(t => (nowUtc - t).TotalSeconds <= 1);
+                    if (perSecond >= MaxPerSecond)
                     {
-                        if (count >= 10)
-                        {
-                            _logger.LogWarning("Rate limit exceeded: ClientId={ClientId}", payload.ClientId);
-                            return new HandshakeResult { Success = false, Error = "Rate limit exceeded — try again later" };
-                        }
-                        _rateLimiter[payload.ClientId] = count + 1;
-                    }
-                    else
-                    {
-                        _rateLimiter[payload.ClientId] = 1;
+                        _logger.LogWarning("Burst rate limit: ClientId={ClientId}, {Count}/sec", payload.ClientId, perSecond);
+                        return new HandshakeResult { Success = false, Error = $"Burst rate limit exceeded (max {MaxPerSecond}/sec)" };
                     }
 
-                    // Cleanup old entries every 100 entries
-                    if (_rateLimiter.Count > 100)
+                    // Check per-minute limit (max 30/min)
+                    if (timestamps.Count >= MaxPerMinute)
                     {
-                        var keysToRemove = _rateLimiter.Keys.Take(50).ToList();
-                        foreach (var key in keysToRemove)
-                            _rateLimiter.Remove(key);
+                        _logger.LogWarning("Minute rate limit: ClientId={ClientId}, {Count}/min", payload.ClientId, timestamps.Count);
+                        return new HandshakeResult { Success = false, Error = $"Rate limit exceeded (max {MaxPerMinute}/min)" };
                     }
+
+                    timestamps.Add(nowUtc);
                 }
 
                 // ── Step 6: Generate Session Token ──
@@ -155,7 +158,7 @@ namespace Pdd.ir.Server.Services
         }
 
         /// <summary>
-        /// Validate session: hash the token, check DB
+        /// Validate session: constant-time hash comparison to prevent timing attacks
         /// </summary>
         public async Task<bool> ValidateSessionAsync(string clientId, string sessionToken)
         {
@@ -169,11 +172,31 @@ namespace Pdd.ir.Server.Services
                 using var conn = _db.GetConnection();
                 conn.Open();
 
-                var session = await conn.QueryFirstOrDefaultAsync<AuthSession>(
-                    "SELECT * FROM AuthSessions WHERE ClientId = @ClientId AND TokenHash = @TokenHash AND IsActive = 1 AND ExpiresAt > GETUTCDATE()",
-                    new { ClientId = clientId, TokenHash = tokenHash });
+                // Always fetch — even if not found, we compare in constant time
+                var sessions = await conn.QueryAsync<AuthSession>(
+                    "SELECT * FROM AuthSessions WHERE ClientId = @ClientId AND IsActive = 1 AND ExpiresAt > GETUTCDATE()",
+                    new { ClientId = clientId });
 
-                return session != null;
+                // Constant-time comparison: compare hash against ALL active sessions
+                var dummyHash = new string('0', 44); // SHA256 base64 = 44 chars
+                var anyMatch = false;
+
+                foreach (var session in sessions)
+                {
+                    // Constant-time byte comparison
+                    var storedBytes = Convert.FromBase64String(session.TokenHash);
+                    var providedBytes = Convert.FromBase64String(tokenHash);
+
+                    if (storedBytes.Length == providedBytes.Length)
+                    {
+                        if (CryptographicOperations.FixedTimeEquals(storedBytes, providedBytes))
+                        {
+                            anyMatch = true;
+                        }
+                    }
+                }
+
+                return anyMatch;
             }
             catch (Exception ex)
             {
