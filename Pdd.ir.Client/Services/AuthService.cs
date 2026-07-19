@@ -54,6 +54,8 @@ namespace Pdd.ir.Client.Services
 
                 _http.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
+                _http.DefaultRequestHeaders.Remove("X-Username");
+                _http.DefaultRequestHeaders.Add("X-Username", Username ?? "");
 
                 await SaveToLocalStorageAsync();
                 OnAuthStateChanged?.Invoke();
@@ -82,6 +84,7 @@ namespace Pdd.ir.Client.Services
             Role = null;
             _encryption.ClearKey();
             _http.DefaultRequestHeaders.Authorization = null;
+            _http.DefaultRequestHeaders.Remove("X-Username");
             _ = ClearLocalStorageAsync();
             OnAuthStateChanged?.Invoke();
         }
@@ -110,6 +113,9 @@ namespace Pdd.ir.Client.Services
                 {
                     _http.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
+                    _http.DefaultRequestHeaders.Remove("X-Username");
+                    if (!string.IsNullOrEmpty(Username))
+                        _http.DefaultRequestHeaders.Add("X-Username", Username);
                     OnAuthStateChanged?.Invoke();
                 }
             }

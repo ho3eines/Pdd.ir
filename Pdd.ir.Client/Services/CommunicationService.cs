@@ -26,7 +26,6 @@ namespace Pdd.ir.Client.Services
         private ClientWebSocket? _ws;
         private bool _isConnected;
         private string _wsUrl = "";
-        private string _apiKey = "";
         private Timer? _reconnectTimer;
         private int _reconnectAttempts;
         private readonly SemaphoreSlim _wsLock = new(1, 1);
@@ -57,7 +56,6 @@ namespace Pdd.ir.Client.Services
                 if (string.IsNullOrEmpty(baseUri)) return;
 
                 var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
-                _apiKey = _encryption.GetKey() ?? "";
                 _wsUrl = wsUri + "/ws";
 
                 await ConnectAsync();
@@ -67,7 +65,6 @@ namespace Pdd.ir.Client.Services
 
         public async Task ReconnectAsync()
         {
-            _apiKey = _encryption.GetKey() ?? "";
             _reconnectAttempts = 0;
 
             if (_ws != null && _ws.State == WebSocketState.Open)
@@ -86,20 +83,24 @@ namespace Pdd.ir.Client.Services
                 _ws = new ClientWebSocket();
 
                 var url = _wsUrl;
-                if (!string.IsNullOrEmpty(_apiKey))
-                    url += $"?apiKey={Uri.EscapeDataString(_apiKey)}";
+                var apiKey = SecureApiKey.GetKey();
+                if (!string.IsNullOrEmpty(apiKey))
+                    url += $"?apiKey={Uri.EscapeDataString(apiKey)}";
 
+                _logger.LogInformation("WS connecting to: {Url}", _wsUrl);
                 await _ws.ConnectAsync(new Uri(url), CancellationToken.None);
                 _isConnected = true;
                 _reconnectAttempts = 0;
                 OnConnectionChanged?.Invoke(true);
+                _logger.LogInformation("WS connected successfully");
 
                 _receiveCts?.Cancel();
                 _receiveCts = new CancellationTokenSource();
                 _ = ReceiveLoopAsync(_receiveCts.Token);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning("WS connection failed: {Error}", ex.Message);
                 _isConnected = false;
                 OnConnectionChanged?.Invoke(false);
                 ScheduleReconnect();
@@ -164,22 +165,28 @@ namespace Pdd.ir.Client.Services
 
                 if (response == null) return;
 
-                if (response.Success && response.Data.HasValue)
+                // ── Decrypt incoming data if it's an encrypted string ──
+                if (response.Success && response.Data.HasValue && response.Data.Value.ValueKind == JsonValueKind.String)
                 {
-                    var dataStr = response.Data.Value.ToString();
-                    if (!string.IsNullOrEmpty(dataStr) && response.Data.Value.ValueKind == JsonValueKind.String)
+                    var encryptedStr = response.Data.Value.GetString();
+                    if (!string.IsNullOrEmpty(encryptedStr))
                     {
-                        var decrypted = TryDecrypt(dataStr);
-                        if (decrypted != null)
+                        try
                         {
+                            var decrypted = _encryption.DecryptAsync(encryptedStr).GetAwaiter().GetResult();
                             response.DecryptedData = decrypted;
+                        }
+                        catch
+                        {
+                            // Not encrypted or invalid key — use raw
                         }
                     }
                 }
 
                 if (!string.IsNullOrEmpty(response.Id) && _pendingRequests.TryRemove(response.Id, out var tcs))
                 {
-                    var responseData = response.DecryptedData ?? (response.Data.HasValue ? response.Data.Value.GetRawText() : "null");
+                    var responseData = response.DecryptedData
+                        ?? (response.Data.HasValue ? response.Data.Value.GetRawText() : "null");
                     tcs.TrySetResult(responseData);
                 }
             }
@@ -189,139 +196,7 @@ namespace Pdd.ir.Client.Services
             }
         }
 
-        private string? TryDecrypt(string ciphertext)
-        {
-            try
-            {
-                var aesKey = _encryption.GetKey();
-                if (string.IsNullOrEmpty(aesKey)) return null;
-                return _encryption.DecryptAsync(ciphertext).GetAwaiter().GetResult();
-            }
-            catch { return null; }
-        }
-
-        private string? TryEncrypt(string plainText)
-        {
-            try
-            {
-                var aesKey = _encryption.GetKey();
-                if (string.IsNullOrEmpty(aesKey)) return null;
-                return _encryption.EncryptAsync(plainText).GetAwaiter().GetResult();
-            }
-            catch { return null; }
-        }
-
-        // ── URL to WS Action mapping (backward compatible) ──
-
-        private static (string action, string? data) MapUrlToAction(string url)
-        {
-            var lower = url.ToLowerInvariant().TrimStart('/');
-
-            // api/contact/5/markread → contact.markread
-            if (lower.Contains("contact") && lower.Contains("markread"))
-            {
-                var id = ExtractId(lower);
-                return ("contact.markread", id);
-            }
-
-            // api/contact/5 → contact.delete (DELETE method handles separately)
-            // api/contact/unread → contact.unread
-            if (lower.Contains("contact") && lower.Contains("unread"))
-                return ("contact.unread", null);
-            if (lower.Contains("contact") && lower.Contains("count"))
-                return ("contact.count", null);
-
-            // api/role/5/permission → permission.role
-            if (lower.Contains("role") && lower.Contains("permission"))
-            {
-                var id = ExtractId(lower);
-                return ("permission.role", id);
-            }
-
-            // admin list endpoints
-            if (lower.Contains("blog") && lower.Contains("admin"))
-                return ("blog.admin", null);
-            if (lower.Contains("portfolio") && lower.Contains("admin"))
-                return ("portfolio.admin", null);
-            if (lower.Contains("user") && lower.Contains("admin"))
-                return ("user.admin", null);
-
-            // User by ID: api/user/5
-            if (lower.Contains("user") && lower.Contains("/password"))
-            {
-                var id = ExtractId(lower);
-                return ("user.password", id);
-            }
-
-            // Entity by ID: api/product/5, api/role/5, api/blog/slug
-            if (lower.Contains("product"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("product.get", id) : ("product.list", null);
-            }
-            if (lower.Contains("blog"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("blog.get", id) : ("blog.list", null);
-            }
-            if (lower.Contains("portfolio"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("portfolio.get", id) : ("portfolio.list", null);
-            }
-            if (lower.Contains("contact"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("contact.delete", id) : ("contact.list", null);
-            }
-            if (lower.Contains("page"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("page.get", id) : ("page.list", null);
-            }
-            if (lower.Contains("user"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("user.get", id) : ("user.list", null);
-            }
-            if (lower.Contains("role"))
-            {
-                var id = ExtractId(lower);
-                return id != null ? ("role.get", id) : ("role.list", null);
-            }
-            if (lower.Contains("permission"))
-                return ("permission.list", null);
-            if (lower.Contains("settings"))
-                return ("settings.list", null);
-            if (lower.Contains("auth") && lower.Contains("login"))
-                return ("auth.login", null);
-
-            // Fallback: extract any number from the URL
-            var fallbackId = ExtractId(lower);
-            if (fallbackId != null)
-                return ("unknown.get", fallbackId);
-
-            return ("unknown.list", null);
-        }
-
-        private static string? ExtractId(string url)
-        {
-            // Extract last segment if it looks like an ID (number or slug)
-            var parts = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0) return null;
-
-            var last = parts[^1];
-            // Skip if it's a known endpoint name
-            if (last is "api" or "admin" or "unread" or "count" or "markread" or "password") return null;
-
-            if (int.TryParse(last, out _))
-                return last;
-
-            // It's a slug (like blog slug)
-            return last;
-        }
-
-        // ── Public API Methods ──
+        // ── Public API Methods (backward compatible with URL-based calls) ──
 
         public async Task<T?> GetAsync<T>(string url)
         {
@@ -381,14 +256,19 @@ namespace Pdd.ir.Client.Services
 
             try
             {
-                var encryptedData = data;
-                if (!string.IsNullOrEmpty(data))
+                // ── Encrypt data with AES key if available ──
+                var sendData = data;
+                if (!string.IsNullOrEmpty(data) && _encryption.HasKey)
                 {
-                    var encrypted = TryEncrypt(data);
-                    if (encrypted != null) encryptedData = encrypted;
+                    try
+                    {
+                        var encrypted = await _encryption.EncryptAsync(data);
+                        sendData = encrypted;
+                    }
+                    catch { /* send unencrypted */ }
                 }
 
-                var request = new { id = requestId, action, data = encryptedData };
+                var request = new { id = requestId, action, data = sendData };
                 var json = JsonSerializer.Serialize(request);
                 var sendBytes = Encoding.UTF8.GetBytes(json);
 
@@ -433,7 +313,63 @@ namespace Pdd.ir.Client.Services
             }
         }
 
-        // ── HTTP Fallback Methods ──
+        // ── URL to WS Action mapping ──
+
+        private static (string action, string? data) MapUrlToAction(string url)
+        {
+            var lower = url.ToLowerInvariant().TrimStart('/');
+
+            if (lower.Contains("contact") && lower.Contains("markread"))
+                return ("contact.markread", ExtractId(lower));
+            if (lower.Contains("contact") && lower.Contains("unread"))
+                return ("contact.unread", null);
+            if (lower.Contains("contact") && lower.Contains("count"))
+                return ("contact.count", null);
+            if (lower.Contains("role") && lower.Contains("permission"))
+                return ("permission.role", ExtractId(lower));
+            if (lower.Contains("blog") && lower.Contains("admin"))
+                return ("blog.admin", null);
+            if (lower.Contains("portfolio") && lower.Contains("admin"))
+                return ("portfolio.admin", null);
+            if (lower.Contains("user") && lower.Contains("admin"))
+                return ("user.admin", null);
+            if (lower.Contains("user") && lower.Contains("/password"))
+                return ("user.password", ExtractId(lower));
+
+            if (lower.Contains("product"))
+            { var id = ExtractId(lower); return id != null ? ("product.get", id) : ("product.list", null); }
+            if (lower.Contains("blog"))
+            { var id = ExtractId(lower); return id != null ? ("blog.get", id) : ("blog.list", null); }
+            if (lower.Contains("portfolio"))
+            { var id = ExtractId(lower); return id != null ? ("portfolio.get", id) : ("portfolio.list", null); }
+            if (lower.Contains("contact"))
+            { var id = ExtractId(lower); return id != null ? ("contact.delete", id) : ("contact.list", null); }
+            if (lower.Contains("page"))
+            { var id = ExtractId(lower); return id != null ? ("page.get", id) : ("page.list", null); }
+            if (lower.Contains("user"))
+            { var id = ExtractId(lower); return id != null ? ("user.get", id) : ("user.list", null); }
+            if (lower.Contains("role"))
+            { var id = ExtractId(lower); return id != null ? ("role.get", id) : ("role.list", null); }
+            if (lower.Contains("permission"))
+                return ("permission.list", null);
+            if (lower.Contains("settings"))
+                return ("settings.list", null);
+            if (lower.Contains("auth") && lower.Contains("login"))
+                return ("auth.login", null);
+
+            return ("unknown.list", null);
+        }
+
+        private static string? ExtractId(string url)
+        {
+            var parts = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return null;
+            var last = parts[^1];
+            if (last is "api" or "admin" or "unread" or "count" or "markread" or "password") return null;
+            return last;
+        }
+
+        // ── HTTP Fallback ──
 
         private async Task<T?> HttpGetAsync<T>(string url)
         {
@@ -441,7 +377,10 @@ namespace Pdd.ir.Client.Services
             {
                 var response = await _http.GetAsync(url);
                 if (response.IsSuccessStatusCode)
-                    return await response.Content.ReadFromJsonAsync<T>();
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    return DecryptHttpResponse<T>(json);
+                }
             }
             catch { }
             return default;
@@ -455,7 +394,10 @@ namespace Pdd.ir.Client.Services
                     ? await _http.PostAsJsonAsync(url, data)
                     : await _http.PostAsync(url, null);
                 if (response.IsSuccessStatusCode)
-                    return await response.Content.ReadFromJsonAsync<T>();
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    return DecryptHttpResponse<T>(json);
+                }
             }
             catch { }
             return default;
@@ -469,7 +411,10 @@ namespace Pdd.ir.Client.Services
                     ? await _http.PutAsJsonAsync(url, data)
                     : await _http.PutAsync(url, null);
                 if (response.IsSuccessStatusCode)
-                    return await response.Content.ReadFromJsonAsync<T>();
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    return DecryptHttpResponse<T>(json);
+                }
             }
             catch { }
             return default;
@@ -483,6 +428,33 @@ namespace Pdd.ir.Client.Services
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }
+        }
+
+        private T? DecryptHttpResponse<T>(string json)
+        {
+            try
+            {
+                var doc = JsonSerializer.Deserialize<JsonElement>(json);
+                if (doc.TryGetProperty("encrypted", out var isEncrypted) && isEncrypted.GetBoolean())
+                {
+                    var encryptedData = doc.GetProperty("data").GetString();
+                    if (!string.IsNullOrEmpty(encryptedData) && _encryption.HasKey)
+                    {
+                        var decrypted = _encryption.DecryptAsync(encryptedData).GetAwaiter().GetResult();
+                        return JsonSerializer.Deserialize<T>(decrypted, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
+            }
+            catch { }
+
+            // Not encrypted — parse as-is
+            return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
         }
 
         public async ValueTask DisposeAsync()

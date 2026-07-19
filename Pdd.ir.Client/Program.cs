@@ -8,19 +8,13 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Pdd"));
-
-// ── HttpClient with API Key header ──
+// ── HttpClient with API Key via DelegatingHandler ──
+builder.Services.AddTransient<ApiKeyHandler>();
 builder.Services.AddScoped(sp =>
 {
-    var config = builder.Configuration;
-    var apiKey = config["Pdd:ApiSettings:APIKey"] ?? "";
-
-    var http = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
-    if (!string.IsNullOrEmpty(apiKey))
-        http.DefaultRequestHeaders.Add("X-API-Key", apiKey);
-
-    return http;
+    var handler = sp.GetRequiredService<ApiKeyHandler>();
+    handler.InnerHandler = new HttpClientHandler();
+    return new HttpClient(handler) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
 });
 
 builder.Services.AddScoped<EncryptionService>();
