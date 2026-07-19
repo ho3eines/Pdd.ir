@@ -57,24 +57,34 @@ namespace Pdd.ir.Server.Services
                 if (payload == null || string.IsNullOrEmpty(payload.ClientId) || payload.Timestamp == 0 || string.IsNullOrEmpty(payload.Nonce))
                     return new HandshakeResult { Success = false, Error = "Invalid payload — missing ClientId, Timestamp, or Nonce" };
 
-                // ── Step 3: Validate Timestamp ≤ 60s ──
+                // ── Step 3: Validate Timestamp (UTC only) ──
                 var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                var timeDiff = Math.Abs(now - payload.Timestamp);
-                if (timeDiff > 60)
+                var timeDiff = now - payload.Timestamp;
+
+                // Reject future timestamps (>5s ahead)
+                if (timeDiff < -5)
                 {
-                    _logger.LogWarning("Handshake expired: ClientId={ClientId}, TimeDiff={Diff}s", payload.ClientId, timeDiff);
-                    return new HandshakeResult { Success = false, Error = $"Handshake expired ({timeDiff}s > 60s). Please sync your clock.", TimeDiff = timeDiff };
+                    _logger.LogWarning("Future timestamp rejected: ClientId={ClientId}, Diff={Diff}s", payload.ClientId, timeDiff);
+                    return new HandshakeResult { Success = false, Error = "Future timestamp not allowed — check your system clock", TimeDiff = timeDiff };
                 }
 
-                // ── Step 4: Anti-Replay — check Nonce ──
-                if (_nonceCache.TryGetValue(payload.Nonce, out _))
+                // Reject expired timestamps (>60s ago)
+                if (timeDiff > 60)
                 {
-                    _logger.LogWarning("Replay attack detected: Nonce={Nonce}", payload.Nonce);
+                    _logger.LogWarning("Expired request from ClientId={ClientId}, Diff={Diff}s", payload.ClientId, timeDiff);
+                    return new HandshakeResult { Success = false, Error = $"Request expired ({timeDiff}s > 60s). Please sync your system clock to UTC.", TimeDiff = timeDiff };
+                }
+
+                // ── Step 4: Anti-Replay — check Nonce bound to ClientId + Timestamp ──
+                var nonceKey = $"{payload.ClientId}:{payload.Nonce}:{payload.Timestamp}";
+                if (_nonceCache.TryGetValue(nonceKey, out _))
+                {
+                    _logger.LogWarning("Replay attack detected: ClientId={ClientId}, Nonce={Nonce}", payload.ClientId, payload.Nonce);
                     return new HandshakeResult { Success = false, Error = "Duplicate request — replay attack blocked" };
                 }
 
                 // Store nonce with 2-minute TTL
-                _nonceCache.Set(payload.Nonce, true, TimeSpan.FromMinutes(2));
+                _nonceCache.Set(nonceKey, true, TimeSpan.FromMinutes(2));
 
                 // ── Step 5: Rate Limiting (max 10 handshakes per minute per ClientId) ──
                 lock (_rateLock)
