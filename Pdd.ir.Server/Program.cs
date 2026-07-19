@@ -5,9 +5,13 @@ using Pdd.ir.Server.Services;
 using Pdd.ir.Server.WebSocket;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
 
 // ── Services ──────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiKeyAttribute>();
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Data

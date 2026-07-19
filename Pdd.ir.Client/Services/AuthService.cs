@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
 
@@ -8,6 +8,7 @@ namespace Pdd.ir.Client.Services
     {
         private readonly HttpClient _http;
         private readonly EncryptionService _encryption;
+        private readonly ICommunicationService _comm;
         private readonly IJSRuntime _js;
 
         public string? Token { get; private set; }
@@ -19,10 +20,11 @@ namespace Pdd.ir.Client.Services
 
         public event Action? OnAuthStateChanged;
 
-        public AuthService(HttpClient http, EncryptionService encryption, IJSRuntime js)
+        public AuthService(HttpClient http, EncryptionService encryption, ICommunicationService comm, IJSRuntime js)
         {
             _http = http;
             _encryption = encryption;
+            _comm = comm;
             _js = js;
         }
 
@@ -55,6 +57,14 @@ namespace Pdd.ir.Client.Services
 
                 await SaveToLocalStorageAsync();
                 OnAuthStateChanged?.Invoke();
+
+                // ── Reconnect WS with new AES key ──
+                try
+                {
+                    await _comm.ReconnectAsync();
+                }
+                catch { }
+
                 return true;
             }
             catch

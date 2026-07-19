@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 
 namespace Pdd.ir.Client.Services
 {
@@ -24,6 +24,8 @@ namespace Pdd.ir.Client.Services
             _aesKey = null;
         }
 
+        public bool HasKey => !string.IsNullOrEmpty(_aesKey);
+
         public async Task<string> EncryptAsync(string plainText)
         {
             if (string.IsNullOrEmpty(_aesKey))
@@ -38,6 +40,11 @@ namespace Pdd.ir.Client.Services
                 throw new InvalidOperationException("AES key not set");
 
             return await _js.InvokeAsync<string>("CryptoUtils.decryptData", ciphertext, _aesKey);
+        }
+
+        public async Task<string> GenerateRandomKeyAsync()
+        {
+            return await _js.InvokeAsync<string>("CryptoUtils.generateRandomKey", 32);
         }
     }
 }

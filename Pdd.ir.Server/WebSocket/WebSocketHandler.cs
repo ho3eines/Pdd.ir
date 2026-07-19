@@ -2,6 +2,7 @@ using Pdd.ir.Business.Models.DTOs;
 using Pdd.ir.Business.Services;
 using Pdd.ir.Server.Services;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -12,6 +13,9 @@ namespace Pdd.ir.Server.WebSocket
         private readonly ConnectionManager _connectionManager;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<WebSocketHandler> _logger;
+        private readonly AesKeyStore _keyStore;
+        private readonly CryptoJsService _crypto;
+        private readonly IConfiguration _config;
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             PropertyNameCaseInsensitive = true,
@@ -21,11 +25,17 @@ namespace Pdd.ir.Server.WebSocket
         public WebSocketHandler(
             ConnectionManager connectionManager,
             IServiceScopeFactory scopeFactory,
-            ILogger<WebSocketHandler> logger)
+            ILogger<WebSocketHandler> logger,
+            AesKeyStore keyStore,
+            CryptoJsService crypto,
+            IConfiguration config)
         {
             _connectionManager = connectionManager;
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _keyStore = keyStore;
+            _crypto = crypto;
+            _config = config;
         }
 
         public async Task HandleAsync(HttpContext context)
@@ -36,11 +46,25 @@ namespace Pdd.ir.Server.WebSocket
                 return;
             }
 
+            // ── API Key Validation ──
+            var apiKey = context.Request.Query["apiKey"].FirstOrDefault();
+            var configuredApiKey = _config["ApiKey"];
+
+            if (string.IsNullOrEmpty(configuredApiKey) || apiKey != configuredApiKey)
+            {
+                _logger.LogWarning("WS rejected: invalid API key from {Ip}", context.Connection.RemoteIpAddress);
+                context.Response.StatusCode = 401;
+                return;
+            }
+
+            // ── Optional: Extract username from query to map AES key ──
+            var username = context.Request.Query["username"].FirstOrDefault();
+
             var connectionId = Guid.NewGuid().ToString();
             var socket = await context.WebSockets.AcceptWebSocketAsync();
-            _connectionManager.AddConnection(connectionId, socket);
+            _connectionManager.AddConnection(connectionId, socket, username);
 
-            _logger.LogInformation("WS connected: {Id}", connectionId);
+            _logger.LogInformation("WS connected: {Id} (user={User})", connectionId, username ?? "anonymous");
 
             try
             {
@@ -110,8 +134,46 @@ namespace Pdd.ir.Server.WebSocket
 
                 _logger.LogDebug("WS received: {Id} -> {Action}", connectionId, request.Action);
 
+                // ── Decrypt incoming data if encrypted ──
+                var username = _connectionManager.GetUsername(connectionId);
+                if (!string.IsNullOrEmpty(request.Data) && !string.IsNullOrEmpty(username))
+                {
+                    var aesKey = _keyStore.GetKey(username);
+                    if (!string.IsNullOrEmpty(aesKey))
+                    {
+                        try
+                        {
+                            request.Data = _crypto.Decrypt(aesKey, request.Data);
+                        }
+                        catch
+                        {
+                            // Not encrypted or invalid — use as-is
+                            _logger.LogDebug("WS: data not encrypted or decrypt failed for {Id}", connectionId);
+                        }
+                    }
+                }
+
                 var response = await RouteActionAsync(request);
                 response.Id = request.Id;
+
+                // ── Encrypt outgoing data ──
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var aesKey = _keyStore.GetKey(username);
+                    if (!string.IsNullOrEmpty(aesKey) && response.Data.HasValue)
+                    {
+                        try
+                        {
+                            var plainJson = response.Data.Value.GetRawText();
+                            var encrypted = _crypto.Encrypt(aesKey, plainJson);
+                            response.Data = JsonSerializer.SerializeToElement(encrypted);
+                        }
+                        catch
+                        {
+                            _logger.LogWarning("WS: encrypt response failed for {Id}", connectionId);
+                        }
+                    }
+                }
 
                 await SendAsync(connectionId, response);
             }
@@ -420,5 +482,4 @@ namespace Pdd.ir.Server.WebSocket
         public string? Message { get; set; }
         public System.Text.Json.JsonElement? Data { get; set; }
     }
-
 }

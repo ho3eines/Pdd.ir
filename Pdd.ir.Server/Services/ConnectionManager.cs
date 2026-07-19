@@ -6,15 +6,30 @@ namespace Pdd.ir.Server.Services
     public class ConnectionManager
     {
         private readonly ConcurrentDictionary<string, System.Net.WebSockets.WebSocket> _connections = new();
+        private readonly ConcurrentDictionary<string, string> _connectionUsers = new();
 
-        public void AddConnection(string connectionId, System.Net.WebSockets.WebSocket socket)
+        public void AddConnection(string connectionId, System.Net.WebSockets.WebSocket socket, string? username = null)
         {
             _connections[connectionId] = socket;
+            if (!string.IsNullOrEmpty(username))
+                _connectionUsers[connectionId] = username;
         }
 
         public void RemoveConnection(string connectionId)
         {
             _connections.TryRemove(connectionId, out _);
+            _connectionUsers.TryRemove(connectionId, out _);
+        }
+
+        public string? GetUsername(string connectionId)
+        {
+            _connectionUsers.TryGetValue(connectionId, out var username);
+            return username;
+        }
+
+        public void SetUsername(string connectionId, string username)
+        {
+            _connectionUsers[connectionId] = username;
         }
 
         public async Task SendToConnectionAsync(string connectionId, string message)
