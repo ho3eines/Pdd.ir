@@ -8,13 +8,14 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// ── HttpClient with API Key via DelegatingHandler ──
-builder.Services.AddTransient<ApiKeyHandler>();
+// ── HttpClient with API Key header ──
 builder.Services.AddScoped(sp =>
 {
-    var handler = sp.GetRequiredService<ApiKeyHandler>();
-    handler.InnerHandler = new HttpClientHandler();
-    return new HttpClient(handler) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+    var http = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+    var apiKey = SecureApiKey.GetKey();
+    if (!string.IsNullOrEmpty(apiKey))
+        http.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+    return http;
 });
 
 builder.Services.AddScoped<EncryptionService>();
