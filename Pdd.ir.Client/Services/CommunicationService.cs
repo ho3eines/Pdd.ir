@@ -426,7 +426,7 @@ namespace Pdd.ir.Client.Services
             return last;
         }
 
-        // ── HTTP Fallback ──
+        // ── HTTP Fallback (with encryption) ──
 
         private async Task<T?> HttpGetAsync<T>(string url)
         {
@@ -461,9 +461,7 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = data != null
-                    ? await _http.PostAsJsonAsync(url, data)
-                    : await _http.PostAsync(url, null);
+                var response = await SendEncryptedPostAsync(url, data);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -473,9 +471,7 @@ namespace Pdd.ir.Client.Services
                         var authHeader = await _security.GetAuthHeaderAsync();
                         if (!string.IsNullOrEmpty(authHeader))
                             _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = data != null
-                            ? await _http.PostAsJsonAsync(url, data)
-                            : await _http.PostAsync(url, null);
+                        response = await SendEncryptedPostAsync(url, data);
                     }
                 }
 
@@ -493,9 +489,7 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = data != null
-                    ? await _http.PutAsJsonAsync(url, data)
-                    : await _http.PutAsync(url, null);
+                var response = await SendEncryptedPutAsync(url, data);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -505,9 +499,7 @@ namespace Pdd.ir.Client.Services
                         var authHeader = await _security.GetAuthHeaderAsync();
                         if (!string.IsNullOrEmpty(authHeader))
                             _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = data != null
-                            ? await _http.PutAsJsonAsync(url, data)
-                            : await _http.PutAsync(url, null);
+                        response = await SendEncryptedPutAsync(url, data);
                     }
                 }
 
@@ -542,6 +534,50 @@ namespace Pdd.ir.Client.Services
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }
+        }
+
+        // ── Encrypted HTTP Helpers ──
+
+        private async Task<HttpResponseMessage> SendEncryptedPostAsync(string url, object? data)
+        {
+            if (data == null)
+                return await _http.PostAsync(url, null);
+
+            var json = JsonSerializer.Serialize(data);
+            var encrypted = await TryEncryptAsync(json);
+            if (encrypted != null)
+            {
+                var payload = JsonSerializer.Serialize(new { encrypted = true, data = encrypted });
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                return await _http.PostAsync(url, content);
+            }
+            return await _http.PostAsJsonAsync(url, data);
+        }
+
+        private async Task<HttpResponseMessage> SendEncryptedPutAsync(string url, object? data)
+        {
+            if (data == null)
+                return await _http.PutAsync(url, null);
+
+            var json = JsonSerializer.Serialize(data);
+            var encrypted = await TryEncryptAsync(json);
+            if (encrypted != null)
+            {
+                var payload = JsonSerializer.Serialize(new { encrypted = true, data = encrypted });
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                return await _http.PutAsync(url, content);
+            }
+            return await _http.PutAsJsonAsync(url, data);
+        }
+
+        private async Task<string?> TryEncryptAsync(string plainText)
+        {
+            return await _security.EncryptDataAsync(plainText);
+        }
+
+        private async Task<string?> TryDecryptAsync(string ciphertext)
+        {
+            return await _security.DecryptDataAsync(ciphertext);
         }
 
         private T? DecryptHttpResponse<T>(string json)

@@ -72,6 +72,9 @@ using (var scope = app.Services.CreateScope())
 // ── Middleware Pipeline ───────────────────────────────────
 app.UseCors();
 
+// Request Decryption (decrypts encrypted request bodies before controllers)
+app.UseMiddleware<RequestDecryptionMiddleware>();
+
 // Response Encryption (captures API responses and encrypts them)
 app.UseMiddleware<ResponseEncryptionMiddleware>();
 

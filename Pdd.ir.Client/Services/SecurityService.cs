@@ -134,6 +134,30 @@ namespace Pdd.ir.Client.Services
             _expiresAt = null;
         }
 
+        /// <summary>
+        /// Encrypt data with SharedKey via JS CryptoUtils
+        /// </summary>
+        public async Task<string?> EncryptDataAsync(string plainText)
+        {
+            try
+            {
+                return await _js.InvokeAsync<string>("CryptoUtils.encryptData", plainText, SharedKey);
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Decrypt data with SharedKey via JS CryptoUtils
+        /// </summary>
+        public async Task<string?> DecryptDataAsync(string ciphertext)
+        {
+            try
+            {
+                return await _js.InvokeAsync<string>("CryptoUtils.decryptData", ciphertext, SharedKey);
+            }
+            catch { return null; }
+        }
+
         private static string GenerateNonce()
         {
             var bytes = RandomNumberGenerator.GetBytes(16);
