@@ -11,8 +11,9 @@ namespace Pdd.ir.Data
 
         public DbService(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection")
+            _connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                 ?? Environment.GetEnvironmentVariable("ConnectionString")
+                ?? configuration.GetConnectionString("DefaultConnection")
                 ?? "workstation id=support;password=123456;packet size=4096;user id=sa;data source=.;persist security info=false;initial catalog=pdd;Encrypt=False";
         }
 
