@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.JSInterop;
 
 namespace Pdd.ir.Client.Services
 {
@@ -26,7 +27,9 @@ namespace Pdd.ir.Client.Services
         private readonly HttpClient _http;
         private readonly EncryptionService _encryption;
         private readonly SecurityService _security;
+        private readonly IJSRuntime _js;
         private readonly ILogger<CommunicationService> _logger;
+        private const string SharedKey = "pdd-ir-ws-2026-secure-key";
         private ClientWebSocket? _ws;
         private bool _isConnected;
         private string _wsUrl = "";
@@ -49,11 +52,12 @@ namespace Pdd.ir.Client.Services
         public bool IsAuthenticated => _security.IsAuthenticated;
         public event Action<bool>? OnConnectionChanged;
 
-        public CommunicationService(HttpClient http, EncryptionService encryption, SecurityService security, ILogger<CommunicationService> logger)
+        public CommunicationService(HttpClient http, EncryptionService encryption, SecurityService security, IJSRuntime js, ILogger<CommunicationService> logger)
         {
             _http = http;
             _encryption = encryption;
             _security = security;
+            _js = js;
             _logger = logger;
         }
 
@@ -224,7 +228,7 @@ namespace Pdd.ir.Client.Services
 
                 if (response == null) return;
 
-                // Decrypt incoming data if encrypted
+                // Decrypt incoming data with SharedKey (server encrypts with SharedKey)
                 if (response.Success && response.Data.HasValue && response.Data.Value.ValueKind == JsonValueKind.String)
                 {
                     var encryptedStr = response.Data.Value.GetString();
@@ -232,7 +236,7 @@ namespace Pdd.ir.Client.Services
                     {
                         try
                         {
-                            var decrypted = _encryption.DecryptAsync(encryptedStr).GetAwaiter().GetResult();
+                            var decrypted = _js.InvokeAsync<string>("CryptoUtils.decryptData", encryptedStr, SharedKey).GetAwaiter().GetResult();
                             response.DecryptedData = decrypted;
                         }
                         catch { }
