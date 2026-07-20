@@ -429,24 +429,28 @@ namespace Pdd.ir.Client.Services
             return last;
         }
 
-        // ── HTTP Fallback (with encryption) ──
+        // ── HTTP Fallback (fresh auth per request) ──
 
         private async Task<T?> HttpGetAsync<T>(string url)
         {
             try
             {
-                var response = await _http.GetAsync(url);
+                var authHeader = await _security.GetAuthHeaderAsync();
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                if (!string.IsNullOrEmpty(authHeader))
+                    req.Headers.Add("X-Auth", authHeader);
 
-                // Handle 401 → re-handshake and retry once
+                var response = await _http.SendAsync(req);
+
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     if (await _security.HandshakeAsync())
                     {
-                        _http.DefaultRequestHeaders.Remove("X-Auth");
-                        var authHeader = await _security.GetAuthHeaderAsync();
-                        if (!string.IsNullOrEmpty(authHeader))
-                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = await _http.GetAsync(url);
+                        var retryAuth = await _security.GetAuthHeaderAsync();
+                        using var retryReq = new HttpRequestMessage(HttpMethod.Get, url);
+                        if (!string.IsNullOrEmpty(retryAuth))
+                            retryReq.Headers.Add("X-Auth", retryAuth);
+                        response = await _http.SendAsync(retryReq);
                     }
                 }
 
@@ -464,17 +468,26 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = await SendEncryptedPostAsync(url, data);
+                var authHeader = await _security.GetAuthHeaderAsync();
+                using var req = new HttpRequestMessage(HttpMethod.Post, url);
+                if (!string.IsNullOrEmpty(authHeader))
+                    req.Headers.Add("X-Auth", authHeader);
+                if (data != null)
+                    req.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+
+                var response = await _http.SendAsync(req);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     if (await _security.HandshakeAsync())
                     {
-                        _http.DefaultRequestHeaders.Remove("X-Auth");
-                        var authHeader = await _security.GetAuthHeaderAsync();
-                        if (!string.IsNullOrEmpty(authHeader))
-                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = await SendEncryptedPostAsync(url, data);
+                        var retryAuth = await _security.GetAuthHeaderAsync();
+                        using var retryReq = new HttpRequestMessage(HttpMethod.Post, url);
+                        if (!string.IsNullOrEmpty(retryAuth))
+                            retryReq.Headers.Add("X-Auth", retryAuth);
+                        if (data != null)
+                            retryReq.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                        response = await _http.SendAsync(retryReq);
                     }
                 }
 
@@ -492,17 +505,26 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = await SendEncryptedPutAsync(url, data);
+                var authHeader = await _security.GetAuthHeaderAsync();
+                using var req = new HttpRequestMessage(HttpMethod.Put, url);
+                if (!string.IsNullOrEmpty(authHeader))
+                    req.Headers.Add("X-Auth", authHeader);
+                if (data != null)
+                    req.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+
+                var response = await _http.SendAsync(req);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     if (await _security.HandshakeAsync())
                     {
-                        _http.DefaultRequestHeaders.Remove("X-Auth");
-                        var authHeader = await _security.GetAuthHeaderAsync();
-                        if (!string.IsNullOrEmpty(authHeader))
-                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = await SendEncryptedPutAsync(url, data);
+                        var retryAuth = await _security.GetAuthHeaderAsync();
+                        using var retryReq = new HttpRequestMessage(HttpMethod.Put, url);
+                        if (!string.IsNullOrEmpty(retryAuth))
+                            retryReq.Headers.Add("X-Auth", retryAuth);
+                        if (data != null)
+                            retryReq.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                        response = await _http.SendAsync(retryReq);
                     }
                 }
 
@@ -520,67 +542,15 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = await _http.DeleteAsync(url);
+                var authHeader = await _security.GetAuthHeaderAsync();
+                using var req = new HttpRequestMessage(HttpMethod.Delete, url);
+                if (!string.IsNullOrEmpty(authHeader))
+                    req.Headers.Add("X-Auth", authHeader);
 
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    if (await _security.HandshakeAsync())
-                    {
-                        _http.DefaultRequestHeaders.Remove("X-Auth");
-                        var authHeader = await _security.GetAuthHeaderAsync();
-                        if (!string.IsNullOrEmpty(authHeader))
-                            _http.DefaultRequestHeaders.Add("X-Auth", authHeader);
-                        response = await _http.DeleteAsync(url);
-                    }
-                }
-
+                var response = await _http.SendAsync(req);
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }
-        }
-
-        // ── Encrypted HTTP Helpers ──
-
-        private async Task<HttpResponseMessage> SendEncryptedPostAsync(string url, object? data)
-        {
-            if (data == null)
-                return await _http.PostAsync(url, null);
-
-            var json = JsonSerializer.Serialize(data);
-            var encrypted = await TryEncryptAsync(json);
-            if (encrypted != null)
-            {
-                var payload = JsonSerializer.Serialize(new { encrypted = true, data = encrypted });
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                return await _http.PostAsync(url, content);
-            }
-            return await _http.PostAsJsonAsync(url, data);
-        }
-
-        private async Task<HttpResponseMessage> SendEncryptedPutAsync(string url, object? data)
-        {
-            if (data == null)
-                return await _http.PutAsync(url, null);
-
-            var json = JsonSerializer.Serialize(data);
-            var encrypted = await TryEncryptAsync(json);
-            if (encrypted != null)
-            {
-                var payload = JsonSerializer.Serialize(new { encrypted = true, data = encrypted });
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                return await _http.PutAsync(url, content);
-            }
-            return await _http.PutAsJsonAsync(url, data);
-        }
-
-        private async Task<string?> TryEncryptAsync(string plainText)
-        {
-            return await _security.EncryptAsync(plainText);
-        }
-
-        private async Task<string?> TryDecryptAsync(string ciphertext)
-        {
-            return await _security.DecryptAsync(ciphertext);
         }
 
         private T? DecryptHttpResponse<T>(string json)
