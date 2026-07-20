@@ -121,44 +121,35 @@ namespace Pdd.ir.Server.WebSocket
 
                 _logger.LogDebug("WS received: {Id} -> {Action}", connectionId, request.Action);
 
-                // ── Decrypt incoming data if encrypted ──
-                var username = _connectionManager.GetUsername(connectionId);
-                if (!string.IsNullOrEmpty(request.Data) && !string.IsNullOrEmpty(username))
+                // ── Decrypt incoming data with SharedKey ──
+                var sharedKey = _config["ApiKey"] ?? "";
+                if (!string.IsNullOrEmpty(request.Data) && !string.IsNullOrEmpty(sharedKey))
                 {
-                    var aesKey = _keyStore.GetKey(username);
-                    if (!string.IsNullOrEmpty(aesKey))
+                    try
                     {
-                        try
-                        {
-                            request.Data = _crypto.Decrypt(aesKey, request.Data);
-                        }
-                        catch
-                        {
-                            // Not encrypted or invalid — use as-is
-                            _logger.LogDebug("WS: data not encrypted or decrypt failed for {Id}", connectionId);
-                        }
+                        request.Data = _crypto.Decrypt(sharedKey, request.Data);
+                    }
+                    catch
+                    {
+                        _logger.LogDebug("WS: data not encrypted or decrypt failed for {Id}", connectionId);
                     }
                 }
 
                 var response = await RouteActionAsync(request);
                 response.Id = request.Id;
 
-                // ── Encrypt outgoing data ──
-                if (!string.IsNullOrEmpty(username))
+                // ── Encrypt outgoing data with SharedKey ──
+                if (!string.IsNullOrEmpty(sharedKey) && response.Data.HasValue)
                 {
-                    var aesKey = _keyStore.GetKey(username);
-                    if (!string.IsNullOrEmpty(aesKey) && response.Data.HasValue)
+                    try
                     {
-                        try
-                        {
-                            var plainJson = response.Data.Value.GetRawText();
-                            var encrypted = _crypto.Encrypt(aesKey, plainJson);
-                            response.Data = JsonSerializer.SerializeToElement(encrypted);
-                        }
-                        catch
-                        {
-                            _logger.LogWarning("WS: encrypt response failed for {Id}", connectionId);
-                        }
+                        var plainJson = response.Data.Value.GetRawText();
+                        var encrypted = _crypto.Encrypt(sharedKey, plainJson);
+                        response.Data = JsonSerializer.SerializeToElement(encrypted);
+                    }
+                    catch
+                    {
+                        _logger.LogWarning("WS: encrypt response failed for {Id}", connectionId);
                     }
                 }
 

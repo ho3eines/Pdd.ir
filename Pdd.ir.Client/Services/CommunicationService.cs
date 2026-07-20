@@ -253,53 +253,51 @@ namespace Pdd.ir.Client.Services
         }
 
         // ── Public API Methods ──
+        // Rule: If WS is connected → ALL requests via WS (encrypted)
+        //       If WS is NOT connected → ALL requests via HTTP (encrypted)
 
         public async Task<T?> GetAsync<T>(string url)
         {
-            await _initTcs.Task; // Wait for handshake before any API call
+            await _initTcs.Task;
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, data) = MapUrlToAction(url);
-                var wsResult = await SendWsAsync<T>(action, data);
-                if (wsResult != null) return wsResult;
+                return await SendWsAsync<T>(action, data);
             }
             return await HttpGetAsync<T>(url);
         }
 
         public async Task<T?> PostAsync<T>(string url, object? data = null)
         {
-            await _initTcs.Task; // Wait for handshake before any API call
+            await _initTcs.Task;
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, _) = MapUrlToAction(url);
                 var dataStr = data != null ? JsonSerializer.Serialize(data) : null;
-                var wsResult = await SendWsAsync<T>(action, dataStr);
-                if (wsResult != null) return wsResult;
+                return await SendWsAsync<T>(action, dataStr);
             }
             return await HttpPostAsync<T>(url, data);
         }
 
         public async Task<T?> PutAsync<T>(string url, object? data = null)
         {
-            await _initTcs.Task; // Wait for handshake before any API call
+            await _initTcs.Task;
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, _) = MapUrlToAction(url);
                 var dataStr = data != null ? JsonSerializer.Serialize(data) : null;
-                var wsResult = await SendWsAsync<T>(action, dataStr);
-                if (wsResult != null) return wsResult;
+                return await SendWsAsync<T>(action, dataStr);
             }
             return await HttpPutAsync<T>(url, data);
         }
 
         public async Task<bool> DeleteAsync(string url)
         {
-            await _initTcs.Task; // Wait for handshake before any API call
+            await _initTcs.Task;
             if (_isConnected && _ws?.State == WebSocketState.Open)
             {
                 var (action, data) = MapUrlToAction(url);
-                var result = await SendWsAsync<object>(action, data);
-                if (result != null) return true;
+                return await SendWsAsync<object>(action, data) != null;
             }
             return await HttpDeleteAsync(url);
         }
