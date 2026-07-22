@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Pdd.ir.Client.Models;
 
 namespace Pdd.ir.Client.Services
 {
@@ -32,25 +33,38 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                var response = await _http.PostAsJsonAsync("api/auth/login", new { Username = username, Password = password });
+                // ✅ استفاده از Comm به جای HttpClient مستقیم
+                // WS: برمیگردونه LoginResponse خام
+                // HTTP: برمیگردونه ApiResponse<LoginResponse> (با data wrapper)
+                var response = await _comm.PostAsync<JsonElement>("api/auth/login", new { Username = username, Password = password });
 
-                if (!response.IsSuccessStatusCode)
+                if (response.ValueKind == JsonValueKind.Undefined || response.ValueKind == JsonValueKind.Null)
                     return false;
 
-                var json = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<JsonElement>(json);
+                // تشخیص فرمت: اگه "data" property داره → HTTP format، وگرنه → WS format
+                JsonElement loginData;
+                if (response.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
+                    loginData = dataProp;
+                else
+                    loginData = response;
 
-                var data = result.GetProperty("data");
+                var success = loginData.TryGetProperty("success", out var s) && s.GetBoolean();
+                if (!success) return false;
 
-                Token = data.GetProperty("token").GetString();
-                RefreshToken = data.GetProperty("refreshToken").GetString();
-                Username = data.GetProperty("username").GetString();
-                FullName = data.GetProperty("fullName").GetString();
-                Role = data.GetProperty("role").GetString();
+                Token = loginData.TryGetProperty("token", out var t) ? t.GetString() : null;
+                RefreshToken = loginData.TryGetProperty("refreshToken", out var rt) ? rt.GetString() : null;
+                Username = loginData.TryGetProperty("username", out var u) ? u.GetString() : null;
+                FullName = loginData.TryGetProperty("fullName", out var fn) ? fn.GetString() : null;
+                Role = loginData.TryGetProperty("role", out var r) ? r.GetString() : null;
 
-                var aesKey = data.GetProperty("aesKey").GetString();
-                if (!string.IsNullOrEmpty(aesKey))
-                    _encryption.SetKey(aesKey);
+                if (loginData.TryGetProperty("aesKey", out var aes) && aes.ValueKind == JsonValueKind.String)
+                {
+                    var aesKey = aes.GetString();
+                    if (!string.IsNullOrEmpty(aesKey))
+                        _encryption.SetKey(aesKey);
+                }
+
+                if (string.IsNullOrEmpty(Token)) return false;
 
                 _http.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
@@ -61,11 +75,7 @@ namespace Pdd.ir.Client.Services
                 OnAuthStateChanged?.Invoke();
 
                 // ── Reconnect WS with new AES key ──
-                try
-                {
-                    await _comm.ReconnectAsync();
-                }
-                catch { }
+                try { await _comm.ReconnectAsync(); } catch { }
 
                 return true;
             }
@@ -105,17 +115,14 @@ namespace Pdd.ir.Client.Services
             {
                 Token = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_token");
                 RefreshToken = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_refreshToken");
-                Username = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_username");
-                FullName = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_fullName");
-                Role = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_role");
+
+                // ✅ اطلاعات کاربر از localStorage خوانده نمی‌شود — فقط توکن‌ها
 
                 if (!string.IsNullOrEmpty(Token))
                 {
                     _http.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Token);
                     _http.DefaultRequestHeaders.Remove("X-Username");
-                    if (!string.IsNullOrEmpty(Username))
-                        _http.DefaultRequestHeaders.Add("X-Username", Username);
                     OnAuthStateChanged?.Invoke();
                 }
             }
@@ -126,11 +133,9 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
+                // ✅ فقط توکن‌ها ذخیره شوند (نه اطلاعات کاربر)
                 await _js.InvokeVoidAsync("localStorage.setItem", "auth_token", Token);
                 await _js.InvokeVoidAsync("localStorage.setItem", "auth_refreshToken", RefreshToken);
-                await _js.InvokeVoidAsync("localStorage.setItem", "auth_username", Username);
-                await _js.InvokeVoidAsync("localStorage.setItem", "auth_fullName", FullName);
-                await _js.InvokeVoidAsync("localStorage.setItem", "auth_role", Role);
             }
             catch { }
         }
@@ -141,9 +146,6 @@ namespace Pdd.ir.Client.Services
             {
                 await _js.InvokeVoidAsync("localStorage.removeItem", "auth_token");
                 await _js.InvokeVoidAsync("localStorage.removeItem", "auth_refreshToken");
-                await _js.InvokeVoidAsync("localStorage.removeItem", "auth_username");
-                await _js.InvokeVoidAsync("localStorage.removeItem", "auth_fullName");
-                await _js.InvokeVoidAsync("localStorage.removeItem", "auth_role");
             }
             catch { }
         }

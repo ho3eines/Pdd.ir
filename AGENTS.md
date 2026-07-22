@@ -1736,13 +1736,51 @@ var ok = await Comm.DeleteAsync($"api/product/{id}");
 ### قوانین ارتباط
 | قانون | توضیح |
 |-------|-------|
-| 🔥 فقط Comm | همه درخواست‌ها از `ICommunicationService` |
+| 🔥 فقط Comm | همه درخواست‌ها از `ICommunicationService` — هیچ سرویسی حق ندارد مستقیم از `HttpClient` استفاده کند |
 | 🔥 WS-first | اگه WS وصله → همه از WS (GET/POST/PUT/DELETE) |
 | 🔥 HTTP fallback | اگه WS قطعه → همه از HTTP |
 | 🔥 Auth endpoints | `/auth/*` همیشه HTTP (نه WS) |
 | 🔥 هر درخواست auth جدید | هر درخواست `X-Auth` header جدید میخواد (timestamp + nonce تکراری نباشه) |
 | 🔥 Handshake | `MainLayout.OnAfterRenderAsync` → `Comm.InitializeAsync()` |
 | 🔥 لاگین | از `Comm.PostAsync` با SharedKey encryption |
+
+### ⚠️ قانون طلایی: سرویس‌های ارتباطی غیرقابل تغییر هستند
+
+> **هیچ سرویسی حق ندارد مستقیم از `HttpClient` استفاده کند. تمام ارتباطات باید از طریق `ICommunicationService` انجام شود — حتی در سرویس‌هایی مانند `AuthService`.**
+
+**سرویس‌هایی که نباید تغییر کنند (زیرساخت ارتباطی):**
+- `ICommunicationService` / `CommunicationService`
+- `SecurityService`
+- `EncryptionService`
+
+**سرویس‌های تجاری که باید از Comm استفاده کنند:**
+- `AuthService` — باید از `_comm.PostAsync` برای لاگین استفاده کند
+- هر سرویس دیگری که نیاز به ارتباط با سرور دارد
+
+**نمونه صحیح (Users.razor):**
+```razor
+@inject ICommunicationService Comm
+
+// ✅ صحیح — همه درخواست‌ها از Comm
+var items = await Comm.GetAsync<List<UserDto>>("api/user");
+await Comm.DeleteAsync($"api/user/{user.Id}");
+```
+
+**نمونه غلط (AuthService قبل از اصلاح):**
+```csharp
+// ❌ غلط — استفاده مستقیم از HttpClient
+var response = await _http.PostAsJsonAsync("api/auth/login", new { Username = username, Password = password });
+
+// ❌ غلط — تنظیم مستقیم header
+_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+```
+
+**نمونه صحیح (AuthService بعد از اصلاح):**
+```csharp
+// ✅ صحیح — استفاده از Comm
+var result = await _comm.PostAsync<LoginResponse>("api/auth/login", new { Username = username, Password = password });
+if (result != null) { Token = result.Token; ... }
+```
 
 ### ❌ ممنوع
 ```razor

@@ -475,12 +475,41 @@ namespace Pdd.ir.Server.WebSocket
 
         private static async Task<WsResponse> HandleAuthLogin(IServiceScope scope, string? data)
         {
-            var svc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
+            var authSvc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
+            var jwtSvc = scope.ServiceProvider.GetRequiredService<JwtService>();
+            var keyStore = scope.ServiceProvider.GetRequiredService<AesKeyStore>();
+
             var req = JsonSerializer.Deserialize<Pdd.ir.Business.Models.DTOs.LoginRequest>(data ?? "{}", JsonOpts);
             if (req == null)
                 return new WsResponse { Action = "auth.login", Success = false, Message = "Invalid credentials" };
-            var result = await svc.LoginAsync(req.Username, req.Password);
-            return new WsResponse { Action = "auth.login", Success = result.Success, Data = JsonSerializer.SerializeToElement(result) };
+
+            var result = await authSvc.LoginAsync(req.Username, req.Password);
+            if (!result.Success)
+                return new WsResponse { Action = "auth.login", Success = false, Message = result.Message };
+
+            var user = await authSvc.GetUserByUsernameAsync(req.Username);
+            if (user == null)
+                return new WsResponse { Action = "auth.login", Success = false, Message = "User not found" };
+
+            var token = jwtSvc.GenerateToken(user);
+            var refreshToken = Guid.NewGuid().ToString("N");
+            keyStore.SetKey(req.Username, result.AesKey);
+
+            return new WsResponse
+            {
+                Action = "auth.login",
+                Success = true,
+                Data = JsonSerializer.SerializeToElement(new LoginResponse
+                {
+                    Success = true,
+                    Token = token,
+                    RefreshToken = refreshToken,
+                    AesKey = result.AesKey,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Role = user.Role
+                })
+            };
         }
     }
 
