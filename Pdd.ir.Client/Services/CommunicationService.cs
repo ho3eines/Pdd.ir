@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using Pdd.ir.Client.Models;
 using Microsoft.JSInterop;
 
 namespace Pdd.ir.Client.Services
@@ -29,6 +31,7 @@ namespace Pdd.ir.Client.Services
         private readonly SecurityService _security;
         private readonly IJSRuntime _js;
         private readonly ILogger<CommunicationService> _logger;
+        private readonly AppSettings _appSettings;
         private const string SharedKey = "pdd-ir-ws-2026-secure-key";
         private ClientWebSocket? _ws;
         private bool _isConnected;
@@ -52,12 +55,13 @@ namespace Pdd.ir.Client.Services
         public bool IsAuthenticated => _security.IsAuthenticated;
         public event Action<bool>? OnConnectionChanged;
 
-        public CommunicationService(HttpClient http, EncryptionService encryption, SecurityService security, IJSRuntime js, ILogger<CommunicationService> logger)
+        public CommunicationService(HttpClient http, EncryptionService encryption, SecurityService security, IJSRuntime js, IOptions<AppSettings> appSettings, ILogger<CommunicationService> logger)
         {
             _http = http;
             _encryption = encryption;
             _security = security;
             _js = js;
+            _appSettings = appSettings.Value;
             _logger = logger;
         }
 
@@ -68,7 +72,9 @@ namespace Pdd.ir.Client.Services
                 var baseUri = _http.BaseAddress?.ToString().TrimEnd('/');
                 if (string.IsNullOrEmpty(baseUri)) { _initTcs.TrySetResult(); return; }
 
-                var wsUri = baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
+                var wsUri = !string.IsNullOrEmpty(_appSettings?.ApiSettings?.WebSocketUrl)
+                    ? _appSettings.ApiSettings.WebSocketUrl
+                    : baseUri.Replace("http://", "ws://").Replace("https://", "wss://");
                 _wsUrl = wsUri + "/ws";
 
                 // ── Step 1: HTTP Handshake (get session token) ──
@@ -186,6 +192,7 @@ namespace Pdd.ir.Client.Services
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
             var buffer = new byte[1024 * 64];
+            var sb = new StringBuilder();
             try
             {
                 while (_ws?.State == WebSocketState.Open && !ct.IsCancellationRequested)
@@ -200,10 +207,15 @@ namespace Pdd.ir.Client.Services
                         return;
                     }
 
-                    if (result.EndOfMessage && result.MessageType == WebSocketMessageType.Text)
+                    if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        HandleIncomingMessage(json);
+                        sb.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                        if (result.EndOfMessage)
+                        {
+                            var json = sb.ToString();
+                            sb.Clear();
+                            await HandleIncomingMessageAsync(json);
+                        }
                     }
                 }
             }
@@ -217,7 +229,7 @@ namespace Pdd.ir.Client.Services
             catch { }
         }
 
-        private void HandleIncomingMessage(string json)
+        private async Task HandleIncomingMessageAsync(string json)
         {
             try
             {
@@ -236,7 +248,7 @@ namespace Pdd.ir.Client.Services
                     {
                         try
                         {
-                            var decrypted = _js.InvokeAsync<string>("CryptoUtils.decryptData", encryptedStr, SharedKey).GetAwaiter().GetResult();
+                            var decrypted = await _js.InvokeAsync<string>("CryptoUtils.decryptData", encryptedStr, SharedKey);
                             response.DecryptedData = decrypted;
                         }
                         catch { }
@@ -428,7 +440,8 @@ namespace Pdd.ir.Client.Services
             if (parts.Length == 0) return null;
             var last = parts[^1];
             if (last is "api" or "admin" or "unread" or "count" or "markread" or "password") return null;
-            return last;
+            if (int.TryParse(last, out _)) return last;
+            return null;
         }
 
         // ── HTTP Fallback (fresh auth per request) ──

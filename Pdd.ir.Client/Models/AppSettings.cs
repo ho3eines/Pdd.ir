@@ -1,4 +1,4 @@
-﻿namespace Pdd.ir.Client.Models;
+namespace Pdd.ir.Client.Models;
 
 public class AppSettings
 {
@@ -9,6 +9,7 @@ public class AppSettings
 public class ApiSettings
 {
     public string BaseUrl { get; set; } = string.Empty;
+    public string WebSocketUrl { get; set; } = string.Empty;
     public string APIKey { get; set; } = string.Empty;
     public string Encryption { get; set; } = string.Empty;
 }

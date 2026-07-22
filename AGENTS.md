@@ -1218,6 +1218,56 @@ async Task Delete(T item)
 }
 ```
 
+### 8. ExtractId Only Returns Numeric IDs
+
+`MapUrlToAction` uses `ExtractId` to detect if a URL has a numeric ID. It MUST only return values that parse as `int`. Entity names like "user", "blog", "product" must NOT be treated as IDs:
+
+```csharp
+// ❌ WRONG — "user" treated as ID → user.get instead of user.list
+private static string? ExtractId(string url) {
+    // ...
+    return last; // returns "user", "blog", etc.
+}
+
+// ✅ CORRECT — only numeric IDs
+private static string? ExtractId(string url) {
+    var parts = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    if (parts.Length == 0) return null;
+    var last = parts[^1];
+    if (last is "api" or "admin" or "unread" or "count" or "markread" or "password") return null;
+    if (int.TryParse(last, out _)) return last;  // only numbers
+    return null;
+}
+```
+
+### 9. HttpClient BaseAddress Must Come From Config
+
+The `HttpClient` BaseAddress MUST read from `appsettings.json` via `IOptions<AppSettings>`, NOT from `builder.HostEnvironment.BaseAddress`:
+
+```csharp
+// ❌ WRONG — uses client's own URL (e.g., https://localhost:7125)
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// ✅ CORRECT — reads from config
+builder.Services.AddScoped(sp => {
+    var baseUrl = builder.Configuration["Pdd:ApiSettings:BaseUrl"] ?? "http://localhost:5000";
+    return new HttpClient { BaseAddress = new Uri(baseUrl) };
+});
+```
+
+### 10. AuthService Login Must Use SharedKey Encryption
+
+Login body MUST be encrypted with `SharedKey` (not AES key, which isn't available yet). Use `CryptoUtils.encryptData(payload, SharedKey)` via JS interop:
+
+```csharp
+// ❌ WRONG — AES key not set yet, throws InvalidOperationException
+var encrypted = await _encryption.EncryptAsync(payload);
+
+// ✅ CORRECT — uses SharedKey directly
+const string SharedKey = "pdd-ir-ws-2026-secure-key";
+var encrypted = await _js.InvokeAsync<string>("CryptoUtils.encryptData", payload, SharedKey);
+```
+
 ---
 
 ## Layout Splash Dismissal (MANDATORY)
@@ -1638,41 +1688,68 @@ Pdd.ir.Client/
 
 ---
 
-## 🚨 MANDATORY: CommunicationService Pattern (WS + HTTP Fallback)
+## 🚨 MANDATORY: Client-Server Communication (کامل و نهایی)
 
 > **قانون اجباری:** تمام ارتباطات کلاینت با سرور باید از طریق `ICommunicationService` انجام شود. استفاده مستقیم از `HttpClient` در صفحات ممنوع است.
 
-### ساختار سرویس
+### آدرس‌ها از appsettings.json خوانده می‌شوند
+
+فایل `wwwroot/appsettings.json` در کلاینت:
+```json
+{
+  "Pdd": {
+    "ApiSettings": {
+      "BaseUrl": "http://localhost:5000",
+      "WebSocketUrl": "ws://localhost:5000"
+    }
+  }
+}
+```
+
+### Program.cs — ثبت configuration
 ```csharp
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Pdd"));
+builder.Services.AddScoped(sp =>
+{
+    var baseUrl = builder.Configuration["Pdd:ApiSettings:BaseUrl"] ?? "http://localhost:5000";
+    return new HttpClient { BaseAddress = new Uri(baseUrl) };
+});
+```
+
+### نحوه ارتباط در صفحات
+```razor
 @inject ICommunicationService Comm
 
-// GET — اول WS، اگه جواب نداد HTTP
-var data = await Comm.GetAsync<List<ProductDto>>("api/product");
+// لیست — وقتی WS وصله از WS، وگرنه HTTP
+var items = await Comm.GetAsync<List<ProductDto>>("api/product");
 
-// POST — اول WS، اگه جواب نداد HTTP
+// ایجاد
 var result = await Comm.PostAsync<object>("api/product", new { Title = "..." });
 
-// PUT — فقط HTTP
+// ویرایش
 var ok = await Comm.PutAsync<object>($"api/product/{id}", new { Title = "..." });
 
-// DELETE — فقط HTTP
+// حذف
 var ok = await Comm.DeleteAsync($"api/product/{id}");
 ```
 
-### قوانین
+### قوانین ارتباط
 | قانون | توضیح |
 |-------|-------|
-| 🔹 GET/POST | اول WebSocket، fallback به HTTP |
-| 🔹 PUT/DELETE | فقط HTTP |
-| 🔹 Timeout | ۵ ثانیه روی هر درخواست WS |
-| 🔹 Reconnect | خودکار با exponential backoff |
-| 🔹 Mutex | `SemaphoreSlim` جلوگیری از ریس کاندیشن |
-| 🔹 Registration | در `Program.cs` با `InitializeAsync()` |
+| 🔥 فقط Comm | همه درخواست‌ها از `ICommunicationService` |
+| 🔥 WS-first | اگه WS وصله → همه از WS (GET/POST/PUT/DELETE) |
+| 🔥 HTTP fallback | اگه WS قطعه → همه از HTTP |
+| 🔥 Auth endpoints | `/auth/*` همیشه HTTP (نه WS) |
+| 🔥 هر درخواست auth جدید | هر درخواست `X-Auth` header جدید میخواد (timestamp + nonce تکراری نباشه) |
+| 🔥 Handshake | `MainLayout.OnAfterRenderAsync` → `Comm.InitializeAsync()` |
+| 🔥 لاگین | از `Comm.PostAsync` با SharedKey encryption |
 
 ### ❌ ممنوع
 ```razor
 @inject HttpClient Http
 var data = await Http.GetFromJsonAsync<List<Product>>("api/product");
+
+// یا مستقیم _http.PostAsJsonAsync
 ```
 
 ### ✅ درست
@@ -1681,75 +1758,67 @@ var data = await Http.GetFromJsonAsync<List<Product>>("api/product");
 var data = await Comm.GetAsync<List<ProductDto>>("api/product");
 ```
 
----
+### WebSocket — URL Mapping
 
-## 🚨 MANDATORY: Security Authentication System (Session-Based)
+`CommunicationService` آدرس URL رو به WS action تبدیل می‌کنه:
 
-> **قانون اجباری:** تمام ارتباطات با سرور باید از سیستم احراز هویت session-based استفاده کنند. **ارسال API Token مستقیم ممنوع است.**
+| URL | WS Action | توضیح |
+|-----|-----------|-------|
+| `api/product` | `product.list` | لیست |
+| `api/product/5` | `product.get` | دریافت با ID عددی |
+| `api/blog` | `blog.list` | لیست |
+| `api/blog/admin` | `blog.admin` | ادمین |
+| `api/user` | `user.list` | لیست |
+| `api/user/5` | `user.get` | دریافت با ID عددی |
+| `api/contact` | `contact.list` | لیست |
+| `api/contact/5/markread` | `contact.markread` | خوانده شده |
 
-### Flow امنیتی
+**نکته مهم:** `ExtractId` فقط رشته‌های عددی (`int.TryParse`) رو ID میشناسه. اگه آخر URL کلمه‌ای مثل `"user"` یا `"blog"` باشه، به عنوان ID شناخته نمیشه و action `list` برمیگردونه.
+
+### ساختار کامل سرویس‌های ارتباطی
+
 ```
-1. Client: encrypt { clientId, timestamp, nonce } → Shared Key (AES-256-CBC)
-2. Server: decrypt → validate timestamp (≤60s, reject future >5s) → anti-replay nonce → rate limit
-3. Server: generate token → store SHA256 hash in DB → encrypt response → return
-4. Client: store sessionToken → send encrypted { clientId, sessionToken } in X-Auth header
-5. Server: validate hash + expiry on every request
+Client/
+├── Services/
+│   ├── CommunicationService.cs     # WS-first + HTTP fallback (اصلی)
+│   ├── SecurityService.cs          # Handshake + Session + Auth Header
+│   ├── EncryptionService.cs        # AES-256-CBC ( بعد از handshake)
+│   └── AuthService.cs              # لاگین/لاگاوت (از Comm استفاده می‌کنه)
+├── Models/
+│   └── AppSettings.cs              # BaseUrl + WebSocketUrl
+└── wwwroot/
+    └── appsettings.json            # آدرس‌های سرور
+
+Server/
+├── WebSocket/
+│   └── WebSocketHandler.cs         # تمام WS actions
+├── Services/
+│   ├── SessionAuthAttribute.cs     # فیلتر auth برای HTTP
+│   ├── RequestDecryptionMiddleware.cs  # decrypt درخواست‌ها
+│   └── ResponseEncryptionMiddleware.cs # encrypt پاسخ‌ها
+└── appsettings.json                # ApiKey = SharedKey
 ```
 
-### ساختار فایل‌ها
-| فایل | سمت | توضیح |
-|------|-----|-------|
-| `Services/AuthService.cs` | Server | Handshake handler: decrypt, validate, anti-replay, rate limit, create session |
-| `Services/SessionAuthAttribute.cs` | Server | فیلتر احراز هویت — validates encrypted auth header |
-| `Models/AuthSession.cs` | Server | مدل دیتابیس |
-| `Controllers/AuthController.cs` | Server | endpoint `/api/auth/handshake` |
-| `Services/SecurityService.cs` | Client | Handshake client: generates clientId, timestamp, nonce, encrypts |
-| `Services/CommunicationService.cs` | Client | WS-first + HTTP fallback با encrypted auth |
+### Encryption Flow
+
+```
+Client                              Server
+  │                                    │
+  │── HTTP POST /api/auth/handshake ──→│  (SharedKey encrypt)
+  │←── encrypted sessionToken ─────────│
+  │                                    │
+  │── WS: { action, auth, data } ─────→│  (SharedKey encrypt/decrypt)
+  │←── WS: { action, data, success } ─│  (SharedKey encrypt)
+  │                                    │
+  │── HTTP: X-Auth header ────────────→│  (SharedKey encrypt per request)
+  │←── encrypted response ────────────│
+```
 
 ### Shared Key
-- **Key**: `pdd-ir-ws-2026-secure-key` (hardcoded در هر دو سمت)
-- **Client**: XOR-encoded در `SecurityService.cs`
-- **Server**: plaintext در `appsettings.json` → `ApiKey`
-
-### قوانین امنیتی
-| قانون | توضیح |
-|-------|-------|
-| 🔹 API Token مستقیم | ❌ ممنوع — فقط session-based |
-| 🔹 Token خام در DB | ❌ ممنوع — فقط SHA256 hash |
-| 🔹 Timestamp expiry | ≤60s — بیشتر reject میشه |
-| 🔹 Future timestamp | >5s reject میشه |
-| 🔹 Nonce anti-replay | `ConcurrentDictionary.TryAdd` (atomic) |
-| 🔹 Rate limiting | 10 handshake/min per ClientId |
-| 🔹 Token theft | Token به ClientId bind شده |
-| 🔹 Encrypted comms | AES-256-CBC روی تمام درخواست‌ها |
-| 🔹 WS-first | اول WebSocket، fallback HTTP |
-
-### Handshake Request/Response
-```json
-// Request (encrypted)
-{ "clientId": "pdd-abc123", "timestamp": 1784493000, "nonce": "base64..." }
-
-// Response (encrypted)
-{ "sessionToken": "base64...", "expiresAt": "2026-07-19T20:50:00Z" }
-```
-
-### Auth Header (درخواست‌های بعدی)
-```json
-// X-Auth header (encrypted)
-{ "clientId": "pdd-abc123", "sessionToken": "base64..." }
-```
-
-### DB Schema
-```sql
-CREATE TABLE AuthSessions (
-    Id INT IDENTITY PRIMARY KEY,
-    ClientId NVARCHAR(64) NOT NULL,
-    TokenHash NVARCHAR(256) NOT NULL,  -- SHA256 hash, NOT raw token
-    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    ExpiresAt DATETIME2 NOT NULL,
-    IsActive BIT DEFAULT 1
-);
-```
+- **Key**: `pdd-ir-ws-2026-secure-key`
+- **Client**: `SecurityService.cs` → `const string SharedKey`
+- **Server**: `appsettings.json` → `ApiKey`
+- **Algorithm**: AES-256-CBC, SHA256(key) → 32 byte key, random IV prepended to ciphertext
 
 ---
 
