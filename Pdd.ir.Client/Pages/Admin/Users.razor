@@ -1,4 +1,5 @@
 @page "/admin/users"
+@attribute [AuthorizeRole("admin")]
 @implements IDisposable
 @inject ICommunicationService Comm
 @inject ITranslateService T
@@ -80,11 +81,16 @@
 
     async Task DeleteUser(UserDto user)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", T.Text("are_you_sure_delete"));
-        if (!confirmed) return;
-        await Comm.DeleteAsync($"api/user/{user.Id}");
-        await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
-        await LoadUsers();
+        try
+        {
+            await Comm.DeleteAsync($"api/user/{user.Id}");
+            await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
+            await LoadUsers();
+        }
+        catch (Exception)
+        {
+            await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed"));
+        }
     }
 
     public void Dispose()

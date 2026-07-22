@@ -63,7 +63,7 @@
                     <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">@SelectedProduct.Subtitle</p>
                     @if (!string.IsNullOrEmpty(SelectedProduct.Description))
                     {
-                        <div style="line-height:1.8;font-size:14px;color:var(--text-secondary);">@((MarkupString)SelectedProduct.Description)</div>
+                        <div style="line-height:1.8;font-size:14px;color:var(--text-secondary);">@((MarkupString)HtmlSanitizer.Sanitize(SelectedProduct.Description))</div>
                     }
                     @if (!string.IsNullOrEmpty(SelectedProduct.Features))
                     {
@@ -97,8 +97,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        ProductList = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new();
-        IsLoading = false;
+        try
+        {
+            ProductList = await Comm.GetAsync<List<ProductDto>>("api/product") ?? new();
+        }
+        catch (Exception)
+        {
+            // Silently handle - show empty state
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     void ShowDetail(ProductDto p) => SelectedProduct = p;

@@ -1,0 +1,129 @@
+@page "/admin/clients"
+@attribute [AuthorizeRole("admin")]
+@implements IDisposable
+@inject ICommunicationService Comm
+@inject ITranslateService T
+@inject IModalService Modal
+@inject IAlertService Alert
+@inject IJSRuntime JS
+
+<PageTitle>@T.Text("client_management") | PDD</PageTitle>
+
+<div class="page-enter">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">@T.Text("client_management")</h4>
+            <p class="text-muted mb-0">@T.Text("client_subtitle")</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenCreate">
+            <i class="bi bi-plus-lg me-1"></i>@T.Text("new_client")
+        </button>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="skeleton skeleton-card"></div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="@T.Text("search")" @bind="SearchText" @bind:after="Filter" />
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>@T.Text("name")</th>
+                                <th>@T.Text("name_en")</th>
+                                <th>@T.Text("icon")</th>
+                                <th>@T.Text("color")</th>
+                                <th>@T.Text("sort_order")</th>
+                                <th>@T.Text("status")</th>
+                                <th>@T.Text("actions")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in FilteredItems)
+                            {
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td>@item.Name</td>
+                                    <td>@item.NameEn</td>
+                                    <td><i class="bi @item.Icon"></i></td>
+                                    <td><span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:@item.Color;"></span></td>
+                                    <td>@item.SortOrder</td>
+                                    <td>
+                                        <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(item.IsActive ? T.Text("active") : T.Text("inactive"))
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenEdit(item)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    List<ClientDto> Items = new();
+    List<ClientDto> FilteredItems = new();
+    bool IsLoading = true;
+    string SearchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    async Task LoadData()
+    {
+        IsLoading = true;
+        Items = await Comm.GetAsync<List<ClientDto>>("api/client/admin") ?? new();
+        Filter();
+        IsLoading = false;
+    }
+
+    void Filter()
+    {
+        var q = SearchText.Trim().ToLower();
+        FilteredItems = string.IsNullOrEmpty(q) ? Items
+            : Items.Where(x => (x.Name ?? "").ToLower().Contains(q) || (x.NameEn ?? "").ToLower().Contains(q)).ToList();
+    }
+
+    void OpenCreate()
+    {
+        Modal.Show<ClientDialog>(T.Text("new_client"));
+    }
+
+    void OpenEdit(ClientDto item)
+    {
+        Modal.Show<ClientDialog>(T.Text("edit_client"), new Dictionary<string, object> { { "Id", item.Id } });
+    }
+
+    async Task Delete(ClientDto item)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", T.Text("are_you_sure_delete"));
+        if (!confirmed) return;
+
+        await Comm.DeleteAsync($"api/client/{item.Id}");
+        await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
+        await LoadData();
+    }
+
+    public void Dispose() { }
+}

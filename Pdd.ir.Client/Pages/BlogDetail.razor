@@ -40,7 +40,7 @@ else
                 }
                 <hr style="border-color:var(--border-color);" />
                 <div style="line-height:2;font-size:15px;color:var(--text-secondary);margin-top:24px;">
-                    @((MarkupString)Post.Content)
+                    @((MarkupString)HtmlSanitizer.Sanitize(Post.Content))
                 </div>
                 <div class="mt-5">
                     <a href="/blog" class="btn btn-outline-primary">

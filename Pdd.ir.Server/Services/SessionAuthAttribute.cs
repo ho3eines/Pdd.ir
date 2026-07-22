@@ -10,9 +10,9 @@ namespace Pdd.ir.Server.Services
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            // Skip auth for handshake endpoint
+            // Skip auth for handshake and login endpoints
             var path = context.HttpContext.Request.Path.Value ?? "";
-            if (path.Contains("/auth/handshake"))
+            if (path.Contains("/auth/handshake") || path.Contains("/auth/login"))
             {
                 await next();
                 return;

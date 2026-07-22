@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Microsoft.JSInterop;
 using Pdd.ir.Client.Models;
@@ -29,35 +30,41 @@ namespace Pdd.ir.Client.Services
             _js = js;
         }
 
+        private const string SharedKey = "pdd-ir-ws-2026-secure-key";
+
         public async Task<bool> LoginAsync(string username, string password)
         {
             try
             {
-                // ✅ استفاده از Comm به جای HttpClient مستقیم
-                // WS: برمیگردونه LoginResponse خام
-                // HTTP: برمیگردونه ApiResponse<LoginResponse> (با data wrapper)
-                var response = await _comm.PostAsync<JsonElement>("api/auth/login", new { Username = username, Password = password });
+                // ✅ لاگین با SharedKey encryption
+                var payload = JsonSerializer.Serialize(new { Username = username, Password = password });
+                var encrypted = await _js.InvokeAsync<string>("CryptoUtils.encryptData", payload, SharedKey);
+                var encryptedBody = JsonSerializer.Serialize(new { encrypted = true, data = encrypted });
 
-                if (response.ValueKind == JsonValueKind.Undefined || response.ValueKind == JsonValueKind.Null)
+                using var content = new StringContent(encryptedBody, Encoding.UTF8, "application/json");
+                var response = await _http.PostAsync("api/auth/login", content);
+
+                if (!response.IsSuccessStatusCode)
                     return false;
 
-                // تشخیص فرمت: اگه "data" property داره → HTTP format، وگرنه → WS format
-                JsonElement loginData;
-                if (response.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
-                    loginData = dataProp;
-                else
-                    loginData = response;
+                var json = await response.Content.ReadAsStringAsync();
+                var doc = JsonSerializer.Deserialize<JsonElement>(json);
 
-                var success = loginData.TryGetProperty("success", out var s) && s.GetBoolean();
+                // سرور: ApiResponse<LoginResponse> → { success, message, data: { token, ... } }
+                var data = doc.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object
+                    ? dataProp
+                    : doc;
+
+                var success = data.TryGetProperty("success", out var s) && s.GetBoolean();
                 if (!success) return false;
 
-                Token = loginData.TryGetProperty("token", out var t) ? t.GetString() : null;
-                RefreshToken = loginData.TryGetProperty("refreshToken", out var rt) ? rt.GetString() : null;
-                Username = loginData.TryGetProperty("username", out var u) ? u.GetString() : null;
-                FullName = loginData.TryGetProperty("fullName", out var fn) ? fn.GetString() : null;
-                Role = loginData.TryGetProperty("role", out var r) ? r.GetString() : null;
+                Token = data.TryGetProperty("token", out var t) ? t.GetString() : null;
+                RefreshToken = data.TryGetProperty("refreshToken", out var rt) ? rt.GetString() : null;
+                Username = data.TryGetProperty("username", out var u) ? u.GetString() : null;
+                FullName = data.TryGetProperty("fullName", out var fn) ? fn.GetString() : null;
+                Role = data.TryGetProperty("role", out var r) ? r.GetString() : null;
 
-                if (loginData.TryGetProperty("aesKey", out var aes) && aes.ValueKind == JsonValueKind.String)
+                if (data.TryGetProperty("aesKey", out var aes) && aes.ValueKind == JsonValueKind.String)
                 {
                     var aesKey = aes.GetString();
                     if (!string.IsNullOrEmpty(aesKey))
@@ -133,7 +140,6 @@ namespace Pdd.ir.Client.Services
         {
             try
             {
-                // ✅ فقط توکن‌ها ذخیره شوند (نه اطلاعات کاربر)
                 await _js.InvokeVoidAsync("localStorage.setItem", "auth_token", Token);
                 await _js.InvokeVoidAsync("localStorage.setItem", "auth_refreshToken", RefreshToken);
             }

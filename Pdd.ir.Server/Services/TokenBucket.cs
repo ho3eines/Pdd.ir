@@ -15,6 +15,7 @@ namespace Pdd.ir.Server.Services
         public TokenBucket(int capacity = 5, double refillRate = 1.0)
         {
             _capacity = capacity;
+            _refillRate = refillRate;
             _tokens = capacity;
             _lastRefill = DateTime.UtcNow;
         }

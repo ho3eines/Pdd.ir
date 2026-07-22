@@ -1,10 +1,11 @@
-﻿@using Microsoft.JSInterop
+@using Microsoft.JSInterop
 @using Pdd.ir.Client.Services
 @implements IAsyncDisposable
 @typeparam TItem
 @inject IModalService Modal
 @inject IAlertService Alert
 @inject IJSRuntime JS
+@inject ITranslateService T
 
 <div class="glass-card table-wrapper fade-slide-in">
     @* ── Header: Title + Search + Actions ── *@
@@ -24,7 +25,7 @@
             {
                 <div class="table-search">
                     <i class="bi bi-search"></i>
-                    <input type="text" class="form-control" placeholder="@SearchPlaceholder"
+                    <input type="text" class="form-control" placeholder="@GetSearchPlaceholder()"
                            value="@_searchText" @oninput="OnSearchInput" />
                     @if (!string.IsNullOrEmpty(_searchText))
                     {
@@ -37,7 +38,7 @@
             @if (CanInsert)
             {
                 <button class="btn btn-primary" @onclick="OnInsertClick">
-                    <i class="bi bi-plus-lg me-1"></i>@InsertButtonText
+                    <i class="bi bi-plus-lg me-1"></i>@GetInsertButtonText()
                 </button>
             }
         </div>
@@ -58,7 +59,7 @@
     {
         <div class="table-empty">
             <i class="@EmptyIcon"></i>
-            <p>@EmptyText</p>
+            <p>@GetEmptyText()</p>
         </div>
     }
     @* ── Table ── *@
@@ -78,7 +79,7 @@
                         }
                         @if (HasActions)
                         {
-                            <th style="width:@ActionColumnWidth;">@ActionColumnTitle</th>
+                            <th style="width:@ActionColumnWidth;">@GetActionColumnTitle()</th>
                         }
                     </tr>
                 </thead>
@@ -114,7 +115,7 @@
                                     <div class="table-actions">
                                         @if (CanEdit)
                                         {
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(capturedItem)" title="ویرایش">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditClick(capturedItem)" title=T.Text("edit")>
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         }
@@ -184,7 +185,7 @@
 
     // ── Search ──
     [Parameter] public bool ShowSearch { get; set; } = true;
-    [Parameter] public string SearchPlaceholder { get; set; } = "جستجو...";
+    [Parameter] public string? SearchPlaceholder { get; set; }
     [Parameter] public Func<TItem, string, bool>? SearchFilter { get; set; }
 
     // ── Pagination ──
@@ -192,21 +193,21 @@
     [Parameter] public bool ShowRowNumber { get; set; } = true;
 
     // ── Empty State ──
-    [Parameter] public string EmptyText { get; set; } = "هیچ داده‌ای یافت نشد";
+    [Parameter] public string? EmptyText { get; set; }
     [Parameter] public string EmptyIcon { get; set; } = "bi bi-inbox";
 
     // ── Insert ──
-    [Parameter] public string InsertButtonText { get; set; } = "جدید";
+    [Parameter] public string? InsertButtonText { get; set; }
     [Parameter] public EventCallback OnInsert { get; set; }
 
     // ── Edit / Delete (via Modal) ──
     [Parameter] public Type? EditDialogType { get; set; }
-    [Parameter] public string EditDialogTitle { get; set; } = "ویرایش";
+    [Parameter] public string? EditDialogTitle { get; set; }
     [Parameter] public Func<TItem, Dictionary<string, object>>? EditParameters { get; set; }
 
     [Parameter] public EventCallback<TItem> OnEdit { get; set; }
     [Parameter] public Func<TItem, Task>? OnDelete { get; set; }
-    [Parameter] public string DeleteConfirmMessage { get; set; } = "آیا از حذف مطمئن هستید؟";
+    [Parameter] public string? DeleteConfirmMessage { get; set; }
     [Parameter] public Func<TItem, string>? DeleteMessageSelector { get; set; }
 
     // ── Row Actions (custom buttons) ──
@@ -216,7 +217,7 @@
     [Parameter] public List<PddTableColumn<TItem>> Columns { get; set; } = new();
 
     // ── Action Column ──
-    [Parameter] public string ActionColumnTitle { get; set; } = "عملیات";
+    [Parameter] public string? ActionColumnTitle { get; set; }
     [Parameter] public string ActionColumnWidth { get; set; } = "120px";
 
     // ═══════════════════════ Events ═══════════════════════
@@ -231,6 +232,15 @@
     private List<TItem> PageItems = new();
     private int TotalPages => (int)Math.Ceiling((double)FilteredItems.Count / PageSize);
     private bool HasActions => CanEdit || CanDelete || RowActions != null;
+
+    // ═══════════════════════ Translated Defaults ═══════════════════════
+
+    private string GetEmptyText() => EmptyText ?? T.Text("no_data");
+    private string GetInsertButtonText() => InsertButtonText ?? T.Text("new_item");
+    private string GetEditDialogTitle() => EditDialogTitle ?? T.Text("edit");
+    private string GetDeleteConfirmMessage() => DeleteConfirmMessage ?? T.Text("are_you_sure_delete");
+    private string GetActionColumnTitle() => ActionColumnTitle ?? T.Text("actions");
+    private string GetSearchPlaceholder() => SearchPlaceholder ?? T.Text("search") + "...";
 
     // ═══════════════════════ Lifecycle ═══════════════════════
 
@@ -326,7 +336,7 @@
         }
         else if (EditDialogType != null)
         {
-            await Modal.Show(EditDialogType, InsertButtonText);
+            await Modal.Show(EditDialogType, GetInsertButtonText());
             await Refresh();
         }
     }
@@ -340,14 +350,14 @@
         else if (EditDialogType != null)
         {
             var parameters = EditParameters != null ? EditParameters(item) : new();
-            await Modal.Show(EditDialogType, EditDialogTitle, parameters);
+            await Modal.Show(EditDialogType, GetEditDialogTitle(), parameters);
             await Refresh();
         }
     }
 
     private async Task OnDeleteClick(TItem item)
     {
-        var msg = DeleteMessageSelector != null ? DeleteMessageSelector(item) : DeleteConfirmMessage;
+        var msg = DeleteMessageSelector != null ? DeleteMessageSelector(item) : GetDeleteConfirmMessage();
         var confirmed = await JS.InvokeAsync<bool>("confirm", msg);
         if (!confirmed) return;
 

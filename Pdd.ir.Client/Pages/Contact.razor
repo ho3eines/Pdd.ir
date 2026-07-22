@@ -2,6 +2,7 @@
 @inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
+@inject IAlertService Alert
 
 <PageTitle>@(T.CurrentLanguage == "fa" ? "تماس با ما" : "Contact") | PDD</PageTitle>
 
@@ -133,9 +134,9 @@
             });
             FormSent = true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed"));
         }
         finally { IsSubmitting = false; }
     }

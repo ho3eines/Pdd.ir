@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.AspNetCore.Components.Authorization;
 using Pdd.ir.Client;
 using Pdd.ir.Client.Services;
 using Pdd.ir.Client.Models;
+using Pdd.ir.Client.Authorization;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -18,6 +20,10 @@ builder.Services.AddScoped(sp =>
     var baseUrl = config["Pdd:ApiSettings:BaseUrl"] ?? "http://localhost:5000";
     return new HttpClient { BaseAddress = new Uri(baseUrl) };
 });
+
+// ── Authentication ──
+builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
+builder.Services.AddAuthorizationCore();
 
 builder.Services.AddScoped<EncryptionService>();
 builder.Services.AddScoped<SecurityService>();

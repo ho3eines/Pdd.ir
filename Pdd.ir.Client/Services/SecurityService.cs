@@ -71,6 +71,8 @@ namespace Pdd.ir.Client.Services
                     return false;
 
                 var decrypted = await DecryptAsync(encryptedData);
+                if (string.IsNullOrEmpty(decrypted))
+                    return false;
                 var responseDoc = JsonSerializer.Deserialize<JsonElement>(decrypted);
 
                 if (responseDoc.TryGetProperty("sessionToken", out var tokenProp) &&

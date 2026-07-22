@@ -1,29 +1,33 @@
+@inject ICommunicationService Comm
+@inject ITranslateService T
+
 <section class="clients-section">
     <div class="clients-track">
-        @foreach (var logo in _logos.Concat(_logos))
+        @foreach (var client in _clients.Concat(_clients))
         {
             <div class="client-logo">
-                <i class="@logo.Icon"></i>
-                <span>@logo.Name</span>
+                <div class="cs-icon" style="background:@client.Color;color:#fff;">
+                    <i class="bi @client.Icon"></i>
+                </div>
+                <span class="cs-name">@(T.CurrentLanguage == "fa" ? client.Name : client.NameEn)</span>
             </div>
         }
     </div>
 </section>
 
 @code {
-    private List<LogoItem> _logos => new()
-    {
-        new("bi bi-hospital", "بیمارستان قائم جیرفت"),
-        new("bi bi-hospital", "بیمارستان محمد کرمانشاهی"),
-        new("bi bi-hospital", "بیمارستان شفا ساری"),
-        new("bi bi-hospital", "بیمارستان حضرت فاطمه ساوه"),
-        new("bi bi-hospital", "بیمارستان نیکوکاری"),
-        new("bi bi-hospital", "بیمارستان محب مهر"),
-        new("bi bi-hospital", "بیمارستان چمران"),
-        new("bi bi-hospital", "بیمارستان امام خمینی"),
-        new("bi bi-hospital", "بیمارستان گلستان"),
-        new("bi bi-hospital", "بیمارستان شهید بهشتی"),
-    };
+    private List<ClientDto> _clients = new();
 
-    private record LogoItem(string Icon, string Name);
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _clients = await Comm.GetAsync<List<ClientDto>>("api/client") ?? new();
+        }
+        catch
+        {
+            // Fallback to empty list
+            _clients = new();
+        }
+    }
 }

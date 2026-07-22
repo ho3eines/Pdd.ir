@@ -11,20 +11,12 @@
           @oninput="OnInput"></textarea>
 
 @code {
-    string _id = "";
-
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
-    [Parameter] public string Id
-    {
-        get => _id ?? $"CKEditor_{uid}";
-        set => _id = value;
-    }
+    [Parameter] public string Id { get; set; } = $"CKEditor_{Guid.NewGuid().ToString("N")[..8]}";
     [Parameter] public string? UploadUrl { get; set; }
     [Parameter] public string? CssClass { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
-
-    readonly string uid = Guid.NewGuid().ToString().ToLower().Replace("-", "");
 
     private async Task OnInput(ChangeEventArgs e)
     {

@@ -11,7 +11,7 @@ namespace Pdd.ir.Data.Queries
         public const string Update = @"UPDATE PortfolioItems SET Title = @Title, Description = @Description, ImageUrl = @ImageUrl, 
                                        ProjectUrl = @ProjectUrl, Category = @Category, SortOrder = @SortOrder, IsActive = @IsActive 
                                        WHERE Id = @Id";
-        public const string Delete = "UPDATE PortfolioItems SET IsActive = 0 WHERE Id = @Id";
+        public const string Delete = "DELETE FROM PortfolioItems WHERE Id = @Id";
         public const string CountAll = "SELECT COUNT(*) FROM PortfolioItems WHERE IsActive = 1";
     }
 }

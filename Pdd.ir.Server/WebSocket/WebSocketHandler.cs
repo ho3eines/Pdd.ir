@@ -121,17 +121,34 @@ namespace Pdd.ir.Server.WebSocket
 
                 _logger.LogDebug("WS received: {Id} -> {Action}", connectionId, request.Action);
 
-                // ── Decrypt incoming data with SharedKey ──
+                // ── Decrypt incoming data: try SharedKey first, then any AES key ──
                 var sharedKey = _config["ApiKey"] ?? "";
-                if (!string.IsNullOrEmpty(request.Data) && !string.IsNullOrEmpty(sharedKey))
+                if (!string.IsNullOrEmpty(request.Data))
                 {
-                    try
+                    // Try SharedKey first
+                    var decrypted = false;
+                    if (!string.IsNullOrEmpty(sharedKey))
                     {
-                        request.Data = _crypto.Decrypt(sharedKey, request.Data);
+                        try
+                        {
+                            request.Data = _crypto.Decrypt(sharedKey, request.Data);
+                            decrypted = true;
+                        }
+                        catch { }
                     }
-                    catch
+
+                    // If SharedKey failed, try any AES key from AesKeyStore
+                    if (!decrypted)
                     {
-                        _logger.LogDebug("WS: data not encrypted or decrypt failed for {Id}", connectionId);
+                        try
+                        {
+                            var aesDecrypted = _keyStore.TryDecryptWithAnyKey(_crypto, request.Data);
+                            if (!string.IsNullOrEmpty(aesDecrypted))
+                            {
+                                request.Data = aesDecrypted;
+                            }
+                        }
+                        catch { }
                     }
                 }
 
@@ -252,6 +269,19 @@ namespace Pdd.ir.Server.WebSocket
 
                 // ── Auth ──
                 "auth.login" => await HandleAuthLogin(scope, request.Data),
+
+                // ── Settings ──
+                "settings.list" => await HandleSettingsList(scope),
+                "settings.get" => await HandleSettingsGet(scope, request.Data),
+                "settings.set" => await HandleSettingsSet(scope, request.Data),
+
+                // ── Client ──
+                "client.list" => await HandleClientList(scope),
+                "client.listadmin" => await HandleClientListAdmin(scope),
+                "client.get" => await HandleClientGet(scope, request.Data),
+                "client.create" => await HandleClientCreate(scope, request.Data),
+                "client.update" => await HandleClientUpdate(scope, request.Data),
+                "client.delete" => await HandleClientDelete(scope, request.Data),
 
                 // ── Ping ──
                 "ping" => new WsResponse { Action = "ping", Success = true, Data = JsonSerializer.SerializeToElement("pong") },
@@ -510,6 +540,78 @@ namespace Pdd.ir.Server.WebSocket
                     Role = user.Role
                 })
             };
+        }
+
+        // ── Settings Handlers ──────────────────────────────────
+        private static async Task<WsResponse> HandleSettingsList(IServiceScope scope)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<SettingsBusinessService>();
+            var data = await svc.GetAllAsync();
+            return new WsResponse { Action = "settings.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+        }
+
+        private static async Task<WsResponse> HandleSettingsGet(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<SettingsBusinessService>();
+            var key = JsonSerializer.Deserialize<string>(data ?? "\"\"", JsonOpts);
+            var value = await svc.GetAsync(key ?? "");
+            return new WsResponse { Action = "settings.get", Success = true, Data = JsonSerializer.SerializeToElement(value) };
+        }
+
+        private static async Task<WsResponse> HandleSettingsSet(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<SettingsBusinessService>();
+            var req = JsonSerializer.Deserialize<Dictionary<string, string>>(data ?? "{}", JsonOpts);
+            if (req != null)
+                await svc.SetManyAsync(req);
+            return new WsResponse { Action = "settings.set", Success = true };
+        }
+
+        // ── Client Handlers ──────────────────────────────────
+        private static async Task<WsResponse> HandleClientList(IServiceScope scope)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var data = await svc.GetAllAsync();
+            return new WsResponse { Action = "client.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+        }
+
+        private static async Task<WsResponse> HandleClientListAdmin(IServiceScope scope)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var data = await svc.GetAllAdminAsync();
+            return new WsResponse { Action = "client.listadmin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+        }
+
+        private static async Task<WsResponse> HandleClientGet(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var id = int.TryParse(data, out var v) ? v : 0;
+            var item = await svc.GetByIdAsync(id);
+            return new WsResponse { Action = "client.get", Success = item != null, Data = item != null ? JsonSerializer.SerializeToElement(item) : default };
+        }
+
+        private static async Task<WsResponse> HandleClientCreate(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var req = JsonSerializer.Deserialize<ClientCreateRequest>(data ?? "{}", JsonOpts);
+            var id = await svc.InsertAsync(req!);
+            return new WsResponse { Action = "client.create", Success = true, Data = JsonSerializer.SerializeToElement(new { id }) };
+        }
+
+        private static async Task<WsResponse> HandleClientUpdate(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var dto = JsonSerializer.Deserialize<ClientDto>(data ?? "{}", JsonOpts);
+            var success = await svc.UpdateAsync(dto!);
+            return new WsResponse { Action = "client.update", Success = success };
+        }
+
+        private static async Task<WsResponse> HandleClientDelete(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
+            var id = int.TryParse(data, out var v) ? v : 0;
+            var success = await svc.DeleteAsync(id);
+            return new WsResponse { Action = "client.delete", Success = success };
         }
     }
 

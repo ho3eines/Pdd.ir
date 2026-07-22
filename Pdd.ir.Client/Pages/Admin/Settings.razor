@@ -1,4 +1,5 @@
 @page "/admin/settings"
+@attribute [AuthorizeRole("admin")]
 @inject ICommunicationService Comm
 @inject ITranslateService T
 @inject IJSRuntime JS
@@ -131,13 +132,10 @@
                 ["Twitter"] = Twitter,
                 ["Telegram"] = Telegram
             };
-            foreach (var kv in items)
-            {
-                await Comm.PutAsync<object>($"api/settings/{kv.Key}", new { Value = kv.Value });
-            }
+            await Comm.PostAsync<object>("api/settings/bulk", items);
             await Alert.ShowSuccessAsync(T.Text("success"), T.Text("saved_successfully"));
         }
-        catch (Exception ex) { await Alert.ShowErrorAsync(T.Text("error"), ex.Message); }
+        catch (Exception) { await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed")); }
         finally { IsSaving = false; }
     }
 

@@ -40,9 +40,9 @@ namespace Pdd.ir.Server.Services
                 return;
             }
 
-            // ── Skip auth endpoints (handshake uses shared key directly) ──
+            // ── Skip handshake (uses shared key directly) ──
             var path = context.Request.Path.Value ?? "";
-            if (path.Contains("/auth/handshake") || path.Contains("/auth/login"))
+            if (path.Contains("/auth/handshake"))
             {
                 await _next(context);
                 return;

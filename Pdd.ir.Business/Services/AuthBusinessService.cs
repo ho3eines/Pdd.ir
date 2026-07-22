@@ -104,14 +104,82 @@ namespace Pdd.ir.Business.Services
 
         public static string HashPassword(string password)
         {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
+            // Generate random salt (16 bytes)
+            var salt = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+
+            // Hash with PBKDF2-SHA256 (100,000 iterations)
+            var hash = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                iterations: 100000,
+                HashAlgorithmName.SHA256,
+                outputLength: 32);
+
+            // Combine salt + hash and encode
+            var result = new byte[16 + 32];
+            Buffer.BlockCopy(salt, 0, result, 0, 16);
+            Buffer.BlockCopy(hash, 0, result, 16, 32);
+            return Convert.ToBase64String(result);
         }
 
         public static bool VerifyPassword(string password, string hash)
         {
-            return HashPassword(password) == hash;
+            try
+            {
+                var hashBytes = Convert.FromBase64String(hash);
+
+                // Check if this is a PBKDF2 hash (48 bytes: 16 salt + 32 hash)
+                if (hashBytes.Length == 48)
+                {
+                    return VerifyPbkdf2Password(password, hashBytes);
+                }
+                // Legacy SHA-256 hash (32 bytes)
+                else if (hashBytes.Length == 32)
+                {
+                    return VerifySha256Password(password, hash);
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool VerifyPbkdf2Password(string password, byte[] hashBytes)
+        {
+            // Extract salt (first 16 bytes)
+            var salt = new byte[16];
+            Buffer.BlockCopy(hashBytes, 0, salt, 0, 16);
+
+            // Extract stored hash (remaining 32 bytes)
+            var storedHash = new byte[32];
+            Buffer.BlockCopy(hashBytes, 16, storedHash, 0, 32);
+
+            // Hash input password with same salt
+            var computedHash = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                iterations: 100000,
+                HashAlgorithmName.SHA256,
+                outputLength: 32);
+
+            // Compare using constant-time comparison
+            return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+        }
+
+        private static bool VerifySha256Password(string password, string hash)
+        {
+            // Legacy SHA-256 verification
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            var computedHash = Convert.ToBase64String(bytes);
+            return computedHash == hash;
         }
 
         public static string GenerateAesKey()

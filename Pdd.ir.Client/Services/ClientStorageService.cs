@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -103,6 +103,7 @@ public class ClientStorageService : IClientStorageService
         await _js.InvokeVoidAsync("eval", $"document.cookie = '{key}={encrypted}; path=/; SameSite=Strict; Secure; max-age={days * 86400}'");
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CA1416", "CA1416")]
     public string EncryptString(string plainText, string key)
     {
         using var aes = Aes.Create();
@@ -115,6 +116,7 @@ public class ClientStorageService : IClientStorageService
         return Convert.ToBase64String(aes.IV) + ":" + Convert.ToBase64String(encrypted);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CA1416", "CA1416")]
     public string DecryptString(string cipherText, string key)
     {
         var parts = cipherText.Split(':');

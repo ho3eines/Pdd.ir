@@ -73,8 +73,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Posts = await Comm.GetAsync<List<BlogDto>>("api/blog") ?? new();
-        IsLoading = false;
+        try
+        {
+            Posts = await Comm.GetAsync<List<BlogDto>>("api/blog") ?? new();
+        }
+        catch (Exception)
+        {
+            // Silently handle - show empty state
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -26,6 +26,8 @@ builder.Services.AddScoped<BlogBusinessService>();
 builder.Services.AddScoped<PortfolioBusinessService>();
 builder.Services.AddScoped<RoleBusinessService>();
 builder.Services.AddScoped<PermissionBusinessService>();
+builder.Services.AddScoped<SettingsBusinessService>();
+builder.Services.AddScoped<ClientBusinessService>();
 
 // Server Services
 builder.Services.AddSingleton<JwtService>();

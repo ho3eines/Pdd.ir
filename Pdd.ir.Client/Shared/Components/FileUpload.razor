@@ -1,0 +1,111 @@
+@inject IJSRuntime JS
+
+<div class="mb-3">
+    <label class="form-label">@Label</label>
+
+    @if (!string.IsNullOrEmpty(CurrentUrl) && ShowPreview)
+    {
+        <div class="mb-2 position-relative d-inline-block">
+            <img src="@CurrentUrl" class="img-thumbnail" style="max-height:150px;" />
+            @if (ShowRemove)
+            {
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                        style="width:24px;height:24px;padding:0;"
+                        @onclick="RemoveFile">
+                    <i class="bi bi-x"></i>
+                </button>
+            }
+        </div>
+    }
+
+    <div class="input-group">
+        <InputFile type="file"
+                   class="form-control"
+                   accept="@Accept"
+                   OnChange="HandleFileSelected" />
+
+        @if (IsUploading)
+        {
+            <span class="input-group-text">
+                <span class="spinner-border spinner-border-sm"></span>
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="text-danger mt-1" style="font-size:0.875rem;">
+            <i class="bi bi-exclamation-circle me-1"></i>@ErrorMessage
+        </div>
+    }
+
+    @if (MaxFileSizeMB > 0)
+    {
+        <div class="form-text">حداکثر حجم: @MaxFileSizeMB مگابایت</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "فایل";
+    [Parameter] public string Accept { get; set; } = "image/*";
+    [Parameter] public int MaxFileSizeMB { get; set; } = 5;
+    [Parameter] public string? CurrentUrl { get; set; }
+    [Parameter] public bool ShowPreview { get; set; } = true;
+    [Parameter] public bool ShowRemove { get; set; } = true;
+    [Parameter] public string Folder { get; set; } = "uploads";
+    [Parameter] public EventCallback<string> OnFileUploaded { get; set; }
+    [Parameter] public EventCallback OnFileRemoved { get; set; }
+
+    bool IsUploading = false;
+    string? ErrorMessage;
+
+    async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        ErrorMessage = null;
+        var file = e.File;
+
+        // Validate file size
+        if (file.Size > MaxFileSizeMB * 1024 * 1024)
+        {
+            ErrorMessage = $"حجم فایل بیش از {MaxFileSizeMB} مگابایت است";
+            return;
+        }
+
+        IsUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Read file as Base64
+            using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeMB * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+
+            // Get content type
+            var contentType = file.ContentType;
+
+            // Build data URL for preview
+            var dataUrl = $"data:{contentType};base64,{base64}";
+
+            // Notify parent
+            await OnFileUploaded.InvokeAsync(dataUrl);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"خطا در آپلود: {ex.Message}";
+        }
+        finally
+        {
+            IsUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task RemoveFile()
+    {
+        CurrentUrl = null;
+        await OnFileRemoved.InvokeAsync();
+        StateHasChanged();
+    }
+}

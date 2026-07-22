@@ -21,5 +21,23 @@ namespace Pdd.ir.Server.Services
         {
             _keys.TryRemove(username, out _);
         }
+
+        /// <summary>
+        /// Try to decrypt with any stored AES key (for WS requests encrypted client-side)
+        /// </summary>
+        public string? TryDecryptWithAnyKey(CryptoJsService crypto, string encryptedText)
+        {
+            foreach (var kvp in _keys)
+            {
+                try
+                {
+                    var decrypted = crypto.Decrypt(kvp.Value, encryptedText);
+                    if (!string.IsNullOrEmpty(decrypted))
+                        return decrypted;
+                }
+                catch { }
+            }
+            return null;
+        }
     }
 }

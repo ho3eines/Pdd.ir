@@ -310,11 +310,7 @@ namespace Pdd.ir.Client.Services
         public async Task<bool> DeleteAsync(string url)
         {
             await _initTcs.Task;
-            if (_isConnected && _ws?.State == WebSocketState.Open)
-            {
-                var (action, data) = MapUrlToAction(url);
-                return await SendWsAsync<object>(action, data) != null;
-            }
+            // ✅ Delete همیشه از HTTP — چون WS اصلاً action حذف نداره
             return await HttpDeleteAsync(url);
         }
 
@@ -428,6 +424,10 @@ namespace Pdd.ir.Client.Services
                 return ("permission.list", null);
             if (lower.Contains("settings"))
                 return ("settings.list", null);
+            if (lower.Contains("client") && lower.Contains("admin"))
+                return ("client.listadmin", null);
+            if (lower.Contains("client"))
+            { var id = ExtractId(lower); return id != null ? ("client.get", id) : ("client.list", null); }
             if (lower.Contains("auth") && lower.Contains("login"))
                 return ("auth.login", null);
 

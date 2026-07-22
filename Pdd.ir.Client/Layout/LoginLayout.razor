@@ -1,3 +1,15 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
 @Body
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await JS.InvokeVoidAsync("dismissSplash"); }
+            catch { }
+        }
+    }
+}

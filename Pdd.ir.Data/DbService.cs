@@ -47,7 +47,7 @@ namespace Pdd.ir.Data
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            return await connection.ExecuteScalarAsync<T>(sql, parameters);
+            return (await connection.ExecuteScalarAsync<T>(sql, parameters))!;
         }
     }
 }
