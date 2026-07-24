@@ -272,10 +272,16 @@ namespace Pdd.ir.Client.Services
         // Rule: If WS is connected → ALL requests via WS (encrypted)
         //       If WS is NOT connected → ALL requests via HTTP (encrypted)
 
+        private static bool IsHttpOnlyUrl(string url)
+        {
+            var lower = url.ToLowerInvariant();
+            return lower.Contains("/api/upload") || lower.Contains("/auth/");
+        }
+
         public async Task<T?> GetAsync<T>(string url)
         {
             await _initTcs.Task;
-            if (_isConnected && _ws?.State == WebSocketState.Open)
+            if (_isConnected && _ws?.State == WebSocketState.Open && !IsHttpOnlyUrl(url))
             {
                 var (action, data) = MapUrlToAction(url);
                 return await SendWsAsync<T>(action, data);
@@ -286,9 +292,9 @@ namespace Pdd.ir.Client.Services
         public async Task<T?> PostAsync<T>(string url, object? data = null)
         {
             await _initTcs.Task;
-            if (_isConnected && _ws?.State == WebSocketState.Open)
+            if (_isConnected && _ws?.State == WebSocketState.Open && !IsHttpOnlyUrl(url))
             {
-                var (action, _) = MapUrlToAction(url);
+                var (action, _) = MapUrlToAction(url, "POST");
                 var dataStr = data != null ? JsonSerializer.Serialize(data) : null;
                 return await SendWsAsync<T>(action, dataStr);
             }
@@ -298,9 +304,9 @@ namespace Pdd.ir.Client.Services
         public async Task<T?> PutAsync<T>(string url, object? data = null)
         {
             await _initTcs.Task;
-            if (_isConnected && _ws?.State == WebSocketState.Open)
+            if (_isConnected && _ws?.State == WebSocketState.Open && !IsHttpOnlyUrl(url))
             {
-                var (action, _) = MapUrlToAction(url);
+                var (action, _) = MapUrlToAction(url, "PUT");
                 var dataStr = data != null ? JsonSerializer.Serialize(data) : null;
                 return await SendWsAsync<T>(action, dataStr);
             }
@@ -310,7 +316,12 @@ namespace Pdd.ir.Client.Services
         public async Task<bool> DeleteAsync(string url)
         {
             await _initTcs.Task;
-            // ✅ Delete همیشه از HTTP — چون WS اصلاً action حذف نداره
+            if (_isConnected && _ws?.State == WebSocketState.Open && !IsHttpOnlyUrl(url))
+            {
+                var (action, data) = MapUrlToAction(url, "DELETE");
+                var result = await SendWsAsync<bool>(action, data);
+                return result;
+            }
             return await HttpDeleteAsync(url);
         }
 
@@ -327,12 +338,19 @@ namespace Pdd.ir.Client.Services
             try
             {
                 var sendData = data;
-                if (!string.IsNullOrEmpty(data) && _encryption.HasKey)
+                if (!string.IsNullOrEmpty(data))
                 {
                     try
                     {
-                        var encrypted = await _encryption.EncryptAsync(data);
-                        sendData = encrypted;
+                        // Try Per-User AES first, then SharedKey
+                        if (_encryption.HasKey)
+                        {
+                            sendData = await _encryption.EncryptAsync(data);
+                        }
+                        else
+                        {
+                            sendData = await _security.EncryptAsync(data);
+                        }
                     }
                     catch { }
                 }
@@ -383,55 +401,36 @@ namespace Pdd.ir.Client.Services
             }
         }
 
-        // ── URL to WS Action mapping ──
+        // ── URL to WS Action mapping (خودکار) ──
 
-        private static (string action, string? data) MapUrlToAction(string url)
+        private static (string action, string? data) MapUrlToAction(string url, string method = "GET")
         {
             var lower = url.ToLowerInvariant().TrimStart('/');
+            var parts = lower.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-            if (lower.Contains("contact") && lower.Contains("markread"))
-                return ("contact.markread", ExtractId(lower));
-            if (lower.Contains("contact") && lower.Contains("unread"))
-                return ("contact.unread", null);
-            if (lower.Contains("contact") && lower.Contains("count"))
-                return ("contact.count", null);
-            if (lower.Contains("role") && lower.Contains("permission"))
-                return ("permission.role", ExtractId(lower));
-            if (lower.Contains("blog") && lower.Contains("admin"))
-                return ("blog.admin", null);
-            if (lower.Contains("portfolio") && lower.Contains("admin"))
-                return ("portfolio.admin", null);
-            if (lower.Contains("user") && lower.Contains("admin"))
-                return ("user.admin", null);
-            if (lower.Contains("user") && lower.Contains("/password"))
-                return ("user.password", ExtractId(lower));
+            // استخراج entity از URL (رد کردن "api" prefix)
+            if (parts.Length == 0) return ("unknown.list", null);
 
-            if (lower.Contains("product"))
-            { var id = ExtractId(lower); return id != null ? ("product.get", id) : ("product.list", null); }
-            if (lower.Contains("blog"))
-            { var id = ExtractId(lower); return id != null ? ("blog.get", id) : ("blog.list", null); }
-            if (lower.Contains("portfolio"))
-            { var id = ExtractId(lower); return id != null ? ("portfolio.get", id) : ("portfolio.list", null); }
-            if (lower.Contains("contact"))
-            { var id = ExtractId(lower); return id != null ? ("contact.delete", id) : ("contact.list", null); }
-            if (lower.Contains("page"))
-            { var id = ExtractId(lower); return id != null ? ("page.get", id) : ("page.list", null); }
-            if (lower.Contains("user"))
-            { var id = ExtractId(lower); return id != null ? ("user.get", id) : ("user.list", null); }
-            if (lower.Contains("role"))
-            { var id = ExtractId(lower); return id != null ? ("role.get", id) : ("role.list", null); }
-            if (lower.Contains("permission"))
-                return ("permission.list", null);
-            if (lower.Contains("settings"))
-                return ("settings.list", null);
-            if (lower.Contains("client") && lower.Contains("admin"))
-                return ("client.listadmin", null);
-            if (lower.Contains("client"))
-            { var id = ExtractId(lower); return id != null ? ("client.get", id) : ("client.list", null); }
-            if (lower.Contains("auth") && lower.Contains("login"))
-                return ("auth.login", null);
+            var entityIndex = parts[0] == "api" ? 1 : 0;
+            if (entityIndex >= parts.Length) return ("unknown.list", null);
 
-            return ("unknown.list", null);
+            var entity = parts[entityIndex];
+            var id = ExtractId(lower);
+
+            // تشخیص عملیات بر اساس method و id
+            if (method == "POST") return ($"{entity}.create", null);
+            if (method == "PUT" && id != null) return ($"{entity}.update", id);
+            if (method == "DELETE" && id != null) return ($"{entity}.delete", id);
+            if (id != null) return ($"{entity}.get", id);
+            
+            // مسیرهای خاص
+            if (lower.Contains("admin"))
+            {
+                var adminEntity = parts.FirstOrDefault(p => p != "api" && p != "admin") ?? entity;
+                return ($"{adminEntity}.admin", null);
+            }
+            
+            return ($"{entity}.list", null);
         }
 
         private static string? ExtractId(string url)
@@ -487,8 +486,25 @@ namespace Pdd.ir.Client.Services
                 using var req = new HttpRequestMessage(HttpMethod.Post, url);
                 if (!string.IsNullOrEmpty(authHeader))
                     req.Headers.Add("X-Auth", authHeader);
+
                 if (data != null)
-                    req.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                {
+                    var jsonData = JsonSerializer.Serialize(data);
+                    try
+                    {
+                        // Try Per-User AES first, then SharedKey
+                        if (_encryption.HasKey)
+                        {
+                            jsonData = await _encryption.EncryptAsync(jsonData);
+                        }
+                        else
+                        {
+                            jsonData = await _security.EncryptAsync(jsonData);
+                        }
+                        req.Content = new StringContent(JsonSerializer.Serialize(new { encrypted = true, data = jsonData }), Encoding.UTF8, "application/json");
+                    }
+                    catch { req.Content = new StringContent(jsonData, Encoding.UTF8, "application/json"); }
+                }
 
                 var response = await _http.SendAsync(req);
 
@@ -501,7 +517,22 @@ namespace Pdd.ir.Client.Services
                         if (!string.IsNullOrEmpty(retryAuth))
                             retryReq.Headers.Add("X-Auth", retryAuth);
                         if (data != null)
-                            retryReq.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                        {
+                            var jsonData = JsonSerializer.Serialize(data);
+                            try
+                            {
+                                if (_encryption.HasKey)
+                                {
+                                    jsonData = await _encryption.EncryptAsync(jsonData);
+                                }
+                                else
+                                {
+                                    jsonData = await _security.EncryptAsync(jsonData);
+                                }
+                                retryReq.Content = new StringContent(JsonSerializer.Serialize(new { encrypted = true, data = jsonData }), Encoding.UTF8, "application/json");
+                            }
+                            catch { retryReq.Content = new StringContent(jsonData, Encoding.UTF8, "application/json"); }
+                        }
                         response = await _http.SendAsync(retryReq);
                     }
                 }
@@ -524,8 +555,25 @@ namespace Pdd.ir.Client.Services
                 using var req = new HttpRequestMessage(HttpMethod.Put, url);
                 if (!string.IsNullOrEmpty(authHeader))
                     req.Headers.Add("X-Auth", authHeader);
+
                 if (data != null)
-                    req.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                {
+                    var jsonData = JsonSerializer.Serialize(data);
+                    try
+                    {
+                        // Try Per-User AES first, then SharedKey
+                        if (_encryption.HasKey)
+                        {
+                            jsonData = await _encryption.EncryptAsync(jsonData);
+                        }
+                        else
+                        {
+                            jsonData = await _security.EncryptAsync(jsonData);
+                        }
+                        req.Content = new StringContent(JsonSerializer.Serialize(new { encrypted = true, data = jsonData }), Encoding.UTF8, "application/json");
+                    }
+                    catch { req.Content = new StringContent(jsonData, Encoding.UTF8, "application/json"); }
+                }
 
                 var response = await _http.SendAsync(req);
 
@@ -538,7 +586,22 @@ namespace Pdd.ir.Client.Services
                         if (!string.IsNullOrEmpty(retryAuth))
                             retryReq.Headers.Add("X-Auth", retryAuth);
                         if (data != null)
-                            retryReq.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+                        {
+                            var jsonData = JsonSerializer.Serialize(data);
+                            try
+                            {
+                                if (_encryption.HasKey)
+                                {
+                                    jsonData = await _encryption.EncryptAsync(jsonData);
+                                }
+                                else
+                                {
+                                    jsonData = await _security.EncryptAsync(jsonData);
+                                }
+                                retryReq.Content = new StringContent(JsonSerializer.Serialize(new { encrypted = true, data = jsonData }), Encoding.UTF8, "application/json");
+                            }
+                            catch { retryReq.Content = new StringContent(jsonData, Encoding.UTF8, "application/json"); }
+                        }
                         response = await _http.SendAsync(retryReq);
                     }
                 }
