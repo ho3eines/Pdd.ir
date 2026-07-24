@@ -41,12 +41,10 @@ namespace Pdd.ir.Server.Controllers
                 var extension = GetExtension(request.ContentType);
                 var fileName = $"{guid}{extension}";
 
-                // پوشه ذخیره
-                var folder = request.Folder ?? "uploads";
-                var uploadPath = Path.Combine(_env.WebRootPath, "uploads", folder);
+                // ذخیره مستقیم در wwwroot/uploads/
+                var uploadPath = Path.Combine(_env.WebRootPath, "uploads");
                 Directory.CreateDirectory(uploadPath);
 
-                // ذخیره فایل
                 var filePath = Path.Combine(uploadPath, fileName);
                 await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
 
@@ -79,8 +77,8 @@ namespace Pdd.ir.Server.Controllers
             {
                 var uploadPath = Path.Combine(_env.WebRootPath, "uploads");
 
-                // جستجوی فایل با GUID (شامل زیرپوشه‌ها)
-                var files = Directory.GetFiles(uploadPath, $"{id}.*", SearchOption.AllDirectories);
+                // جستجوی فایل با GUID
+                var files = Directory.GetFiles(uploadPath, $"{id}.*");
                 if (files.Length == 0)
                     return NotFound(new { success = false, message = "File not found" });
 
@@ -118,7 +116,7 @@ namespace Pdd.ir.Server.Controllers
             {
                 var uploadPath = Path.Combine(_env.WebRootPath, "uploads");
 
-                var files = Directory.GetFiles(uploadPath, $"{id}.*", SearchOption.AllDirectories);
+                var files = Directory.GetFiles(uploadPath, $"{id}.*");
                 if (files.Length == 0)
                     return NotFound(new { success = false, message = "File not found" });
 
