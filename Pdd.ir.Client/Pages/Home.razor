@@ -2,6 +2,7 @@
 @inject IJSRuntime JS
 @inject ITranslateService T
 @inject ICommunicationService Comm
+@inject IFileUploadService FileUpload
 @implements IAsyncDisposable
 
 <div class="home-fullscreen" id="homeScreen">
@@ -173,13 +174,24 @@
         try
         {
             var clientsDto = await Comm.GetAsync<List<ClientDto>>("api/client") ?? new();
-            _clients = clientsDto.Select(c => new Customer
+            var imageTasks = clientsDto.Select(async c =>
             {
-                Abbr = c.NameEn.Length >= 2 ? c.NameEn.Substring(0, 2) : c.NameEn,
-                NameFa = c.Name,
-                NameEn = c.NameEn,
-                ImageUrl = c.ImageUrl
-            }).ToList();
+                var imageUrl = c.ImageUrl;
+                if (!string.IsNullOrEmpty(imageUrl) && !imageUrl.StartsWith("data:"))
+                {
+                    var file = await FileUpload.GetFileAsync(imageUrl);
+                    if (file != null)
+                        imageUrl = $"data:{file.contentType};base64,{file.base64}";
+                }
+                return new Customer
+                {
+                    Abbr = c.NameEn.Length >= 2 ? c.NameEn.Substring(0, 2) : c.NameEn,
+                    NameFa = c.Name,
+                    NameEn = c.NameEn,
+                    ImageUrl = imageUrl ?? ""
+                };
+            });
+            _clients = (await Task.WhenAll(imageTasks)).ToList();
         }
         catch
         {

@@ -347,23 +347,65 @@ DateHelper.MiladiToShamsi("2023-04-05")  // "1402/01/15"
 ```razor
 @inject IFileUploadService FileUpload
 
-// آپلود تصویر
-var url = await FileUpload.UploadImageAsync(dataUrl, "clients");
+// آپلود تصویر — GUID برمیگردونه
+var guid = await FileUpload.UploadImageAsync(dataUrl);
 
-// دریافت تصویر
-var file = await FileUpload.GetFileAsync("abc123", "clients");
+// دریافت تصویر — Base64 برمیگردونه
+var file = await FileUpload.GetFileAsync(guid);
+if (file != null)
+{
+    var dataUrl = $"data:{file.contentType};base64,{file.base64}";
+}
 
 // حذف فایل
-await FileUpload.DeleteFileAsync("abc123", "clients");
+await FileUpload.DeleteFileAsync(guid);
+```
+
+### نحوه نمایش تصویر در صفحات
+```razor
+@inject IFileUploadService FileUpload
+
+// ✅ صحیح — GUID رو از دیتابیس بگیر، از سرور Base64 بگیر، data URL بساز
+var file = await FileUpload.GetFileAsync(client.ImageUrl);
+var dataUrl = $"data:{file.contentType};base64,{file.base64}";
+// <img src="@dataUrl" />
+
+// ❌ غلط — مستقیم GUID رو به عنوان src استفاده نکن
+// <img src="@client.ImageUrl" />  ← کار نمیکنه!
+```
+
+### نحوه آپلود در Dialog (Create)
+```csharp
+async Task Save()
+{
+    // ۱. اول عکس رو آپلود کن، GUID بگیر
+    if (Model.ImageUrl?.StartsWith("data:") == true)
+    {
+        var guid = await FileUpload.UploadImageAsync(Model.ImageUrl);
+        if (!string.IsNullOrEmpty(guid))
+            Model.ImageUrl = guid;  // GUID ذخیره شود، نه data URL
+    }
+
+    // ۲. حالا entity رو ذخیره کن (ImageUrl = GUID)
+    await Comm.PostAsync<object>("api/client", Model);
+}
 ```
 
 ### قوانین FileUpload
 | قانون | توضیح |
 |-------|-------|
 | 🔥 اجباری | از `IFileUploadService` برای آپلود/دریافت فایل استفاده کن |
-| 🔥 اجباری | فقط GUID در دیتابیس ذخیره شود |
-| 🔥 اجباری | فایل‌ها در پوشه `uploads/` ذخیره شوند |
+| 🔥 اجباری | فقط GUID (بدون dash) در دیتابیس ذخیره شود |
+| 🔥 اجباری | فایل‌ها مستقیم در `uploads/` ذخیره شوند (زیرپوشه نباشه) |
+| 🔥 اجباری | برای نمایش، GUID رو از API بگیر و به data URL تبدیل کن |
+| 🔥 اجباری | `ClientCreateRequest` باید `ImageUrl` property داشته باشه |
 | 🔥 ممنوع | از `HttpClient` مستقیم برای آپلود استفاده نکن |
+| 🔥 ممنوع | GUID با dash ذخیره نکن (از `ToString("N")` استفاده کن) |
+| 🔥 ممنوع | فایل رو در زیرپوشه (img/, events/) ذخیره نکن |
+
+### ⚠️ نکته حیاتی: upload request باید از WebSocket عبور کنه
+`CommunicationService.IsHttpOnlyUrl` درخواست‌های `api/upload` رو از WS عبور میده.
+اگه entity جدیدی با upload داری، مطمئن شو در `IsHttpOnlyUrl` هندل میشه.
 
 ---
 

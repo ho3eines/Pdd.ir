@@ -9,8 +9,8 @@
             <div class="client-logo">
                 @if (!string.IsNullOrEmpty(client.ImageUrl))
                 {
-                    <img src="@client.ImageUrl" 
-                         alt="@(T.CurrentLanguage == "fa" ? client.Name : client.NameEn)" 
+                    <img src="@client.ImageUrl"
+                         alt="@(T.CurrentLanguage == "fa" ? client.Name : client.NameEn)"
                          style="width:50px;height:50px;object-fit:contain;" />
                 }
                 else
@@ -32,11 +32,22 @@
     {
         try
         {
-            // دریافت لیست مشتریان از سرور
             var response = await Comm.GetAsync<ClientListResponse>("api/client");
             if (response?.success == true && response.data != null)
             {
-                _clients = response.data;
+                var imageTasks = response.data.Select(async c =>
+                {
+                    var imageUrl = c.ImageUrl;
+                    if (!string.IsNullOrEmpty(imageUrl) && !imageUrl.StartsWith("data:"))
+                    {
+                        var file = await FileUpload.GetFileAsync(imageUrl);
+                        if (file != null)
+                            imageUrl = $"data:{file.contentType};base64,{file.base64}";
+                    }
+                    c.ImageUrl = imageUrl ?? "";
+                    return c;
+                });
+                _clients = (await Task.WhenAll(imageTasks)).ToList();
             }
         }
         catch
