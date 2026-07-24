@@ -128,33 +128,7 @@
     private Timer? _progressTimer;
     private bool _isDark = true;
 
-    private List<SlideItem> _slides => new()
-    {
-        new SlideItem
-        {
-            BadgeFa = "راهکار هوشمند", BadgeEn = "Smart Solution",
-            TitleFa = "نرم‌افزار جامع مدیریت درمانی", TitleEn = "Comprehensive Healthcare Software",
-            DescFa = "طراحی سیستم‌های مدرن برای بیمارستان‌ها و مراکز درمانی با بیش از ۲۲ سال تجربه",
-            DescEn = "Modern systems for hospitals and medical centers with over 22 years of experience",
-            ImageUrl = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920&q=80"
-        },
-        new SlideItem
-        {
-            BadgeFa = "پوشش جامع", BadgeEn = "Full Coverage",
-            TitleFa = "۲۷ زیرسیستم یکپارچه", TitleEn = "27 Integrated Subsystems",
-            DescFa = "از پذیرش بیمار تا ترخیص، از آزمایشگاه تا خزانه‌داری — همه در یک پلتفرم",
-            DescEn = "From patient admission to discharge, lab to treasury — all in one platform",
-            ImageUrl = "https://images.unsplash.com/photo-1551190822-a9ce113ac100?w=1920&q=80"
-        },
-        new SlideItem
-        {
-            BadgeFa = "پشتیبانی", BadgeEn = "Support",
-            TitleFa = "پشتیبانی ۲۴ ساعته", TitleEn = "24/7 Support",
-            DescFa = "بیش از ۱۱۰ مرکز درمانی در سراسر کشور به ما اعتماد کرده‌اند",
-            DescEn = "Over 110 medical centers across the country trust us",
-            ImageUrl = "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1920&q=80"
-        }
-    };
+    private List<SlideItem> _slides = new();
 
     private List<ProductItem> _products => new()
     {
@@ -170,6 +144,26 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load slides from database
+        try
+        {
+            var slidesDto = await Comm.GetAsync<List<HomeSlideDto>>("api/homeslide") ?? new();
+            _slides = slidesDto.Select(s => new SlideItem
+            {
+                BadgeFa = s.BadgeFa,
+                BadgeEn = s.BadgeEn,
+                TitleFa = s.TitleFa,
+                TitleEn = s.TitleEn,
+                DescFa = s.DescFa,
+                DescEn = s.DescEn,
+                ImageUrl = s.ImageUrl
+            }).ToList();
+        }
+        catch
+        {
+            _slides = new();
+        }
+
         // Load clients from database
         try
         {

@@ -1,0 +1,147 @@
+@inject ICommunicationService Comm
+@inject IAlertService Alert
+@inject ITranslateService T
+@inject IModalService Modal
+@inject IFileUploadService FileUpload
+
+<div class="aco-dialog-body">
+    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <i class="bi bi-info-circle" style="color:var(--accent-primary);"></i>
+            <strong style="font-size:0.875rem;">@T.Text("guide")</strong>
+        </div>
+        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">
+            @T.Text("home_slide_dialog_desc")
+        </p>
+    </div>
+
+    @if (IsLoading)
+    {
+        <Skeleton Type="card" />
+    }
+    else
+    {
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("badge_fa") *</label>
+                <input type="text" class="form-control" @bind="Model.BadgeFa" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("badge_en") *</label>
+                <input type="text" class="form-control" @bind="Model.BadgeEn" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("title_fa") *</label>
+                <input type="text" class="form-control" @bind="Model.TitleFa" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("title_en") *</label>
+                <input type="text" class="form-control" @bind="Model.TitleEn" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("description_fa")</label>
+                <textarea class="form-control" rows="2" @bind="Model.DescFa"></textarea>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("description_en")</label>
+                <textarea class="form-control" rows="2" @bind="Model.DescEn"></textarea>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("sort_order")</label>
+                <input type="number" class="form-control" @bind="Model.SortOrder" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">@T.Text("image")</label>
+                <FileUpload Label="@T.Text("upload_image")"
+                            Accept="image/*"
+                            MaxFileSizeMB="5"
+                            CurrentUrl="@Model.ImageUrl"
+                            OnFileUploaded="OnImageUploaded" />
+            </div>
+        </div>
+    }
+</div>
+
+<div class="aco-dialog-footer">
+    <button class="btn btn-secondary" @onclick="Close">@T.Text("cancel")</button>
+    <button class="btn btn-primary" @onclick="Save" disabled="@(IsSaving || IsLoading)">
+        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        else { <i class="bi bi-floppy me-1"></i> }
+        @T.Text("save")
+    </button>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    HomeSlideDto Model = new();
+    bool IsLoading = true;
+    bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var item = await Comm.GetAsync<HomeSlideDto>($"api/homeslide/{Id}");
+            if (item != null)
+            {
+                Model = item;
+                if (!string.IsNullOrEmpty(Model.ImageUrl) && !Model.ImageUrl.StartsWith("data:"))
+                {
+                    var file = await FileUpload.GetFileAsync(Model.ImageUrl);
+                    if (file != null)
+                        Model.ImageUrl = $"data:{file.contentType};base64,{file.base64}";
+                }
+            }
+        }
+        else
+        {
+            Model = new HomeSlideDto();
+        }
+        IsLoading = false;
+    }
+
+    void OnImageUploaded(string dataUrl)
+    {
+        Model.ImageUrl = dataUrl;
+        StateHasChanged();
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(Model.TitleFa))
+        {
+            await Alert.ShowWarningAsync(T.Text("warning"), T.Text("title_required"));
+            return;
+        }
+
+        IsSaving = true;
+        try
+        {
+            if (!string.IsNullOrEmpty(Model.ImageUrl) && Model.ImageUrl.StartsWith("data:"))
+            {
+                var guid = await FileUpload.UploadImageAsync(Model.ImageUrl);
+                if (!string.IsNullOrEmpty(guid))
+                    Model.ImageUrl = guid;
+            }
+
+            if (Id.HasValue)
+                await Comm.PutAsync<object>($"api/homeslide/{Id}", Model);
+            else
+                await Comm.PostAsync<object>("api/homeslide", Model);
+
+            await Alert.ShowSuccessAsync(T.Text("success"), T.Text("saved_successfully"));
+            Modal.Close();
+        }
+        catch (Exception ex)
+        {
+            await Alert.ShowErrorAsync(T.Text("error"), ex.Message);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    void Close() => Modal.Close();
+}

@@ -228,5 +228,12 @@
   "location_placeholder": "مثلاً: سالن همایش شماره ۱",
   "event_date": "تاریخ ایونت",
   "event_end_date": "تاریخ پایان",
-  "title_required": "عنوان الزامی است"
+  "title_required": "عنوان الزامی است",
+  "home_slide_management": "مدیریت اسلایدر",
+  "home_slide_subtitle": "اضافه، ویرایش و حذف اسلایدهای صفحه اصلی",
+  "new_slide": "اسلاید جدید",
+  "edit_slide": "ویرایش اسلاید",
+  "home_slide_dialog_desc": "اطلاعات اسلاید جدید را وارد کنید. پس از ذخیره، اسلاید در صفحه اصلی نمایش داده خواهد شد.",
+  "badge_fa": "بج فارسی",
+  "badge_en": "بج انگلیسی"
 }

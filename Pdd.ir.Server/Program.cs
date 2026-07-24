@@ -42,6 +42,7 @@ builder.Services.AddScoped<EventBusinessService>(sp =>
     return new EventBusinessService(db, imagePath);
 });
 builder.Services.AddScoped<UserBusinessService>();
+builder.Services.AddScoped<HomeSlideBusinessService>();
 
 // Server Services
 builder.Services.AddSingleton<JwtService>();

@@ -228,5 +228,12 @@
   "location_placeholder": "e.g. Conference Hall No. 1",
   "event_date": "Event Date",
   "event_end_date": "End Date",
-  "title_required": "Title is required"
+  "title_required": "Title is required",
+  "home_slide_management": "Home Slider",
+  "home_slide_subtitle": "Add, edit and delete home page slides",
+  "new_slide": "New Slide",
+  "edit_slide": "Edit Slide",
+  "home_slide_dialog_desc": "Enter the slide information. After saving, the slide will be displayed on the home page.",
+  "badge_fa": "Badge (FA)",
+  "badge_en": "Badge (EN)"
 }

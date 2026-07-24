@@ -359,6 +359,7 @@ namespace Pdd.ir.Server.WebSocket
                 "client" => sp.GetService<ClientBusinessService>(),
                 "event" => sp.GetService<EventBusinessService>(),
                 "user" => sp.GetService<UserBusinessService>(),
+                "homeslide" => sp.GetService<HomeSlideBusinessService>(),
                 _ => null
             };
         }
