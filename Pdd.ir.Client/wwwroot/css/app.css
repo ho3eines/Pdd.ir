@@ -2802,12 +2802,15 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   width: 40px;
   height: 40px;
   object-fit: contain;
-  filter: grayscale(50%);
+  filter: grayscale(50%) brightness(1.1);
   opacity: 0.7;
+  mix-blend-mode: multiply;
   transition: filter 0.3s, opacity 0.3s, transform 0.3s;
+  border-radius: 6px;
+  padding: 2px;
 }
 .cs-item:hover .cs-img {
-  filter: grayscale(0%);
+  filter: grayscale(0%) brightness(1);
   opacity: 1;
   transform: scale(1.1);
 }
