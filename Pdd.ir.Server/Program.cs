@@ -43,6 +43,7 @@ builder.Services.AddScoped<EventBusinessService>(sp =>
 });
 builder.Services.AddScoped<UserBusinessService>();
 builder.Services.AddScoped<HomeSlideBusinessService>();
+builder.Services.AddScoped<HomeProductBusinessService>();
 
 // Server Services
 builder.Services.AddSingleton<JwtService>();

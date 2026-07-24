@@ -1,0 +1,103 @@
+@page "/admin/homeproducts"
+@attribute [AuthorizeRole("admin")]
+@implements IDisposable
+@inject ICommunicationService Comm
+@inject ITranslateService T
+@inject IModalService Modal
+@inject IAlertService Alert
+
+<PageTitle>@T.Text("home_product_management") | PDD</PageTitle>
+
+<div class="page-enter">
+    <PddTable TItem="HomeProductDto"
+              Items="@Items"
+              Title="@T.Text("home_product_management")"
+              Subtitle="@T.Text("home_product_subtitle")"
+              IsLoading="@IsLoading"
+              PageSize="10"
+              CanInsert="true"
+              CanEdit="true"
+              CanDelete="true"
+              Columns="@GetColumns()"
+              SearchFilter="@Search"
+              OnInsert="OpenCreate"
+              OnEdit="OpenEdit"
+              OnDelete="Delete"
+              DeleteMessageSelector="@(x => T.Text("are_you_sure_delete"))" />
+</div>
+
+@code {
+    List<HomeProductDto> Items = new();
+    bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T.OnLanguageChanged += Refresh;
+        await LoadData();
+    }
+
+    async Task LoadData()
+    {
+        IsLoading = true;
+        Items = await Comm.GetAsync<List<HomeProductDto>>("api/homeproduct/admin") ?? new();
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    List<PddTableColumn<HomeProductDto>> GetColumns() => new()
+    {
+        new() { Title = "#", GetValue = x => x.Id.ToString() },
+        new() { Title = T.Text("name_fa"), GetValue = x => x.NameFa },
+        new() { Title = T.Text("name_en"), GetValue = x => x.NameEn },
+        new() { Title = T.Text("sub_fa"), GetValue = x => x.SubFa },
+        new() { Title = T.Text("icon"), Template = c => builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", $"display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:{c.IconBg};color:{c.IconColor};font-size:14px;");
+            builder.AddContent(2, c.Icon);
+            builder.CloseElement();
+        }},
+        new() { Title = T.Text("sort_order"), GetValue = x => x.SortOrder.ToString() },
+        new() { Title = T.Text("status"), Template = c => builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", $"badge {(c.IsActive ? "bg-success" : "bg-secondary")}");
+            builder.AddContent(2, c.IsActive ? T.Text("active") : T.Text("inactive"));
+            builder.CloseElement();
+        }}
+    };
+
+    bool Search(HomeProductDto x, string q) =>
+        (x.NameFa ?? "").ToLower().Contains(q) ||
+        (x.NameEn ?? "").ToLower().Contains(q);
+
+    async Task OpenCreate()
+    {
+        await Modal.Show<HomeProductDialog>(T.Text("new_product"));
+        await LoadData();
+    }
+
+    async Task OpenEdit(HomeProductDto item)
+    {
+        await Modal.Show<HomeProductDialog>(T.Text("edit_product"), new Dictionary<string, object> { { "Id", item.Id } });
+        await LoadData();
+    }
+
+    async Task Delete(HomeProductDto item)
+    {
+        try
+        {
+            var result = await Comm.DeleteAsync($"api/homeproduct/{item.Id}");
+            if (result)
+            {
+                await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
+                await LoadData();
+            }
+            else await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed"));
+        }
+        catch { await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed")); }
+    }
+
+    void Refresh() => InvokeAsync(StateHasChanged);
+    public void Dispose() => T.OnLanguageChanged -= Refresh;
+}

@@ -235,5 +235,16 @@
   "edit_slide": "Edit Slide",
   "home_slide_dialog_desc": "Enter the slide information. After saving, the slide will be displayed on the home page.",
   "badge_fa": "Badge (FA)",
-  "badge_en": "Badge (EN)"
+  "badge_en": "Badge (EN)",
+  "home_product_management": "Home Products",
+  "home_product_subtitle": "Add, edit and delete home page products",
+  "new_product": "New Product",
+  "edit_product": "Edit Product",
+  "home_product_dialog_desc": "Enter the product information. After saving, the product will be displayed on the home page.",
+  "sub_fa": "Subtitle (FA)",
+  "sub_en": "Subtitle (EN)",
+  "icon": "Icon",
+  "icon_bg": "Icon Background",
+  "icon_color": "Icon Color",
+  "route": "Route"
 }

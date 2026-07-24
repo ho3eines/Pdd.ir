@@ -360,6 +360,7 @@ namespace Pdd.ir.Server.WebSocket
                 "event" => sp.GetService<EventBusinessService>(),
                 "user" => sp.GetService<UserBusinessService>(),
                 "homeslide" => sp.GetService<HomeSlideBusinessService>(),
+                "homeproduct" => sp.GetService<HomeProductBusinessService>(),
                 _ => null
             };
         }

@@ -130,15 +130,7 @@
 
     private List<SlideItem> _slides = new();
 
-    private List<ProductItem> _products => new()
-    {
-        new ProductItem { Icon = "bi-hospital", IconBg = "rgba(13,110,253,0.15)", IconColor = "#0D6EFD", NameFa = "HIS — بیمارستانی", NameEn = "HIS — Hospital", SubFa = "مدیریت جامع بیمارستان", SubEn = "Hospital Management", Route = "/products" },
-        new ProductItem { Icon = "bi-clipboard2-pulse", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "CIS — درمانگاهی", NameEn = "CIS — Clinic", SubFa = "مدیریت کلینیک", SubEn = "Clinic Management", Route = "/products" },
-        new ProductItem { Icon = "bi-camera-reels", IconBg = "rgba(121,40,202,0.15)", IconColor = "#7928ca", NameFa = "RIS — تصویربرداری", NameEn = "RIS — Imaging", SubFa = "مراکز MRI و CT", SubEn = "MRI & CT Centers", Route = "/products" },
-        new ProductItem { Icon = "bi-lungs", IconBg = "rgba(80,227,194,0.15)", IconColor = "#50e3c2", NameFa = "LIS — آزمایشگاه", NameEn = "LIS — Laboratory", SubFa = "مدیریت آزمایشگاه", SubEn = "Lab Management", Route = "/products" },
-        new ProductItem { Icon = "bi-calculator", IconBg = "rgba(13,110,253,0.15)", IconColor = "#0D6EFD", NameFa = "MIS — مالی اداری", NameEn = "MIS — Financial", SubFa = "حسابداری و خزانه", SubEn = "Accounting & Treasury", Route = "/products" },
-        new ProductItem { Icon = "bi-building", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "اتوماسیون اداری", NameEn = "Office Automation", SubFa = "گردش نامه و بایگانی", SubEn = "Document & Filing", Route = "/products" }
-    };
+    private List<ProductItem> _products = new();
 
     private List<Customer> _clients = new();
 
@@ -162,6 +154,27 @@
         catch
         {
             _slides = new();
+        }
+
+        // Load products from database
+        try
+        {
+            var productsDto = await Comm.GetAsync<List<HomeProductDto>>("api/homeproduct") ?? new();
+            _products = productsDto.Select(p => new ProductItem
+            {
+                Icon = p.Icon,
+                IconBg = p.IconBg,
+                IconColor = p.IconColor,
+                NameFa = p.NameFa,
+                NameEn = p.NameEn,
+                SubFa = p.SubFa,
+                SubEn = p.SubEn,
+                Route = p.Route
+            }).ToList();
+        }
+        catch
+        {
+            _products = new();
         }
 
         // Load clients from database
