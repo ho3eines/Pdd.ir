@@ -275,7 +275,7 @@ namespace Pdd.ir.Client.Services
         private static bool IsHttpOnlyUrl(string url)
         {
             var lower = url.ToLowerInvariant();
-            return lower.Contains("/api/upload") || lower.Contains("/auth/");
+            return lower.Contains("api/upload") || lower.Contains("auth/");
         }
 
         public async Task<T?> GetAsync<T>(string url)

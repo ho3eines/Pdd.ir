@@ -8,10 +8,14 @@ namespace Pdd.ir.Business.Services
     public class ClientBusinessService
     {
         private readonly IDbService _db;
+        private readonly string _imagePath;
 
-        public ClientBusinessService(IDbService db)
+        public ClientBusinessService(IDbService db, string imagePath)
         {
             _db = db;
+            _imagePath = imagePath;
+            // Ensure img folder exists
+            Directory.CreateDirectory(_imagePath);
         }
 
         public async Task<IEnumerable<ClientDto>> GetAllAsync()
@@ -34,12 +38,19 @@ namespace Pdd.ir.Business.Services
 
         public async Task<int> InsertAsync(ClientCreateRequest request)
         {
+            string imageUrl = "";
+            
+            // Save image file if provided (Base64 or data URL)
+            if (!string.IsNullOrEmpty(request.ImageBase64))
+            {
+                imageUrl = await SaveImageAsync(request.ImageBase64);
+            }
+
             return await _db.ExecuteScalarAsync<int>(ClientQueries.Insert, new
             {
                 request.Name,
                 request.NameEn,
-                request.Icon,
-                request.Color,
+                ImageUrl = imageUrl,
                 request.SortOrder,
                 CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             });
@@ -47,24 +58,70 @@ namespace Pdd.ir.Business.Services
 
         public async Task<bool> UpdateAsync(ClientDto dto)
         {
-            var rows = await _db.ExecuteAsync(ClientQueries.Update, dto);
+            string imageUrl = dto.ImageUrl;
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateAsync] dto.ImageUrl = {(dto.ImageUrl?.Length > 50 ? dto.ImageUrl[..50] + "..." : dto.ImageUrl)}");
+            
+            // If ImageUrl is a data URL (starts with "data:"), save as file
+            if (!string.IsNullOrEmpty(dto.ImageUrl) && dto.ImageUrl.StartsWith("data:"))
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateAsync] Data URL detected, saving file...");
+                imageUrl = await SaveImageAsync(dto.ImageUrl);
+                System.Diagnostics.Debug.WriteLine($"[UpdateAsync] File saved: {imageUrl}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateAsync] Not a data URL, using existing: {imageUrl}");
+            }
+
+            var rows = await _db.ExecuteAsync(ClientQueries.Update, new
+            {
+                dto.Name,
+                dto.NameEn,
+                ImageUrl = imageUrl,
+                dto.SortOrder,
+                dto.Id
+            });
+            System.Diagnostics.Debug.WriteLine($"[UpdateAsync] Rows affected: {rows}");
             return rows > 0;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var rows = await _db.ExecuteAsync(ClientQueries.SoftDelete, new { Id = id });
+            var rows = await _db.ExecuteAsync(ClientQueries.Delete, new { Id = id });
             return rows > 0;
         }
 
-        public async Task<bool> ToggleActiveAsync(int id)
+        private async Task<string> SaveImageAsync(string imageData)
         {
-            var client = await _db.QueryFirstOrDefaultAsync<Client>(ClientQueries.GetById, new { Id = id });
-            if (client == null) return false;
-            
-            var newStatus = !client.IsActive;
-            var rows = await _db.ExecuteAsync(ClientQueries.SetActive, new { Id = id, IsActive = newStatus });
-            return rows > 0;
+            string base64 = imageData;
+            string extension = ".jpg"; // Default
+
+            // Extract Base64 from data URL if needed
+            if (imageData.StartsWith("data:"))
+            {
+                // Parse content type from data URL: "data:image/png;base64,..."
+                if (imageData.Contains("image/png")) extension = ".png";
+                else if (imageData.Contains("image/gif")) extension = ".gif";
+                else if (imageData.Contains("image/webp")) extension = ".webp";
+                
+                // Extract Base64 part
+                if (imageData.Contains(","))
+                    base64 = imageData.Split(',')[1];
+            }
+
+            // Convert to byte array
+            var imageBytes = Convert.FromBase64String(base64);
+
+            // Generate GUID filename (no dashes)
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var filePath = Path.Combine(_imagePath, fileName);
+
+            // Save file
+            await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+
+            // Return GUID only (without extension and path)
+            return Path.GetFileNameWithoutExtension(fileName);
         }
 
         private static ClientDto MapToDto(Client c)
@@ -74,8 +131,7 @@ namespace Pdd.ir.Business.Services
                 Id = c.Id,
                 Name = c.Name,
                 NameEn = c.NameEn,
-                Icon = c.Icon,
-                Color = c.Color,
+                ImageUrl = c.ImageUrl,
                 SortOrder = c.SortOrder,
                 IsActive = c.IsActive
             };

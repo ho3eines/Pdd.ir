@@ -1,0 +1,161 @@
+@inject ICommunicationService Comm
+@inject IAlertService Alert
+@inject ITranslateService T
+@inject IFileUploadService FileUpload
+@inject IModalService Modal
+
+<div class="aco-dialog-body">
+    <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <i class="bi bi-info-circle" style="color:var(--accent-primary);"></i>
+            <strong style="font-size:0.875rem;">@T.Text("event_form_guide_title")</strong>
+        </div>
+        <p style="margin:0;font-size:0.8125rem;color:var(--text-secondary);">
+            @T.Text("event_form_guide_desc")
+        </p>
+    </div>
+
+    @if (IsLoading)
+    {
+        <Skeleton Type="card" />
+    }
+    else
+    {
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("title_fa") *</label>
+                <input type="text" class="form-control" @bind="Model.Title" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("title_en") *</label>
+                <input type="text" class="form-control" @bind="Model.TitleEn" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">@T.Text("description_fa")</label>
+                <textarea class="form-control" rows="3" @bind="Model.Description"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">@T.Text("description_en")</label>
+                <textarea class="form-control" rows="3" @bind="Model.DescriptionEn"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">@T.Text("location")</label>
+                <input type="text" class="form-control" @bind="Model.Location" placeholder="@T.Text("location_placeholder")" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("event_date") *</label>
+                <PersianDatePicker @bind-Value="EventDateValue" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("event_end_date")</label>
+                <PersianDatePicker @bind-Value="EventEndDateValue" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">@T.Text("sort_order")</label>
+                <input type="number" class="form-control" @bind="Model.SortOrder" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">@T.Text("image")</label>
+                <FileUpload Label="@T.Text("upload_image")"
+                            Accept="image/*"
+                            MaxFileSizeMB="5"
+                            CurrentUrl="@Model.ImageUrl"
+                            OnFileUploaded="OnImageUploaded" />
+            </div>
+        </div>
+    }
+</div>
+<div class="aco-dialog-footer">
+    <button class="btn btn-secondary" style="min-width:100px;" @onclick="Close">@T.Text("cancel")</button>
+    <button class="btn btn-primary" style="min-width:100px;" disabled="@(IsSaving)" @onclick="Save">
+        @if (IsSaving)
+        {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        else
+        {
+            <i class="bi bi-floppy me-1"></i>
+        }
+        @T.Text("save")
+    </button>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    EventDto Model = new();
+    bool IsLoading = true;
+    bool IsSaving = false;
+
+    long? EventDateValue
+    {
+        get => Model.EventDate > 0 ? Model.EventDate : null;
+        set => Model.EventDate = value ?? 0;
+    }
+
+    long? EventEndDateValue
+    {
+        get => Model.EventEndDate > 0 ? Model.EventEndDate : null;
+        set => Model.EventEndDate = value ?? 0;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var item = await Comm.GetAsync<EventDto>($"api/event/{Id}");
+            if (item != null) Model = item;
+        }
+        else
+        {
+            Model = new EventDto();
+        }
+        IsLoading = false;
+    }
+
+    void OnImageUploaded(string dataUrl)
+    {
+        Model.ImageUrl = dataUrl;
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Title))
+        {
+            await Alert.ShowErrorAsync(T.Text("error"), T.Text("title_required"));
+            return;
+        }
+
+        IsSaving = true;
+        try
+        {
+            // If ImageUrl is a data URL, upload via HTTP first
+            if (!string.IsNullOrEmpty(Model.ImageUrl) && Model.ImageUrl.StartsWith("data:"))
+            {
+                var imageUrl = await FileUpload.UploadImageAsync(Model.ImageUrl);
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    Model.ImageUrl = imageUrl;
+                }
+            }
+
+            if (Id.HasValue)
+                await Comm.PutAsync<object>($"api/event/{Id}", Model);
+            else
+                await Comm.PostAsync<object>("api/event", Model);
+
+            await Alert.ShowSuccessAsync(T.Text("success"), T.Text("saved_successfully"));
+            Modal.Close();
+        }
+        catch (Exception ex)
+        {
+            await Alert.ShowErrorAsync(T.Text("error"), ex.Message);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    void Close() => Modal.Close();
+}

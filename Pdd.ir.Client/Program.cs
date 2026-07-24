@@ -41,6 +41,9 @@ builder.Services.AddScoped<IClientStorageService, ClientStorageService>();
 builder.Services.AddScoped<IEncryptionService, PddEncryptionService>();
 builder.Services.AddScoped<IModalService, ModalService>();
 
+// File Upload Service (گلوبال)
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
 var app = builder.Build();
 
 var translateService = app.Services.GetRequiredService<ITranslateService>();

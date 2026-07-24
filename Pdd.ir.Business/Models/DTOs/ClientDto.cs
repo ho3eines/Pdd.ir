@@ -5,8 +5,7 @@ namespace Pdd.ir.Business.Models.DTOs
         public int Id { get; set; }
         public string Name { get; set; } = "";
         public string NameEn { get; set; } = "";
-        public string Icon { get; set; } = "bi-hospital";
-        public string Color { get; set; } = "#0D6EFD";
+        public string ImageUrl { get; set; } = "";  // File path like "/img/abc123.jpg"
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
     }
@@ -15,8 +14,7 @@ namespace Pdd.ir.Business.Models.DTOs
     {
         public string Name { get; set; } = "";
         public string NameEn { get; set; } = "";
-        public string Icon { get; set; } = "bi-hospital";
-        public string Color { get; set; } = "#0D6EFD";
+        public string? ImageBase64 { get; set; }  // Base64 from client
         public int SortOrder { get; set; }
     }
 }

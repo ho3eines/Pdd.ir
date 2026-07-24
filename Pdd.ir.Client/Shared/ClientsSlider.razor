@@ -1,14 +1,24 @@
 @inject ICommunicationService Comm
 @inject ITranslateService T
+@inject IFileUploadService FileUpload
 
 <section class="clients-section">
     <div class="clients-track">
         @foreach (var client in _clients.Concat(_clients))
         {
             <div class="client-logo">
-                <div class="cs-icon" style="background:@client.Color;color:#fff;">
-                    <i class="bi @client.Icon"></i>
-                </div>
+                @if (!string.IsNullOrEmpty(client.ImageUrl))
+                {
+                    <img src="@client.ImageUrl" 
+                         alt="@(T.CurrentLanguage == "fa" ? client.Name : client.NameEn)" 
+                         style="width:50px;height:50px;object-fit:contain;" />
+                }
+                else
+                {
+                    <div class="cs-icon" style="background:#0D6EFD;color:#fff;">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                }
                 <span class="cs-name">@(T.CurrentLanguage == "fa" ? client.Name : client.NameEn)</span>
             </div>
         }
@@ -16,18 +26,36 @@
 </section>
 
 @code {
-    private List<ClientDto> _clients = new();
+    private List<ClientImage> _clients = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _clients = await Comm.GetAsync<List<ClientDto>>("api/client") ?? new();
+            // دریافت لیست مشتریان از سرور
+            var response = await Comm.GetAsync<ClientListResponse>("api/client");
+            if (response?.success == true && response.data != null)
+            {
+                _clients = response.data;
+            }
         }
         catch
         {
-            // Fallback to empty list
             _clients = new();
         }
+    }
+
+    public class ClientImage
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string NameEn { get; set; } = "";
+        public string? ImageUrl { get; set; }
+    }
+
+    public class ClientListResponse
+    {
+        public bool success { get; set; }
+        public List<ClientImage>? data { get; set; }
     }
 }

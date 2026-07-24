@@ -18,11 +18,234 @@
 
 ---
 
-## 🚨 MANDATORY: Git Workflow (اول commit، بعد docker)
+## 🚨 MANDATORY: Deep Analysis & Step-by-Step Execution (تحلیل عمیق و اجرای مرحله‌ای)
 
-> **قانون اجباری:** ترتیب انجام کار باید دقیقاً این باشد:
+> **قانون اجباری:** هنگام دریافت هر درخواستی از کاربر، **بلافاصله کد تولید نکن**. ابتدا تحلیل عمیق انجام بده.
+
+### ترتیب اجباری:
+```
+۱. تحلیل عمیق درخواست (بررسی پروژه، وابستگی‌ها، تأثیرات)
+۲. پلن‌بندی (تقسیم به مراحل کوچک)
+۳. پرسیدن سوالات (اگر ابهامی وجود دارد)
+۴. اجرا قسمت به قسمت (با تأیید کاربر بین مراحل)
+```
+
+### قوانین
+| قانون | توضیح |
+|-------|-------|
+| 🔥 تحلیل اول | هرگز بدون تحلیل، کد تولید نکن |
+| 🔥 بررسی پروژه | فایل‌های مرتبط را بخوان قبل از شروع |
+| 🔥 شناسایی وابستگی‌ها | ببین تغییرات روی چه بخش‌هایی تأثیر دارد |
+| 🔥 پلن مرحله‌ای | کار را به مراحل کوچک تقسیم کن |
+| 🔥 سوال اول | اگر ابهامی داری، قبل از اجرا بپرس |
+| 🔥 اجرا مرحله‌ای | هر مرحله را جداگانه اجرا و تأیید کن |
+| 🔥 مستندسازی | تصمیمات و تغییرات را مستند کن |
+
+### نحوه عمل:
+```
+۱. درخواست کاربر را بخوان
+۲. فایل‌های مرتبط پروژه را بررسی کن
+۳. تحلیل کن: چه چیزی تغییر می‌کند؟ چه وابستگی‌هایی دارد؟
+۴. پلن بنویس: مراحل کار را لیست کن
+۵. سوالاتت را بپرس (اگر داری)
+۶. با تأیید کاربر، قسمت به قسمت اجرا کن
+۷. بعد از هر مرحله، نتیجه را گزارش بده
+```
+
+---
+
+## 🚨 MANDATORY: ساخت Entity جدید (کامل و استاندارد)
+
+> **قانون اجباری:** هر بار که کاربر از شما بخواهد Entity/ماژول جدیدی بسازد (مثلاً ایونت، محصول، خبر، ...)، دقیقاً مراحل زیر را **ترتیبی** انجام دهید.
 >
-> **۱. کد را تغییر بده → ۲. Build کن → ۳. Commit + Push کن → ۴. Docker rebuild کن**
+> **⚠️ قانون طلایی: به WebSocketHandler.cs و CommunicationService.cs دست نزنید!**
+> این دو فایل زیرساخت ارتباطی هستند. اگر CRUD خودکار (dynamic) درست کار نمی‌کنه، مشکل از جای دیگه‌ست — نه از این فایل‌ها.
+
+### مراحل ساخت Entity جدید
+
+#### مرحله ۱: Entity (مدل دیتابیس)
+📁 `Pdd.ir.Business/Models/Entities/{Entity}.cs`
+```csharp
+namespace Pdd.ir.Business.Models.Entities
+{
+    public class Entity
+    {
+        public int Id { get; set; }
+        // فیلدها با PascalCase
+        // تاریخ‌ها: long (BigInt) نه DateTime
+        // bool با default
+    }
+}
+```
+
+#### مرحله ۲: DTO سمت سرور
+📁 `Pdd.ir.Business/Models/DTOs/{Entity}Dto.cs`
+```csharp
+namespace Pdd.ir.Business.Models.DTOs
+{
+    public class EntityDto
+    {
+        public int Id { get; set; }
+        // فیلدهای مورد نیاز UI
+    }
+    public class EntityCreateRequest
+    {
+        // فیلدها برای create (بدون Id)
+    }
+}
+```
+
+#### مرحله ۳: DTO سمت کلاینت
+📁 `Pdd.ir.Client/Models/{Entity}Dto.cs`
+```csharp
+// دقیقاً مثل DTO سرور (تکراری)
+namespace Pdd.ir.Client.Models
+{
+    public class EntityDto { /* همان فیلدها */ }
+}
+```
+
+#### مرحله ۴: SQL Queries
+📁 `Pdd.ir.Data/Queries/{Entity}Queries.cs`
+```csharp
+namespace Pdd.ir.Data.Queries
+{
+    public static class EntityQueries
+    {
+        public const string GetAll = "SELECT * FROM Entities WHERE IsActive = 1 ...";
+        public const string GetById = "SELECT * FROM Entities WHERE Id = @Id";
+        public const string Insert = "INSERT INTO Entities (...) VALUES (...); SELECT CAST(SCOPE_IDENTITY() AS INT)";
+        public const string Update = "UPDATE Entities SET ... WHERE Id = @Id";
+        public const string Delete = "DELETE FROM Entities WHERE Id = @Id";
+    }
+}
+```
+
+#### مرحله ۵: BusinessService (متد استاندارد الزامی!)
+📁 `Pdd.ir.Business/Services/{Entity}BusinessService.cs`
+```csharp
+namespace Pdd.ir.Business.Services
+{
+    public class EntityBusinessService
+    {
+        private readonly IDbService _db;
+
+        public EntityBusinessService(IDbService db) { _db = db; }
+
+        // ⚠️ نام و امضا دقیقاً باید اینها باشد (CRUD خودکار به اینها وابسته است):
+        public async Task<IEnumerable<EntityDto>> GetAllAsync() { ... }
+        public async Task<EntityDto?> GetByIdAsync(int id) { ... }
+        public async Task<int> InsertAsync(EntityCreateRequest dto) { ... }
+        public async Task<bool> UpdateAsync(EntityDto dto) { ... }
+        public async Task<bool> DeleteAsync(int id) { ... }
+    }
+}
+```
+
+#### مرحله ۶: Controller
+📁 `Pdd.ir.Server/Controllers/{Entity}Controller.cs`
+```csharp
+[ApiController]
+[Route("api/{entity}")]
+public class EntityController : ControllerBase
+{
+    // GET, GET/{id}, POST, PUT/{id}, DELETE/{id}
+}
+```
+
+#### مرحله ۷: ثبت در Program.cs
+📁 `Pdd.ir.Server/Program.cs`
+```csharp
+builder.Services.AddScoped<EntityBusinessService>();
+// اگر constructor پارامتر داره:
+builder.Services.AddScoped<EntityBusinessService>(sp => {
+    var db = sp.GetRequiredService<IDbService>();
+    return new EntityBusinessService(db);
+});
+```
+
+#### مرحله ۸: ثبت در WebSocketHandler (فقط یک خط!)
+📁 `Pdd.ir.Server/WebSocket/WebSocketHandler.cs` → متد `GetService`
+```csharp
+"entity" => sp.GetService<EntityBusinessService>(),
+```
+**⚠️ فقط این یک خط اضافه شود! هیچ هندلر دیگری ننویسید!**
+
+#### مرحله ۹: Dialog (مودال CRUD)
+📁 `Pdd.ir.Client/Shared/Dialogs/{Entity}Dialog.razor`
+- فرم با فیلدها
+- `@inject ICommunicationService Comm`
+- `@inject IFileUploadService FileUpload` (اگر تصویر داره)
+- Save → `Comm.PostAsync` / `Comm.PutAsync`
+
+#### مرحله ۱۰: صفحه Admin
+📁 `Pdd.ir.Client/Pages/Admin/{Entity}s.razor`
+- `@page "/admin/{entity}s"`
+- `PddTable` با ستون‌ها
+- جستجو، حذف، ویرایش
+
+#### مرحله ۱۱: ترجمه‌ها
+📁 `wwwroot/lang/fa.json` + `wwwroot/lang/en.json`
+- اضافه کردن تمام کلیدهای متنی
+
+#### مرحله ۱۲: Sidebar
+📁 `Layout/NavMenu.razor`
+- لینک به صفحه admin
+
+#### مرحله ۱۳: SQL Migration
+📁 `Server/wwwroot/resource/{timestamp}_{Create_Entity}.sql`
+```sql
+IF OBJECT_ID('Entities', 'U') IS NULL
+BEGIN
+    CREATE TABLE Entities ( ... );
+END
+GO
+```
+
+### چک‌لیست قبل از اتمام
+
+| # | بررسی | وضعیت |
+|---|-------|-------|
+| 1 | Entity با PascalCase و long برای تاریخ | |
+| 2 | DTO در Business و Client (هر دو) | |
+| 3 | Queries با SCOPE_IDENTITY | |
+| 4 | BusinessService با ۵ متد استاندارد | |
+| 5 | Controller با Route("api/{entity}") | |
+| 6 | ثبت در Program.cs | |
+| 7 | `GetService` در WebSocketHandler (فقط ۱ خط) | |
+| 8 | Dialog با `ICommunicationService` | |
+| 9 | صفحه Admin با PddTable | |
+| 10 | ترجمه‌ها در fa.json + en.json | |
+| 11 | لینک در NavMenu | |
+| 12 | SQL Migration | |
+| 13 | Build موفق (بدون خطا) | |
+
+### ❌ ممنوع مطلق
+```
+1. تغییر WebSocketHandler.cs (بجز ۱ خط در GetService)
+2. تغییر CommunicationService.cs
+3. تغییر SecurityService.cs
+4. تغییر EncryptionService.cs
+5. نوشتن هندلر اختصاصی در WebSocketHandler (HandleEntityGet, HandleEntityList و...)
+6. نوشتن if در MapUrlToAction
+7. کپی کردن کد بین entityها
+```
+
+### ✅ اگر CRUD خودکار کار نمی‌کنه
+```
+۱. بررسی کن BusinessService ثبت شده در Program.cs
+۲. بررسی کن GetService در WebSocketHandler entity رو داره
+۳. بررسی کن نام متد دقیقاً GetAllAsync, GetByIdAsync, InsertAsync, UpdateAsync, DeleteAsync باشه
+۴. بررسی کن return type متد درسته (IEnumerable<T> برای list)
+۵. لاگ سرور رو چک کن
+۶. دست به WebSocketHandler نزن!
+```
+
+---
+
+## 🚨 MANDATORY: Git Workflow
+
+> **قانون اجباری:** ترتیب انجام کار: تغییر کد → Build → Commit → Push
 
 ### ترتیب اجباری
 ```
@@ -31,82 +254,14 @@
 3. git add -A
 4. git commit -m "پیام توضیحی"
 5. git push
-6. docker compose up --build -d
-7. docker logs بررسی کن
-8. به کاربر بگو "تمام"
 ```
 
 ### قوانین
 | قانون | توضیح |
 |-------|-------|
-| 🔥 اول commit | هرگز قبل از push، docker اجرا نکن |
+| 🔥 اول commit | هرگز قبل از push کار دیگه‌ای نکن |
 | 🔥 بعد از هر تغییر | فوراً commit + push کن — منتظر نمان |
-| 🔥 پیام commit | انگلیسی، مختصر، توضیحی (مثلاً: `fix: DB connection string for Docker`) |
-| 🔥 docker بعد از push | فقط بعد از push موفق، docker rebuild کن |
-| 🔥 لاگ چک | قبل از گفتن "تمام"، لاگ docker ببین |
-| 🔥 همیشه --no-cache | حتماً `docker compose build --no-cache` — cached build کد جدید رو نمیاره |
-| 🔥 همه سرویس‌ها | هم `app` و هم `nginx` باید rebuild بشن — فقط یکی کافی نیست |
-
-### ❌ ممنوع
-```bash
-# این ترتیب اشتباه است:
-docker compose up --build -d    # ❌ اول docker
-# ... کار تمام
-git commit -m "..."             # ❌ بعد commit
-git push                        # ❌ بعد push
-
-# این هم اشتباه است (cached build):
-docker compose up --build -d    # ❌ cache داره، کد جدید نمیاره
-
-# این هم اشتباه است (فقط یک سرویس):
-docker compose build --no-cache app  # ❌ nginx هم باید rebuild بشه
-```
-
-### ✅ درست
-```bash
-dotnet build                              # ۱. build
-git add -A                                # ۲. stage
-git commit -m "fix: ..."                  # ۳. commit
-git push                                  # ۴. push
-docker compose down                       # ۵. توقف همه
-docker compose build --no-cache           # ۶. rebuild همه (بدون cache)
-docker compose up -d                      # ۷. اجرا
-docker logs pdd-app --tail 20             # ۸. بررسی لاگ
-```
-
----
-
-## 🚨 MANDATORY: Docker Testing After Changes
-
-> **قانون اجباری:** پس از هر تغییر کد، پروژه باید در Docker rebuild و تست شود.
-
-### دستورات
-```bash
-# اجرای مجدد بعد از تغییرات
-docker compose up --build -d
-
-# بررسی وضعیت کانتینرها
-docker ps -a
-
-# بررسی لاگ‌ها
-docker logs pdd-app --tail 20
-docker logs pdd-nginx --tail 20
-
-# توقف کامل
-docker compose down
-
-# توقف + پاک‌سازی حجم‌ها
-docker compose down -v
-```
-
-### قوانین
-| قانون | توضیح |
-|-------|-------|
-| 🔥 هر تغییر کد | `docker compose up --build -d` اجرا شود |
-| 🔥 بررسی لاگ | قبل از گفتن "تمام"، لاگ‌ها چک شود |
-| 🔥 تست مرورگر | `http://localhost` باز شود |
-| 🔥 دیتابیس | دیتابیس `pdd` باید خودکار ساخته شود |
-| 🔥 حجم داده | `sql-data` volume حفظ شود |
+| 🔥 پیام commit | انگلیسی، مختصر، توضیحی |
 
 ---
 
@@ -186,6 +341,217 @@ DateHelper.MiladiToShamsi("2023-04-05")  // "1402/01/15"
 | 🔥 ممنوع | جدول دستی با `<table>` نساز (از PddTable استفاده کن) |
 | 🔥 ممنوع | از `NavigateTo(url, true)` استفاده نکن — باعث reload کامل صفحه می‌شود |
 | 🔥 ممنوع | از `NavigationManager.NavigateTo` با forceLoad: true استفاده نکن |
+| 🔥 اجباری | برای آپلود/دریافت فایل حتماً از `IFileUploadService` استفاده کن |
+
+### نحوه استفاده از FileUploadService
+```razor
+@inject IFileUploadService FileUpload
+
+// آپلود تصویر
+var url = await FileUpload.UploadImageAsync(dataUrl, "clients");
+
+// دریافت تصویر
+var file = await FileUpload.GetFileAsync("abc123", "clients");
+
+// حذف فایل
+await FileUpload.DeleteFileAsync("abc123", "clients");
+```
+
+### قوانین FileUpload
+| قانون | توضیح |
+|-------|-------|
+| 🔥 اجباری | از `IFileUploadService` برای آپلود/دریافت فایل استفاده کن |
+| 🔥 اجباری | فقط GUID در دیتابیس ذخیره شود |
+| 🔥 اجباری | فایل‌ها در پوشه `uploads/` ذخیره شوند |
+| 🔥 ممنوع | از `HttpClient` مستقیم برای آپلود استفاده نکن |
+
+---
+
+## 🚨 MANDATORY: Server-Client Communication (ارتباط سرور-کلاینت)
+
+> **قانون اجباری:** تمام ارتباطات کلاینت با سرور باید از طریق `ICommunicationService` انجام شود. استفاده مستقیم از `HttpClient` در صفحات ممنوع است.
+
+### آدرس‌ها از appsettings.json خوانده می‌شوند
+
+فایل `wwwroot/appsettings.json` در کلاینت:
+```json
+{
+  "Pdd": {
+    "ApiSettings": {
+      "BaseUrl": "http://localhost:5000",
+      "WebSocketUrl": "ws://localhost:5000"
+    }
+  }
+}
+```
+
+### نحوه ارتباط در صفحات
+```razor
+@inject ICommunicationService Comm
+
+// لیست — وقتی WS وصله از WS، وگرنه HTTP
+var items = await Comm.GetAsync<List<ProductDto>>("api/product");
+
+// ایجاد
+var result = await Comm.PostAsync<object>("api/product", new { Title = "..." });
+
+// ویرایش
+var ok = await Comm.PutAsync<object>($"api/product/{id}", new { Title = "..." });
+
+// حذف
+var ok = await Comm.DeleteAsync($"api/product/{id}");
+```
+
+### قوانین ارتباط
+| قانون | توضیح |
+|-------|-------|
+| 🔥 فقط Comm | همه درخواست‌ها از `ICommunicationService` — هیچ سرویسی حق ندارد مستقیم از `HttpClient` استفاده کند |
+| 🔥 WS-first | اگه WS وصله → همه از WS |
+| 🔥 HTTP fallback | اگه WS قطعه → همه از HTTP |
+| 🔥 Auth endpoints | `/auth/*` همیشه HTTP (نه WS) |
+| 🔥 هر درخواست auth جدید | هر درخواست `X-Auth` header جدید میخواد (timestamp + nonce تکراری نباشه) |
+| 🔥 Handshake | `MainLayout.OnAfterRenderAsync` → `Comm.InitializeAsync()` |
+| 🔥 لاگین | از `Comm.PostAsync` با SharedKey encryption |
+
+### ⚠️ قانون طلایی: سرویس‌های ارتباطی غیرقابل تغییر هستند
+
+> **هیچ سرویسی حق ندارد مستقیم از `HttpClient` استفاده کند. تمام ارتباطات باید از طریق `ICommunicationService` انجام شود — حتی در سرویس‌هایی مانند `AuthService`.**
+
+**سرویس‌هایی که نباید تغییر کنند (زیرساخت ارتباطی):**
+- `ICommunicationService` / `CommunicationService`
+- `SecurityService`
+- `EncryptionService`
+
+**سرویس‌های تجاری که باید از Comm استفاده کنند:**
+- `AuthService` — باید از `_comm.PostAsync` برای لاگین استفاده کند
+- هر سرویس دیگری که نیاز به ارتباط با سرور دارد
+
+**نمونه صحیح (Users.razor):**
+```razor
+@inject ICommunicationService Comm
+
+// ✅ صحیح — همه درخواست‌ها از Comm
+var items = await Comm.GetAsync<List<UserDto>>("api/user");
+await Comm.DeleteAsync($"api/user/{user.Id}");
+```
+
+**نمونه غلط (AuthService قبل از اصلاح):**
+```csharp
+// ❌ غلط — استفاده مستقیم از HttpClient
+var response = await _http.PostAsJsonAsync("api/auth/login", new { Username = username, Password = password });
+
+// ❌ غلط — تنظیم مستقیم header
+_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+```
+
+**نمونه صحیح (AuthService بعد از اصلاح):**
+```csharp
+// ✅ صحیح — استفاده از Comm
+var result = await _comm.PostAsync<LoginResponse>("api/auth/login", new { Username = username, Password = password });
+if (result != null) { Token = result.Token; ... }
+```
+
+### ❌ ممنوع
+```razor
+@inject HttpClient Http
+var data = await Http.GetFromJsonAsync<List<Product>>("api/product");
+
+// یا مستقیم _http.PostAsJsonAsync
+```
+
+### ✅ درست
+```razor
+@inject ICommunicationService Comm
+var data = await Comm.GetAsync<List<ProductDto>>("api/product");
+```
+
+### WebSocket — URL Mapping (خودکار)
+
+`CommunicationService.MapUrlToAction` آدرس URL رو **خودکار** به WS action تبدیل می‌کنه:
+
+### قوانین خودکار
+
+| URL | WS Action | قانون |
+|-----|-----------|-------|
+| `api/product` | `product.list` | `{entity}.list` |
+| `api/product/5` | `product.get` | `{entity}.get` |
+| `POST api/client` | `client.create` | `POST → {entity}.create` |
+| `PUT api/client/5` | `client.update` | `PUT + ID → {entity}.update` |
+| `DELETE api/client/5` | `client.delete` | `DELETE + ID → {entity}.delete` |
+| `api/client/admin` | `client.admin` | `contains "admin" → {entity}.admin` |
+| `api/contact/5/markread` | `contact.markread` | `contains "markread" → {entity}.markread` |
+| `api/blog/admin` | `blog.admin` | `contains "admin" → {entity}.admin` |
+
+### نحوه کار خودکار
+
+```
+URL: api/{entity}/{id}?action={special}
+     ↓
+MapUrlToAction(url, method):
+  1. استخراج entity از اولین بخش URL
+  2. استخراج id اگه عددی باشه
+  3. تشخیص عملیات بر اساس method:
+     POST   → {entity}.create
+     PUT    → {entity}.update
+     DELETE → {entity}.delete
+     GET+id → {entity}.get
+     GET    → {entity}.list
+     حاوی "admin" → {entity}.admin
+```
+
+### قوانین سمت سرور (WebSocketHandler)
+
+```
+RequiresSession → action.Split('.') → [entity, operation]
+  ↓
+CRUD operations (خودکار با Reflection):
+  list   → HandleList   → svc.GetAllAsync()
+  get    → HandleGet    → svc.GetByIdAsync(id)
+  create → HandleCreate → svc.InsertAsync(dto)
+  update → HandleUpdate → svc.UpdateAsync(dto)
+  delete → HandleDelete → svc.DeleteAsync(id)
+  ↓
+Special operations (مسیریابی سوئیچ):
+  admin, markread, unread, count, submit, ...
+```
+
+### ⚠️ قانون طلایی
+
+> **برای entity جدید، فقط ۳ چیز لازمه:**
+> 1. `BusinessService` با متدهای `GetAllAsync`, `GetByIdAsync`, `InsertAsync`, `UpdateAsync`, `DeleteAsync`
+> 2. `Controller` با attribute `Route("api/{entity}")`
+> 3. صفحه `@inject ICommunicationService Comm`
+>
+> **مسیریابی خودکار انجام میشه! نیازی به اضافه کردن کد جدید در MapUrlToAction یا WebSocketHandler نیست.**
+
+### ❌ ممنوع
+```csharp
+// اضافه کردن if جدید در MapUrlToAction
+if (lower.Contains("newentity"))
+{ ... }  // ❌ ممنوع - خودکار انجام میشه
+
+// اضافه کردن case جدید در switch سرور
+"newentity.list" => await HandleNewEntityList(scope)  // ❌ ممنوع
+```
+
+### ✅ درست
+```csharp
+// فقط BusinessService بساز با متدهای استاندارد
+public class NewEntityBusinessService
+{
+    public async Task<List<NewEntity>> GetAllAsync() { ... }
+    public async Task<NewEntity?> GetByIdAsync(int id) { ... }
+    public async Task<int> InsertAsync(NewEntityDto dto) { ... }
+    public async Task<bool> UpdateAsync(NewEntityDto dto) { ... }
+    public async Task<bool> DeleteAsync(int id) { ... }
+}
+
+// و در صفحه استفاده کن
+var items = await Comm.GetAsync<List<NewEntityDto>>("api/newentity");    // → newentity.list
+await Comm.PostAsync("api/newentity", dto);                              // → newentity.create
+await Comm.PutAsync($"api/newentity/{id}", dto);                        // → newentity.update
+await Comm.DeleteAsync($"api/newentity/{id}");                          // → newentity.delete
+```
 
 ### نمونه استفاده در صفحه
 ```razor
@@ -1796,20 +2162,20 @@ var data = await Http.GetFromJsonAsync<List<Product>>("api/product");
 var data = await Comm.GetAsync<List<ProductDto>>("api/product");
 ```
 
-### WebSocket — URL Mapping
+### WebSocket — URL Mapping (خودکار)
 
-`CommunicationService` آدرس URL رو به WS action تبدیل می‌کنه:
+`CommunicationService.MapUrlToAction` آدرس URL رو **خودکار** به WS action تبدیل می‌کنه:
 
-| URL | WS Action | توضیح |
+| URL | WS Action | قانون |
 |-----|-----------|-------|
-| `api/product` | `product.list` | لیست |
-| `api/product/5` | `product.get` | دریافت با ID عددی |
-| `api/blog` | `blog.list` | لیست |
-| `api/blog/admin` | `blog.admin` | ادمین |
-| `api/user` | `user.list` | لیست |
-| `api/user/5` | `user.get` | دریافت با ID عددی |
-| `api/contact` | `contact.list` | لیست |
-| `api/contact/5/markread` | `contact.markread` | خوانده شده |
+| `api/product` | `product.list` | `{entity}.list` |
+| `api/product/5` | `product.get` | `{entity}.get` |
+| `POST api/client` | `client.create` | `POST → {entity}.create` |
+| `PUT api/client/5` | `client.update` | `PUT + ID → {entity}.update` |
+| `DELETE api/client/5` | `client.delete` | `DELETE + ID → {entity}.delete` |
+| `api/client/admin` | `client.admin` | `contains "admin" → {entity}.admin` |
+| `api/contact/5/markread` | `contact.markread` | `contains "markread" → {entity}.markread` |
+| `api/blog/admin` | `blog.admin` | `contains "admin" → {entity}.admin` |
 
 **نکته مهم:** `ExtractId` فقط رشته‌های عددی (`int.TryParse`) رو ID میشناسه. اگه آخر URL کلمه‌ای مثل `"user"` یا `"blog"` باشه، به عنوان ID شناخته نمیشه و action `list` برمیگردونه.
 

@@ -9,5 +9,4 @@ public class Customer
     public string TypeEn { get; set; } = "";
     public string ImageUrl { get; set; } = "";
     public string Abbr { get; set; } = "";
-    public string Color { get; set; } = "#0D6EFD";
 }

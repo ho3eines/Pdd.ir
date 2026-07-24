@@ -1,6 +1,7 @@
 @page "/"
 @inject IJSRuntime JS
 @inject ITranslateService T
+@inject ICommunicationService Comm
 @implements IAsyncDisposable
 
 <div class="home-fullscreen" id="homeScreen">
@@ -164,28 +165,27 @@
         new ProductItem { Icon = "bi-building", IconBg = "rgba(248,28,229,0.15)", IconColor = "#f81ce5", NameFa = "اتوماسیون اداری", NameEn = "Office Automation", SubFa = "گردش نامه و بایگانی", SubEn = "Document & Filing", Route = "/products" }
     };
 
-    private List<Customer> _clients => new()
-    {
-        new Customer { Abbr = "شب", NameFa = "شهید بهشتی", NameEn = "Shahid Beheshti", Color = "#0D6EFD" },
-        new Customer { Abbr = "مت", NameFa = "دانشگاه تهران", NameEn = "TUMS", Color = "#f81ce5" },
-        new Customer { Abbr = "دای", NameFa = "دانشگاه ایران", NameEn = "Iran University", Color = "#7928ca" },
-        new Customer { Abbr = "قب", NameFa = "قائم جیرفت", NameEn = "Ghaem Jiroft", Color = "#50e3c2" },
-        new Customer { Abbr = "مک", NameFa = "محمد کرمانشاهی", NameEn = "Mohammad Kermanshahi", Color = "#0D6EFD" },
-        new Customer { Abbr = "شس", NameFa = "شفا ساری", NameEn = "Shafa Sari", Color = "#f81ce5" },
-        new Customer { Abbr = "حف", NameFa = "حضرت فاطمه ساوه", NameEn = "Hazrate Fatemeh Saveh", Color = "#7928ca" },
-        new Customer { Abbr = "آگ", NameFa = "آیت‌الله گلپایگانی", NameEn = "Ayatollah Golpaygani", Color = "#50e3c2" },
-        new Customer { Abbr = "ام", NameFa = "امیرالمؤمنین", NameEn = "Amiralmomenin", Color = "#0D6EFD" },
-        new Customer { Abbr = "اخ", NameFa = "امام خمینی", NameEn = "Imam Khomeini", Color = "#f81ce5" },
-        new Customer { Abbr = "دگ", NameFa = "دانشگاه گلستان", NameEn = "Golestan University", Color = "#7928ca" },
-        new Customer { Abbr = "دس", NameFa = "دانشگاه سمنان", NameEn = "Semnan University", Color = "#50e3c2" },
-        new Customer { Abbr = "دز", NameFa = "دانشگاه زنجان", NameEn = "Zanjan University", Color = "#0D6EFD" },
-        new Customer { Abbr = "دی", NameFa = "دانشگاه یزد", NameEn = "Yazd University", Color = "#f81ce5" },
-        new Customer { Abbr = "دک", NameFa = "دانشگاه کاشان", NameEn = "Kashan University", Color = "#7928ca" },
-        new Customer { Abbr = "قز", NameFa = "دانشگاه قزوین", NameEn = "Qazvin University", Color = "#50e3c2" }
-    };
+    private List<Customer> _clients = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        // Load clients from database
+        try
+        {
+            var clientsDto = await Comm.GetAsync<List<ClientDto>>("api/client") ?? new();
+            _clients = clientsDto.Select(c => new Customer
+            {
+                Abbr = c.NameEn.Length >= 2 ? c.NameEn.Substring(0, 2) : c.NameEn,
+                NameFa = c.Name,
+                NameEn = c.NameEn,
+                ImageUrl = c.ImageUrl
+            }).ToList();
+        }
+        catch
+        {
+            _clients = new();
+        }
+
         _slideTimer = new Timer(_ =>
         {
             InvokeAsync(() => { NextSlide(); StateHasChanged(); });

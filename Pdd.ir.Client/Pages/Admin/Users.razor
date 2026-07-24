@@ -60,7 +60,7 @@
     async Task LoadUsers()
     {
         IsLoading = true;
-        UserList = await Comm.GetAsync<List<UserDto>>("api/user") ?? new();
+        UserList = await Comm.GetAsync<List<UserDto>>("api/user/list") ?? new();
         IsLoading = false;
     }
 

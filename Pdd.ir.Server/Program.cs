@@ -27,7 +27,21 @@ builder.Services.AddScoped<PortfolioBusinessService>();
 builder.Services.AddScoped<RoleBusinessService>();
 builder.Services.AddScoped<PermissionBusinessService>();
 builder.Services.AddScoped<SettingsBusinessService>();
-builder.Services.AddScoped<ClientBusinessService>();
+builder.Services.AddScoped<ClientBusinessService>(sp =>
+{
+    var db = sp.GetRequiredService<IDbService>();
+    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    var imagePath = Path.Combine(env.WebRootPath, "uploads");
+    return new ClientBusinessService(db, imagePath);
+});
+builder.Services.AddScoped<EventBusinessService>(sp =>
+{
+    var db = sp.GetRequiredService<IDbService>();
+    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    var imagePath = Path.Combine(env.WebRootPath, "uploads", "events");
+    return new EventBusinessService(db, imagePath);
+});
+builder.Services.AddScoped<UserBusinessService>();
 
 // Server Services
 builder.Services.AddSingleton<JwtService>();

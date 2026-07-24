@@ -5,8 +5,7 @@ namespace Pdd.ir.Business.Models.Entities
         public int Id { get; set; }
         public string Name { get; set; } = "";
         public string NameEn { get; set; } = "";
-        public string Icon { get; set; } = "bi-hospital";
-        public string Color { get; set; } = "#0D6EFD";
+        public string ImageUrl { get; set; } = "";  // e.g., "/img/abc123.jpg"
         public int SortOrder { get; set; }
         public bool IsActive { get; set; } = true;
         public long CreatedAt { get; set; }

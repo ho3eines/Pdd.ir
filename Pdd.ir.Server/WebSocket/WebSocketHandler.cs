@@ -156,13 +156,13 @@ namespace Pdd.ir.Server.WebSocket
                 response.Id = request.Id;
 
                 // ── Encrypt outgoing data with SharedKey ──
-                if (!string.IsNullOrEmpty(sharedKey) && response.Data.HasValue)
+                if (!string.IsNullOrEmpty(sharedKey) && response.Data != null)
                 {
                     try
                     {
-                        var plainJson = response.Data.Value.GetRawText();
+                        var plainJson = JsonSerializer.Serialize(response.Data, JsonOpts);
                         var encrypted = _crypto.Encrypt(sharedKey, plainJson);
-                        response.Data = JsonSerializer.SerializeToElement(encrypted);
+                        response.Data = encrypted;
                     }
                     catch
                     {
@@ -224,70 +224,36 @@ namespace Pdd.ir.Server.WebSocket
                     return new WsResponse { Action = action, Success = false, Message = "Invalid or expired session" };
             }
 
-            return action switch
+            // ── تشخیص خودکار entity و operation ──
+            var parts = action.Split('.', 2);
+            if (parts.Length == 2)
             {
-                // ── Product ──
-                "product.list" => await HandleProductList(scope),
-                "product.get" => await HandleProductGet(scope, request.Data),
-                "product.category" => await HandleProductCategory(scope, request.Data),
-
-                // ── Blog ──
-                "blog.list" => await HandleBlogList(scope),
-                "blog.get" => await HandleBlogGet(scope, request.Data),
-                "blog.admin" => await HandleBlogAdmin(scope),
-
-                // ── Portfolio ──
-                "portfolio.list" => await HandlePortfolioList(scope),
-                "portfolio.get" => await HandlePortfolioGet(scope, request.Data),
-                "portfolio.admin" => await HandlePortfolioAdmin(scope),
-
-                // ── Contact ──
-                "contact.list" => await HandleContactList(scope),
-                "contact.unread" => await HandleContactUnread(scope),
-                "contact.count" => await HandleContactCount(scope),
-                "contact.submit" => await HandleContactSubmit(scope, request.Data),
-                "contact.markread" => await HandleContactMarkRead(scope, request.Data),
-                "contact.delete" => await HandleContactDelete(scope, request.Data),
-
-                // ── Page ──
-                "page.list" => await HandlePageList(scope),
-                "page.get" => await HandlePageGet(scope, request.Data),
-                "page.id" => await HandlePageById(scope, request.Data),
-
-                // ── User ──
-                "user.list" => await HandleUserList(scope),
-                "user.get" => await HandleUserGet(scope, request.Data),
-                "user.admin" => await HandleUserAdmin(scope),
-
-                // ── Role ──
-                "role.list" => await HandleRoleList(scope),
-                "role.get" => await HandleRoleGet(scope, request.Data),
-
-                // ── Permission ──
-                "permission.list" => await HandlePermissionList(scope),
-                "permission.role" => await HandlePermissionByRole(scope, request.Data),
-
-                // ── Auth ──
-                "auth.login" => await HandleAuthLogin(scope, request.Data),
-
-                // ── Settings ──
-                "settings.list" => await HandleSettingsList(scope),
-                "settings.get" => await HandleSettingsGet(scope, request.Data),
-                "settings.set" => await HandleSettingsSet(scope, request.Data),
-
-                // ── Client ──
-                "client.list" => await HandleClientList(scope),
-                "client.listadmin" => await HandleClientListAdmin(scope),
-                "client.get" => await HandleClientGet(scope, request.Data),
-                "client.create" => await HandleClientCreate(scope, request.Data),
-                "client.update" => await HandleClientUpdate(scope, request.Data),
-                "client.delete" => await HandleClientDelete(scope, request.Data),
-
-                // ── Ping ──
-                "ping" => new WsResponse { Action = "ping", Success = true, Data = JsonSerializer.SerializeToElement("pong") },
-
-                _ => new WsResponse { Action = action, Success = false, Message = $"Unknown action: {action}" }
-            };
+                var entity = parts[0];
+                var operation = parts[1];
+                
+                // ابتدا special operations (هندلرهای اختصاصی)
+                var special = await HandleSpecialOperation(scope, entity, operation, request);
+                if (special != null) return special;
+                
+                // سپس CRUD operations خودکار
+                return operation switch
+                {
+                    "list" or "admin" or "listadmin" => await HandleList(scope, entity),
+                    "get" => await HandleGet(scope, entity, request.Data),
+                    "create" => await HandleCreate(scope, entity, request.Data),
+                    "update" => await HandleUpdate(scope, entity, request.Data),
+                    "delete" => await HandleDelete(scope, entity, request.Data),
+                    _ => new WsResponse { Action = action, Success = false, Message = $"Unknown operation: {operation}" }
+                };
+            }
+            
+            // Auth actions
+            if (action == "auth.handshake")
+                return await HandleAuthHandshake(scope, request.Data);
+            if (action == "auth.login")
+                return await HandleAuthLogin(scope, request.Data);
+            
+            return new WsResponse { Action = action, Success = false, Message = $"Unknown action: {action}" };
         }
 
         // ── Product Handlers ──────────────────────────────────
@@ -295,7 +261,127 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<ProductBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "product.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "product.list", Success = true, Data = data };
+        }
+
+        // ── Generic CRUD Handlers (خودکار با dynamic) ──
+
+        private static async Task<WsResponse> HandleList(IServiceScope scope, string entity)
+        {
+            var svc = GetService(scope, entity);
+            if (svc == null)
+                return new WsResponse { Action = $"{entity}.list", Success = false, Message = $"Service not found for {entity}" };
+
+            var method = svc.GetType().GetMethod("GetAllAsync");
+            if (method == null)
+                return new WsResponse { Action = $"{entity}.list", Success = false, Message = $"GetAllAsync not found for {entity}" };
+
+            dynamic result = await ((dynamic)method.Invoke(svc, null)!);
+            return new WsResponse { Action = $"{entity}.list", Success = true, Data = result };
+        }
+
+        private static async Task<WsResponse> HandleGet(IServiceScope scope, string entity, string? data)
+        {
+            var svc = GetService(scope, entity);
+            if (svc == null)
+                return new WsResponse { Action = $"{entity}.get", Success = false, Message = $"Service not found for {entity}" };
+
+            var id = int.TryParse(data, out var v) ? v : 0;
+            var method = svc.GetType().GetMethod("GetByIdAsync");
+            if (method == null)
+                return new WsResponse { Action = $"{entity}.get", Success = false, Message = $"GetByIdAsync not found for {entity}" };
+
+            dynamic result = await ((dynamic)method.Invoke(svc, new object[] { id })!);
+            return new WsResponse { Action = $"{entity}.get", Success = result != null, Data = result };
+        }
+
+        private static async Task<WsResponse> HandleCreate(IServiceScope scope, string entity, string? data)
+        {
+            var svc = GetService(scope, entity);
+            if (svc == null)
+                return new WsResponse { Action = $"{entity}.create", Success = false, Message = $"Service not found for {entity}" };
+
+            var method = svc.GetType().GetMethod("InsertAsync");
+            if (method == null)
+                return new WsResponse { Action = $"{entity}.create", Success = false, Message = $"InsertAsync not found for {entity}" };
+
+            var dtoType = method.GetParameters()[0].ParameterType;
+            var dto = JsonSerializer.Deserialize(data ?? "{}", dtoType, JsonOpts);
+            dynamic result = await ((dynamic)method.Invoke(svc, new object[] { dto })!);
+            return new WsResponse { Action = $"{entity}.create", Success = true, Data = new { id = (int)result } };
+        }
+
+        private static async Task<WsResponse> HandleUpdate(IServiceScope scope, string entity, string? data)
+        {
+            var svc = GetService(scope, entity);
+            if (svc == null)
+                return new WsResponse { Action = $"{entity}.update", Success = false, Message = $"Service not found for {entity}" };
+
+            var method = svc.GetType().GetMethod("UpdateAsync");
+            if (method == null)
+                return new WsResponse { Action = $"{entity}.update", Success = false, Message = $"UpdateAsync not found for {entity}" };
+
+            var dtoType = method.GetParameters()[0].ParameterType;
+            var dto = JsonSerializer.Deserialize(data ?? "{}", dtoType, JsonOpts);
+            dynamic result = await ((dynamic)method.Invoke(svc, new object[] { dto })!);
+            return new WsResponse { Action = $"{entity}.update", Success = result };
+        }
+
+        private static async Task<WsResponse> HandleDelete(IServiceScope scope, string entity, string? data)
+        {
+            var svc = GetService(scope, entity);
+            if (svc == null)
+                return new WsResponse { Action = $"{entity}.delete", Success = false, Message = $"Service not found for {entity}" };
+
+            var method = svc.GetType().GetMethod("DeleteAsync");
+            if (method == null)
+                return new WsResponse { Action = $"{entity}.delete", Success = false, Message = $"DeleteAsync not found for {entity}" };
+
+            var id = int.TryParse(data, out var v) ? v : 0;
+            dynamic result = await ((dynamic)method.Invoke(svc, new object[] { id })!);
+            return new WsResponse { Action = $"{entity}.delete", Success = result, Data = result };
+        }
+
+        private static object? GetService(IServiceScope scope, string entity)
+        {
+            var sp = scope.ServiceProvider;
+            
+            return entity.ToLowerInvariant() switch
+            {
+                "product" => sp.GetService<ProductBusinessService>(),
+                "blog" => sp.GetService<BlogBusinessService>(),
+                "portfolio" => sp.GetService<PortfolioBusinessService>(),
+                "contact" => sp.GetService<ContactBusinessService>(),
+                "page" => sp.GetService<PageBusinessService>(),
+                "role" => sp.GetService<RoleBusinessService>(),
+                "permission" => sp.GetService<PermissionBusinessService>(),
+                "settings" => sp.GetService<SettingsBusinessService>(),
+                "client" => sp.GetService<ClientBusinessService>(),
+                "event" => sp.GetService<EventBusinessService>(),
+                "user" => sp.GetService<UserBusinessService>(),
+                _ => null
+            };
+        }
+
+        // ── Special Operations (فقط مسیرهای غیرCRUD standard) ──
+        private static async Task<WsResponse?> HandleSpecialOperation(IServiceScope scope, string entity, string operation, WsRequest request)
+        {
+            return (entity, operation) switch
+            {
+                // Contact
+                ("contact", "submit") => await HandleContactSubmit(scope, request.Data),
+                ("contact", "markread") => await HandleContactMarkRead(scope, request.Data),
+                ("contact", "unread") => await HandleContactUnread(scope),
+                ("contact", "count") => await HandleContactCount(scope),
+
+                // Product
+                ("product", "category") => await HandleProductCategory(scope, request.Data),
+
+                // Auth
+                ("auth", "login") => await HandleAuthLogin(scope, request.Data),
+
+                _ => null  // ناشناخته → به CRUD خودکار بره
+            };
         }
 
         private static async Task<WsResponse> HandleProductGet(IServiceScope scope, string? data)
@@ -303,14 +389,14 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<ProductBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var item = await svc.GetByIdAsync(id);
-            return new WsResponse { Action = "product.get", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "product.get", Success = true, Data = item };
         }
 
         private static async Task<WsResponse> HandleProductCategory(IServiceScope scope, string? data)
         {
             var svc = scope.ServiceProvider.GetRequiredService<ProductBusinessService>();
             var items = await svc.GetByCategoryAsync(data ?? "");
-            return new WsResponse { Action = "product.category", Success = true, Data = JsonSerializer.SerializeToElement(items) };
+            return new WsResponse { Action = "product.category", Success = true, Data = items };
         }
 
         // ── Blog Handlers ─────────────────────────────────────
@@ -318,21 +404,21 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<BlogBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "blog.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "blog.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleBlogGet(IServiceScope scope, string? data)
         {
             var svc = scope.ServiceProvider.GetRequiredService<BlogBusinessService>();
             var item = await svc.GetBySlugAsync(data ?? "");
-            return new WsResponse { Action = "blog.get", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "blog.get", Success = true, Data = item };
         }
 
         private static async Task<WsResponse> HandleBlogAdmin(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<BlogBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "blog.admin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "blog.admin", Success = true, Data = data };
         }
 
         // ── Portfolio Handlers ────────────────────────────────
@@ -340,7 +426,7 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<PortfolioBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "portfolio.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "portfolio.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandlePortfolioGet(IServiceScope scope, string? data)
@@ -348,14 +434,14 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<PortfolioBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var item = await svc.GetByIdAsync(id);
-            return new WsResponse { Action = "portfolio.get", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "portfolio.get", Success = true, Data = item };
         }
 
         private static async Task<WsResponse> HandlePortfolioAdmin(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<PortfolioBusinessService>();
             var data = await svc.GetAllAdminAsync();
-            return new WsResponse { Action = "portfolio.admin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "portfolio.admin", Success = true, Data = data };
         }
 
         // ── Contact Handlers ──────────────────────────────────
@@ -363,21 +449,21 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<ContactBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "contact.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "contact.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleContactUnread(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<ContactBusinessService>();
             var data = await svc.GetUnreadAsync();
-            return new WsResponse { Action = "contact.unread", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "contact.unread", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleContactCount(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<ContactBusinessService>();
             var (total, unread) = await svc.CountAsync();
-            return new WsResponse { Action = "contact.count", Success = true, Data = JsonSerializer.SerializeToElement(new { total, unread }) };
+            return new WsResponse { Action = "contact.count", Success = true, Data = new { total, unread } };
         }
 
         private static async Task<WsResponse> HandleContactSubmit(IServiceScope scope, string? data)
@@ -387,7 +473,7 @@ namespace Pdd.ir.Server.WebSocket
             if (req == null)
                 return new WsResponse { Action = "contact.submit", Success = false, Message = "Invalid data" };
             var id = await svc.SubmitAsync(req);
-            return new WsResponse { Action = "contact.submit", Success = true, Data = JsonSerializer.SerializeToElement(id) };
+            return new WsResponse { Action = "contact.submit", Success = true, Data = id };
         }
 
         private static async Task<WsResponse> HandleContactMarkRead(IServiceScope scope, string? data)
@@ -411,14 +497,14 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<PageBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "page.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "page.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandlePageGet(IServiceScope scope, string? data)
         {
             var svc = scope.ServiceProvider.GetRequiredService<PageBusinessService>();
             var item = await svc.GetBySlugAsync(data ?? "");
-            return new WsResponse { Action = "page.get", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "page.get", Success = true, Data = item };
         }
 
         private static async Task<WsResponse> HandlePageById(IServiceScope scope, string? data)
@@ -426,7 +512,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<PageBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var item = await svc.GetByIdAsync(id);
-            return new WsResponse { Action = "page.id", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "page.id", Success = true, Data = item };
         }
 
         // ── Role Handlers ──────────────────────────────────────
@@ -434,7 +520,7 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<RoleBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "role.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "role.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleRoleGet(IServiceScope scope, string? data)
@@ -442,7 +528,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<RoleBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var item = await svc.GetByIdAsync(id);
-            return new WsResponse { Action = "role.get", Success = true, Data = JsonSerializer.SerializeToElement(item) };
+            return new WsResponse { Action = "role.get", Success = true, Data = item };
         }
 
         // ── Permission Handlers ────────────────────────────────
@@ -450,7 +536,7 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<PermissionBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "permission.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "permission.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandlePermissionByRole(IServiceScope scope, string? data)
@@ -458,7 +544,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<PermissionBusinessService>();
             var roleId = int.TryParse(data, out var v) ? v : 0;
             var items = await svc.GetByRoleIdAsync(roleId);
-            return new WsResponse { Action = "permission.role", Success = true, Data = JsonSerializer.SerializeToElement(items) };
+            return new WsResponse { Action = "permission.role", Success = true, Data = items };
         }
 
         // ── User Handlers ──────────────────────────────────────
@@ -466,7 +552,7 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
             var data = await svc.GetAllUsersAsync();
-            return new WsResponse { Action = "user.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "user.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleUserGet(IServiceScope scope, string? data)
@@ -474,14 +560,14 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var user = await svc.GetUserByIdAsync(id);
-            return new WsResponse { Action = "user.get", Success = true, Data = JsonSerializer.SerializeToElement(user) };
+            return new WsResponse { Action = "user.get", Success = true, Data = user };
         }
 
         private static async Task<WsResponse> HandleUserAdmin(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<AuthBusinessService>();
             var data = await svc.GetAllUsersAdminAsync();
-            return new WsResponse { Action = "user.admin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "user.admin", Success = true, Data = data };
         }
 
         // ── Auth Handlers ──────────────────────────────────────
@@ -498,7 +584,7 @@ namespace Pdd.ir.Server.WebSocket
                 Success = result.Success,
                 Message = result.Error,
                 Data = result.Success && result.EncryptedResponse != null
-                    ? JsonSerializer.SerializeToElement(new { encrypted = true, data = result.EncryptedResponse })
+                    ? new { encrypted = true, data = result.EncryptedResponse }
                     : null
             };
         }
@@ -547,7 +633,7 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<SettingsBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "settings.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "settings.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleSettingsGet(IServiceScope scope, string? data)
@@ -555,7 +641,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<SettingsBusinessService>();
             var key = JsonSerializer.Deserialize<string>(data ?? "\"\"", JsonOpts);
             var value = await svc.GetAsync(key ?? "");
-            return new WsResponse { Action = "settings.get", Success = true, Data = JsonSerializer.SerializeToElement(value) };
+            return new WsResponse { Action = "settings.get", Success = true, Data = value };
         }
 
         private static async Task<WsResponse> HandleSettingsSet(IServiceScope scope, string? data)
@@ -572,14 +658,14 @@ namespace Pdd.ir.Server.WebSocket
         {
             var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
             var data = await svc.GetAllAsync();
-            return new WsResponse { Action = "client.list", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "client.list", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleClientListAdmin(IServiceScope scope)
         {
             var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
             var data = await svc.GetAllAdminAsync();
-            return new WsResponse { Action = "client.listadmin", Success = true, Data = JsonSerializer.SerializeToElement(data) };
+            return new WsResponse { Action = "client.listadmin", Success = true, Data = data };
         }
 
         private static async Task<WsResponse> HandleClientGet(IServiceScope scope, string? data)
@@ -587,7 +673,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var item = await svc.GetByIdAsync(id);
-            return new WsResponse { Action = "client.get", Success = item != null, Data = item != null ? JsonSerializer.SerializeToElement(item) : default };
+            return new WsResponse { Action = "client.get", Success = item != null, Data = item != null ? item : default };
         }
 
         private static async Task<WsResponse> HandleClientCreate(IServiceScope scope, string? data)
@@ -595,7 +681,7 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
             var req = JsonSerializer.Deserialize<ClientCreateRequest>(data ?? "{}", JsonOpts);
             var id = await svc.InsertAsync(req!);
-            return new WsResponse { Action = "client.create", Success = true, Data = JsonSerializer.SerializeToElement(new { id }) };
+            return new WsResponse { Action = "client.create", Success = true, Data = new { id } };
         }
 
         private static async Task<WsResponse> HandleClientUpdate(IServiceScope scope, string? data)
@@ -611,7 +697,47 @@ namespace Pdd.ir.Server.WebSocket
             var svc = scope.ServiceProvider.GetRequiredService<ClientBusinessService>();
             var id = int.TryParse(data, out var v) ? v : 0;
             var success = await svc.DeleteAsync(id);
-            return new WsResponse { Action = "client.delete", Success = success };
+            return new WsResponse { Action = "client.delete", Success = success, Data = success };
+        }
+
+        // ── Event Handlers ─────────────────────────────────────
+        private static async Task<WsResponse> HandleEventList(IServiceScope scope)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<EventBusinessService>();
+            var data = await svc.GetAllAsync();
+            return new WsResponse { Action = "event.list", Success = true, Data = data };
+        }
+
+        private static async Task<WsResponse> HandleEventGet(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<EventBusinessService>();
+            var id = int.TryParse(data, out var v) ? v : 0;
+            var item = await svc.GetByIdAsync(id);
+            return new WsResponse { Action = "event.get", Success = item != null, Data = item };
+        }
+
+        private static async Task<WsResponse> HandleEventCreate(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<EventBusinessService>();
+            var req = JsonSerializer.Deserialize<EventCreateRequest>(data ?? "{}", JsonOpts);
+            var id = await svc.InsertAsync(req!);
+            return new WsResponse { Action = "event.create", Success = true, Data = new { id } };
+        }
+
+        private static async Task<WsResponse> HandleEventUpdate(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<EventBusinessService>();
+            var dto = JsonSerializer.Deserialize<EventDto>(data ?? "{}", JsonOpts);
+            var success = await svc.UpdateAsync(dto!);
+            return new WsResponse { Action = "event.update", Success = success };
+        }
+
+        private static async Task<WsResponse> HandleEventDelete(IServiceScope scope, string? data)
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<EventBusinessService>();
+            var id = int.TryParse(data, out var v) ? v : 0;
+            var success = await svc.DeleteAsync(id);
+            return new WsResponse { Action = "event.delete", Success = success, Data = success };
         }
     }
 
@@ -630,6 +756,7 @@ namespace Pdd.ir.Server.WebSocket
         public string Action { get; set; } = string.Empty;
         public bool Success { get; set; }
         public string? Message { get; set; }
-        public System.Text.Json.JsonElement? Data { get; set; }
+        public object? Data { get; set; }
     }
 }
+

@@ -2,6 +2,7 @@
 @inject IAlertService Alert
 @inject ITranslateService T
 @inject IModalService Modal
+@inject IFileUploadService FileUpload
 
 <div class="aco-dialog-body">
     <div style="background:var(--bg-tertiary);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
@@ -23,13 +24,13 @@
             <label class="form-label">@T.Text("name_en")</label>
             <input type="text" class="form-control" @bind="Model.NameEn" />
         </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">@T.Text("icon")</label>
-            <input type="text" class="form-control" @bind="Model.Icon" placeholder="bi-hospital" />
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label">@T.Text("color")</label>
-            <input type="color" class="form-control form-control-color" @bind="Model.Color" />
+        <div class="col-12">
+            <label class="form-label">@T.Text("image")</label>
+            <FileUpload Label="@T.Text("upload_image")"
+                        Accept="image/*"
+                        MaxFileSizeMB="5"
+                        CurrentUrl="@Model.ImageUrl"
+                        OnFileUploaded="OnImageUploaded" />
         </div>
         <div class="col-12 col-md-6">
             <label class="form-label">@T.Text("sort_order")</label>
@@ -58,14 +59,55 @@
 
     ClientDto Model = new();
     bool IsSaving = false;
+    string? _pendingImageData;
 
     protected override async Task OnInitializedAsync()
     {
         if (Id.HasValue)
         {
             var item = await Comm.GetAsync<ClientDto>($"api/client/{Id}");
-            if (item != null) Model = item;
+            if (item != null)
+            {
+                Model = item;
+                
+                // If ImageUrl is a file path (not data URL), fetch via API
+                if (!string.IsNullOrEmpty(Model.ImageUrl) && !Model.ImageUrl.StartsWith("data:"))
+                {
+                    var imageUrl = await FetchImageViaHttp(Model.ImageUrl);
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        Model.ImageUrl = imageUrl;
+                    }
+                }
+            }
         }
+    }
+
+    async Task<string?> FetchImageViaHttp(string imagePath)
+    {
+        try
+        {
+            // imagePath شامل GUID هست (مثلاً: "abc123")
+            var file = await FileUpload.GetFileAsync(imagePath);
+            if (file != null)
+            {
+                return $"data:{file.contentType};base64,{file.base64}";
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    void OnImageUploaded(string dataUrl)
+    {
+        // Store data URL temporarily
+        _pendingImageData = dataUrl;
+        // Show preview
+        Model.ImageUrl = dataUrl;
+        StateHasChanged();
     }
 
     async Task Save()
@@ -79,6 +121,17 @@
         IsSaving = true;
         try
         {
+            // If there's a new image (data URL), upload it via HTTP first
+            if (!string.IsNullOrEmpty(Model.ImageUrl) && Model.ImageUrl.StartsWith("data:"))
+            {
+                var imageUrl = await UploadImageViaHttp(Model.ImageUrl);
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    Model.ImageUrl = imageUrl;  // GUID
+                }
+            }
+
+            // Now save the client with the GUID (not data URL)
             if (Id.HasValue)
                 await Comm.PutAsync<object>($"api/client/{Id}", Model);
             else
@@ -89,6 +142,7 @@
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[Save] Error: {ex.Message}");
             await Alert.ShowErrorAsync(T.Text("error"), ex.Message);
         }
         finally
@@ -97,5 +151,30 @@
         }
     }
 
+    async Task<string?> UploadImageViaHttp(string dataUrl)
+    {
+        try
+        {
+            return await FileUpload.UploadImageAsync(dataUrl);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Upload error: {ex.Message}");
+            return null;
+        }
+    }
+
     void Close() => Modal.Close();
+
+    public class FileUploadResult
+    {
+        public bool success { get; set; }
+        public FileData? data { get; set; }
+    }
+
+    public class FileData
+    {
+        public string url { get; set; } = "";
+        public string fileName { get; set; } = "";
+    }
 }

@@ -1,4 +1,4 @@
-@page "/admin/clients"
+@page "/admin/events"
 @attribute [AuthorizeRole("admin")]
 @implements IDisposable
 @inject ICommunicationService Comm
@@ -7,13 +7,13 @@
 @inject IAlertService Alert
 @inject IFileUploadService FileUpload
 
-<PageTitle>@T.Text("client_management") | PDD</PageTitle>
+<PageTitle>@T.Text("event_management") | PDD</PageTitle>
 
 <div class="page-enter">
-    <PddTable TItem="ClientDto"
+    <PddTable TItem="EventDto"
               Items="@Items"
-              Title="@T.Text("client_management")"
-              Subtitle="@T.Text("client_subtitle")"
+              Title="@T.Text("event_management")"
+              Subtitle="@T.Text("event_subtitle")"
               IsLoading="@IsLoading"
               PageSize="10"
               CanInsert="true"
@@ -28,7 +28,7 @@
 </div>
 
 @code {
-    List<ClientDto> Items = new();
+    List<EventDto> Items = new();
     bool IsLoading = true;
     Dictionary<int, string> _imageCache = new();
 
@@ -41,9 +41,8 @@
     async Task LoadData()
     {
         IsLoading = true;
-        Items = await Comm.GetAsync<List<ClientDto>>("api/client/list") ?? new();
+        Items = await Comm.GetAsync<List<EventDto>>("api/event") ?? new();
         
-        // بارگذاری تصاویر از سرویس (به صورت موازی)
         var imageTasks = Items
             .Where(x => !string.IsNullOrEmpty(x.ImageUrl))
             .Select(async item =>
@@ -65,28 +64,30 @@
         StateHasChanged();
     }
 
-    List<PddTableColumn<ClientDto>> GetColumns() => new()
+    List<PddTableColumn<EventDto>> GetColumns() => new()
     {
         new() { Title = "#", GetValue = x => x.Id.ToString() },
-        new() { Title = T.Text("name_fa"), GetValue = x => x.Name },
-        new() { Title = T.Text("name_en"), GetValue = x => x.NameEn },
+        new() { Title = T.Text("title_fa"), GetValue = x => x.Title },
+        new() { Title = T.Text("title_en"), GetValue = x => x.TitleEn },
         new() { Title = T.Text("image"), Template = c => builder =>
         {
             if (_imageCache.TryGetValue(c.Id, out var imageUrl))
             {
                 builder.OpenElement(0, "img");
                 builder.AddAttribute(1, "src", imageUrl);
-                builder.AddAttribute(2, "style", "width:40px;height:40px;object-fit:contain;border-radius:8px;");
-                builder.AddAttribute(3, "alt", c.Name);
+                builder.AddAttribute(2, "style", "width:40px;height:40px;object-fit:cover;border-radius:8px;");
+                builder.AddAttribute(3, "alt", c.Title);
                 builder.CloseElement();
             }
             else
             {
                 builder.OpenElement(0, "i");
-                builder.AddAttribute(1, "class", "bi bi-image text-muted");
+                builder.AddAttribute(1, "class", "bi bi-calendar-event text-muted");
                 builder.CloseElement();
             }
         }},
+        new() { Title = T.Text("location"), GetValue = x => x.Location },
+        new() { Title = T.Text("event_date"), GetValue = x => DateHelper.ToShamsi(x.EventDate) },
         new() { Title = T.Text("sort_order"), GetValue = x => x.SortOrder.ToString() },
         new() { Title = T.Text("status"), Template = c => builder =>
         {
@@ -97,28 +98,28 @@
         }}
     };
 
-    bool Search(ClientDto x, string q) => 
-        (x.Name ?? "").ToLower().Contains(q) || 
-        (x.NameEn ?? "").ToLower().Contains(q);
+    bool Search(EventDto x, string q) =>
+        (x.Title ?? "").ToLower().Contains(q) ||
+        (x.TitleEn ?? "").ToLower().Contains(q) ||
+        (x.Location ?? "").ToLower().Contains(q);
 
     async Task OpenCreate()
     {
-        await Modal.Show<ClientDialog>(T.Text("new_client"));
+        await Modal.Show<EventDialog>(T.Text("new_event"));
         await LoadData();
     }
 
-    async Task OpenEdit(ClientDto item)
+    async Task OpenEdit(EventDto item)
     {
-        await Modal.Show<ClientDialog>(T.Text("edit_client"), new Dictionary<string, object> { { "Id", item.Id } });
+        await Modal.Show<EventDialog>(T.Text("edit_event"), new Dictionary<string, object> { { "Id", item.Id } });
         await LoadData();
     }
 
-    async Task Delete(ClientDto item)
+    async Task Delete(EventDto item)
     {
         try
         {
-            var result = await Comm.DeleteAsync($"api/client/{item.Id}");
-            
+            var result = await Comm.DeleteAsync($"api/event/{item.Id}");
             if (result)
             {
                 await Alert.ShowSuccessAsync(T.Text("success"), T.Text("deleted_successfully"));
@@ -131,16 +132,13 @@
                 await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed"));
             }
         }
-        catch (Exception)
+        catch
         {
             await Alert.ShowErrorAsync(T.Text("error"), T.Text("operation_failed"));
         }
     }
 
-    void Refresh()
-    {
-        InvokeAsync(StateHasChanged);
-    }
+    void Refresh() => InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
