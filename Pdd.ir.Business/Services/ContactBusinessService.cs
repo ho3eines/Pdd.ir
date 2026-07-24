@@ -53,6 +53,24 @@ namespace Pdd.ir.Business.Services
             return affected > 0;
         }
 
+        public async Task<int> InsertAsync(ContactRequest request)
+        {
+            return await SubmitAsync(request);
+        }
+
+        public async Task<ContactDto?> GetByIdAsync(int id)
+        {
+            var msg = await _db.QueryFirstOrDefaultAsync<ContactMessage>(ContactQueries.GetById, new { Id = id });
+            return msg != null ? MapToDto(msg) : null;
+        }
+
+        public async Task<bool> UpdateAsync(ContactDto dto)
+        {
+            if (dto.IsRead)
+                return await MarkAsReadAsync(dto.Id);
+            return true;
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var affected = await _db.ExecuteAsync(ContactQueries.Delete, new { Id = id });

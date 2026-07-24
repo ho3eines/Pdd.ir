@@ -63,12 +63,7 @@
     async Task LoadData()
     {
         IsLoading = true;
-        var response = await Comm.GetAsync<ContactListResponse>("api/contact");
-        if (response?.success == true && response.data != null)
-            Items = response.data;
-        else
-            Items = new();
-
+        Items = await Comm.GetAsync<List<ContactDto>>("api/contact") ?? new();
         UnreadCount = Items.Count(x => !x.IsRead);
         IsLoading = false;
         StateHasChanged();
@@ -158,10 +153,4 @@
 
     void Refresh() => InvokeAsync(StateHasChanged);
     public void Dispose() => T.OnLanguageChanged -= Refresh;
-
-    public class ContactListResponse
-    {
-        public bool success { get; set; }
-        public List<ContactDto>? data { get; set; }
-    }
 }

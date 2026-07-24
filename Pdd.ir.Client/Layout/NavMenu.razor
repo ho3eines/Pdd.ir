@@ -129,9 +129,8 @@
     {
         try
         {
-            var response = await Comm.GetAsync<ContactCountResponse>("api/contact/unread");
-            if (response?.success == true && response.data != null)
-                UnreadCount = response.data.Count;
+            var unread = await Comm.GetAsync<List<ContactDto>>("api/contact/unread");
+            UnreadCount = unread?.Count ?? 0;
         }
         catch { }
     }
@@ -155,11 +154,5 @@
     {
         AppState.OnStateChanged -= OnStateChanged;
         T.OnLanguageChanged -= OnLanguageChanged;
-    }
-
-    public class ContactCountResponse
-    {
-        public bool success { get; set; }
-        public List<object>? data { get; set; }
     }
 }
