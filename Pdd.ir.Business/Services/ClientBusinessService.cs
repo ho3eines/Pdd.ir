@@ -40,8 +40,13 @@ namespace Pdd.ir.Business.Services
         {
             string imageUrl = "";
             
-            // Save image file if provided (Base64 or data URL)
-            if (!string.IsNullOrEmpty(request.ImageBase64))
+            // If ImageUrl GUID is provided (from UploadController), use it directly
+            if (!string.IsNullOrEmpty(request.ImageUrl))
+            {
+                imageUrl = request.ImageUrl;
+            }
+            // Otherwise if Base64 is provided, save as file
+            else if (!string.IsNullOrEmpty(request.ImageBase64))
             {
                 imageUrl = await SaveImageAsync(request.ImageBase64);
             }

@@ -15,6 +15,7 @@ namespace Pdd.ir.Client.Models
         public string Name { get; set; } = "";
         public string NameEn { get; set; } = "";
         public string? ImageBase64 { get; set; }  // Base64 from client
+        public string? ImageUrl { get; set; }  // GUID from UploadController
         public int SortOrder { get; set; }
     }
 }
