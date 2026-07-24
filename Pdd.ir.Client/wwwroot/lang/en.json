@@ -246,5 +246,13 @@
   "icon": "Icon",
   "icon_bg": "Icon Background",
   "icon_color": "Icon Color",
-  "route": "Route"
+  "route": "Route",
+  "contact_management": "Contact Messages",
+  "contact_subtitle": "View and manage received messages",
+  "unread_messages": "Unread Messages",
+  "unread_messages_desc": "You have new messages that haven't been viewed",
+  "mark_as_read": "Mark as Read",
+  "view_detail": "View Detail",
+  "message_detail": "Message Detail",
+  "close": "Close"
 }

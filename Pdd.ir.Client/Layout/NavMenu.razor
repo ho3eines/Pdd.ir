@@ -1,6 +1,7 @@
 @inject AuthService Auth
 @inject ITranslateService T
 @inject IAppStateService AppState
+@inject ICommunicationService Comm
 @implements IDisposable
 
 <button class="admin-hamburger" id="adminHamburger" @onclick="ToggleSidebar" aria-label="Toggle menu">
@@ -79,6 +80,19 @@
         <div class="admin-nav-divider"></div>
 
         <div class="admin-nav-item">
+            <NavLink class="admin-nav-link" href="admin/messages">
+                <span class="admin-nav-icon" style="position:relative;">
+                    <i class="bi bi-envelope"></i>
+                    @if (UnreadCount > 0)
+                    {
+                        <span style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">@(UnreadCount > 9 ? "9+" : UnreadCount)</span>
+                    }
+                </span>
+                <span class="admin-nav-text">@T.Text("contact_management")</span>
+            </NavLink>
+        </div>
+
+        <div class="admin-nav-item">
             <NavLink class="admin-nav-link" href="admin/users">
                 <span class="admin-nav-icon"><i class="bi bi-people"></i></span>
                 <span class="admin-nav-text">@T.Text("admin_users")</span>
@@ -102,11 +116,24 @@
 
 @code {
     [Parameter] public EventCallback OnToggleSidebar { get; set; }
+    int UnreadCount = 0;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         AppState.OnStateChanged += OnStateChanged;
         T.OnLanguageChanged += OnLanguageChanged;
+        await LoadUnreadCount();
+    }
+
+    async Task LoadUnreadCount()
+    {
+        try
+        {
+            var response = await Comm.GetAsync<ContactCountResponse>("api/contact/unread");
+            if (response?.success == true && response.data != null)
+                UnreadCount = response.data.Count;
+        }
+        catch { }
     }
 
     void OnStateChanged()
@@ -128,5 +155,11 @@
     {
         AppState.OnStateChanged -= OnStateChanged;
         T.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    public class ContactCountResponse
+    {
+        public bool success { get; set; }
+        public List<object>? data { get; set; }
     }
 }

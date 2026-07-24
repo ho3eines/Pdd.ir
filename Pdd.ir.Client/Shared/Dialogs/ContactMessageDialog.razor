@@ -1,0 +1,54 @@
+@inject ITranslateService T
+
+<div class="aco-dialog-body">
+    @if (Message != null)
+    {
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border-color);">
+                <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0D6EFD,#7928ca);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">
+                    @(Message.Name?.Length > 0 ? Message.Name[0].ToString() : "?")
+                </div>
+                <div>
+                    <div style="font-weight:600;font-size:15px;">@Message.Name</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">@Message.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:var(--bg-tertiary);border-radius:8px;padding:10px 14px;">
+                    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">@T.Text("email")</div>
+                    <div style="font-size:13px;font-weight:500;" dir="ltr">@Message.Email</div>
+                </div>
+                <div style="background:var(--bg-tertiary);border-radius:8px;padding:10px 14px;">
+                    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">@T.Text("phone")</div>
+                    <div style="font-size:13px;font-weight:500;" dir="ltr">@(string.IsNullOrEmpty(Message.Phone) ? "-" : Message.Phone)</div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Message.Subject))
+            {
+                <div style="background:var(--bg-tertiary);border-radius:8px;padding:10px 14px;">
+                    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">@T.Text("subject")</div>
+                    <div style="font-size:13px;font-weight:500;">@Message.Subject</div>
+                </div>
+            }
+
+            <div style="background:var(--bg-tertiary);border-radius:8px;padding:14px;">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">@T.Text("message")</div>
+                <div style="font-size:13px;line-height:1.8;white-space:pre-wrap;">@Message.Message</div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="aco-dialog-footer">
+    <button class="btn btn-secondary" @onclick="Close">@T.Text("close")</button>
+</div>
+
+@code {
+    [Parameter] public ContactDto? Message { get; set; }
+
+    [Inject] private IModalService Modal { get; set; } = default!;
+
+    void Close() => Modal.Close();
+}

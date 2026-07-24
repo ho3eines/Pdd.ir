@@ -246,5 +246,13 @@
   "icon": "آیکون",
   "icon_bg": "رنگ پس‌زمینه آیکون",
   "icon_color": "رنگ آیکون",
-  "route": "مسیر"
+  "route": "مسیر",
+  "contact_management": "پیام‌های تماس",
+  "contact_subtitle": "مشاهده و مدیریت پیام‌های دریافتی",
+  "unread_messages": "پیام خوانده نشده",
+  "unread_messages_desc": "پیام‌های جدیدی دارید که هنوز مشاهده نکرده‌اید",
+  "mark_as_read": "خوانده شد",
+  "view_detail": "مشاهده جزئیات",
+  "message_detail": "جزئیات پیام",
+  "close": "بستن"
 }
