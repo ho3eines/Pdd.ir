@@ -1,0 +1,65 @@
+@using Pdd.ir.Client.Services
+@inject IModalService Modal
+
+<div class="ip-wrapper" @onclick="OpenPicker">
+    <div class="ip-preview">
+        @if (!string.IsNullOrEmpty(Value))
+        {
+            <i class="bi @Value"></i>
+        }
+        else
+        {
+            <i class="bi bi-plus-lg"></i>
+        }
+    </div>
+    <input type="text"
+           class="form-control ip-input"
+           value="@(Value ?? "")"
+           placeholder="انتخاب آیکون..."
+           readonly
+           style="cursor:pointer;" />
+</div>
+
+<style>
+    .ip-wrapper {
+        position: relative; width: 100%; cursor: pointer;
+        display: flex; align-items: center;
+    }
+    .ip-preview {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        width: 28px; height: 28px; border-radius: 8px;
+        background: rgba(13,110,253,0.1); border: 1px solid rgba(13,110,253,0.2);
+        pointer-events: none; z-index: 1;
+        display: flex; align-items: center; justify-content: center;
+        color: #0d6efd; font-size: 0.85rem;
+    }
+    .ip-input {
+        padding-right: 48px !important; cursor: pointer;
+    }
+
+    [data-theme="light"] .ip-preview {
+        background: rgba(13,110,253,0.08);
+        border-color: rgba(13,110,253,0.15);
+    }
+</style>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private async Task OpenPicker()
+    {
+        var result = await Modal.ShowAsync<string, IconPickerModal>(
+            "انتخاب آیکون",
+            new Dictionary<string, object> { { "CurrentValue", Value ?? "" } },
+            closeButton: true,
+            modalSize: "modal-sm"
+        );
+
+        if (!string.IsNullOrEmpty(result))
+        {
+            Value = result;
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+}
