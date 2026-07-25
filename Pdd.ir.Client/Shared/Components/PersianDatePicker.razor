@@ -2,64 +2,24 @@
 @using Pdd.ir.Client.Services
 @inject IModalService Modal
 
-<div class="pdp-input-wrapper" @onclick="OpenCalendar">
+<div class="pdp-wrapper" @onclick="OpenCalendar">
     <input type="text"
-           class="pdp-input @CssClass"
+           class="form-control pdp-input"
            value="@inputText"
            placeholder="@Placeholder"
-           readonly />
-    <i class="bi bi-calendar3 pdp-input-icon"></i>
+           readonly
+           style="cursor:pointer;padding-left:36px;" />
+    <i class="bi bi-calendar3 pdp-icon"></i>
 </div>
 
 <style>
-    .pdp-input-wrapper {
-        position: relative;
-        width: 100%;
-        cursor: pointer;
+    .pdp-wrapper { position: relative; width: 100%; cursor: pointer; }
+    .pdp-icon {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: var(--text-secondary, #9CA3AF); pointer-events: none;
+        font-size: 0.9rem; transition: color 0.2s ease;
     }
-    .pdp-input {
-        width: 100%;
-        padding-left: 36px !important;
-        cursor: pointer;
-        background: var(--pdd-glass, rgba(255,255,255,0.04)) !important;
-        border: 1px solid var(--pdd-glass-border, rgba(255,255,255,0.08)) !important;
-        border-radius: 12px !important;
-        color: var(--pdd-text, #E5E7EB) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        transition: all 0.2s ease;
-    }
-    .pdp-input:focus {
-        border-color: rgba(13,110,253,0.5) !important;
-        box-shadow: 0 0 0 3px rgba(13,110,253,0.15) !important;
-        outline: none;
-    }
-    .pdp-input::placeholder {
-        color: var(--text-secondary, #9CA3AF);
-    }
-    .pdp-input-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary, #9CA3AF);
-        pointer-events: none;
-        font-size: 0.9rem;
-        transition: color 0.2s ease;
-    }
-    .pdp-input-wrapper:hover .pdp-input-icon {
-        color: #0d6efd;
-    }
-
-    /* ── Light Mode ── */
-    [data-theme="light"] .pdp-input {
-        background: rgba(0,0,0,0.03) !important;
-        border-color: rgba(0,0,0,0.1) !important;
-        color: #1a1a2e !important;
-    }
-    [data-theme="light"] .pdp-input:focus {
-        border-color: rgba(13,110,253,0.5) !important;
-    }
+    .pdp-wrapper:hover .pdp-icon { color: #0d6efd; }
 </style>
 
 @code {
