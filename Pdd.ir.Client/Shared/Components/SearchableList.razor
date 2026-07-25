@@ -52,7 +52,7 @@
 </div>
 
 @code {
-    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Width { get; set; } public double Height { get; set; } }
+    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Bottom { get; set; } public double Width { get; set; } public double Height { get; set; } }
 
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public Func<TItem, string> TextSelector { get; set; } = item => item?.ToString() ?? string.Empty;
@@ -128,11 +128,11 @@
     {
         try
         {
-            await Task.Delay(10);
-            var rect = await JS.InvokeAsync<DomRect>("getPositionFromElement", InputRef);
+            await Task.Delay(20);
+            var rect = await JS.InvokeAsync<DomRect>("getInputRect", InputRef);
             if (rect != null)
             {
-                await JS.InvokeVoidAsync("positionDropdown", DropdownRef, rect);
+                await JS.InvokeVoidAsync("positionDropdownBelow", DropdownRef, rect.Left, rect.Bottom + 4, rect.Width);
             }
         }
         catch { }

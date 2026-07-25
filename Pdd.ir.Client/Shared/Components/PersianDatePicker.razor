@@ -90,7 +90,7 @@
 </style>
 
 @code {
-    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Width { get; set; } public double Height { get; set; } }
+    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Bottom { get; set; } public double Width { get; set; } public double Height { get; set; } }
 
     [Parameter] public long? Value { get; set; }
     [Parameter] public EventCallback<long?> ValueChanged { get; set; }
@@ -140,11 +140,11 @@
     {
         try
         {
-            await Task.Delay(10);
-            var rect = await JS.InvokeAsync<DomRect>("getPositionFromElement", InputRef);
+            await Task.Delay(20);
+            var rect = await JS.InvokeAsync<DomRect>("getInputRect", InputRef);
             if (rect != null)
             {
-                await JS.InvokeVoidAsync("positionDropdown", DropdownRef, rect);
+                await JS.InvokeVoidAsync("positionDropdownBelow", DropdownRef, rect.Left, rect.Bottom + 4, rect.Width);
             }
         }
         catch { }
