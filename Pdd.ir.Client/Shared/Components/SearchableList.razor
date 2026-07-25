@@ -1,102 +1,19 @@
 @using Microsoft.AspNetCore.Components.Web
-@using Microsoft.JSInterop
+@using Pdd.ir.Client.Services
 @typeparam TItem
 @typeparam TValue
-@implements IAsyncDisposable
-@inject IJSRuntime JS
+@inject IModalService Modal
 
 <div class="sl-wrapper">
-    <input @ref="InputRef" type="text"
+    <input type="text"
            class="form-control"
-           @bind="displayText"
-           @oninput="OnSearchInput"
-           @onfocus="OpenDropdown"
-           @onblur="OnBlurInput"
-           @onkeydown="OnKeyDown"
-           @onkeydown:preventDefault="@shouldPreventDefault"
-           placeholder="@Placeholder" />
+           value="@displayText"
+           @onclick="OpenModal"
+           @onfocus="OpenModal"
+           placeholder="@Placeholder"
+           readonly
+           style="cursor:pointer;" />
 </div>
-
-@if (isDropdownOpen)
-{
-    <div @ref="DropdownRef" class="sl-dropdown">
-        @if (filteredItems.Any())
-        {
-            @for (int i = 0; i < filteredItems.Count; i++)
-            {
-                var item = filteredItems[i];
-                var itemIndex = i;
-                <div class="sl-item @(highlightedIndex == itemIndex ? "sl-item--active" : "")"
-                     @onclick:stopPropagation
-                     @onclick="@(() => SelectItem(item))"
-                     @onmouseenter="@(() => highlightedIndex = itemIndex)">
-                    @TextSelector(item)
-                </div>
-            }
-        }
-        else
-        {
-            <div class="sl-empty">
-                <i class="bi bi-search"></i>
-                <span>موردی یافت نشد</span>
-            </div>
-        }
-    </div>
-}
-
-<style>
-    .sl-wrapper { position: relative; width: 100%; }
-
-    .sl-dropdown {
-        position: fixed;
-        z-index: 99999;
-        background: rgba(15, 20, 30, 0.92);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        box-shadow: 0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-        max-height: 220px;
-        overflow-y: auto;
-        padding: 6px;
-    }
-    .sl-dropdown::-webkit-scrollbar { width: 5px; }
-    .sl-dropdown::-webkit-scrollbar-track { background: transparent; }
-    .sl-dropdown::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-
-    .sl-item {
-        display: block; width: 100%; padding: 10px 14px;
-        font-size: 0.875rem; font-weight: 500;
-        color: #E5E7EB; text-align: inherit; text-decoration: none;
-        white-space: nowrap; background: transparent;
-        border: 1px solid transparent; border-radius: 10px;
-        cursor: pointer; transition: all 0.15s ease;
-    }
-    .sl-item:hover, .sl-item--active {
-        background: rgba(13,110,253,0.12);
-        border-color: rgba(13,110,253,0.2);
-        color: #fff;
-    }
-
-    .sl-empty {
-        display: flex; flex-direction: column; align-items: center;
-        gap: 6px; padding: 20px 16px;
-        color: #9CA3AF; font-size: 0.85rem;
-    }
-
-    [data-theme="light"] .sl-dropdown {
-        background: rgba(255,255,255,0.95);
-        border-color: rgba(0,0,0,0.08);
-        box-shadow: 0 25px 60px rgba(0,0,0,0.12);
-    }
-    [data-theme="light"] .sl-item { color: #1a1a2e; }
-    [data-theme="light"] .sl-item:hover, [data-theme="light"] .sl-item--active {
-        background: rgba(13,110,253,0.08);
-        border-color: rgba(13,110,253,0.15);
-        color: #0d6efd;
-    }
-    [data-theme="light"] .sl-empty { color: #6c757d; }
-</style>
 
 @code {
     [Parameter] public List<TItem> Items { get; set; } = new();
@@ -108,31 +25,15 @@
     [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
     [Parameter] public string Placeholder { get; set; } = "جستجو...";
 
-    private ElementReference InputRef;
-    private ElementReference DropdownRef;
-    private string searchTerm = string.Empty;
     private string displayText = string.Empty;
-    private List<TItem> filteredItems = new();
-    private bool isDropdownOpen = false;
-    private int highlightedIndex = -1;
-    private bool shouldPreventDefault = false;
 
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        UpdateDisplayTextFromSelectedItem();
-        FilterItems();
+        UpdateDisplayText();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (isDropdownOpen && DropdownRef.Context != null)
-        {
-            await JS.InvokeVoidAsync("slPositionDropdown", InputRef, DropdownRef);
-        }
-    }
-
-    private void UpdateDisplayTextFromSelectedItem()
+    private void UpdateDisplayText()
     {
         TItem? itemToSync = default;
         if (Value is not null && ValueSelector is not null)
@@ -143,100 +44,40 @@
         displayText = itemToSync is not null ? TextSelector(itemToSync) : string.Empty;
     }
 
-    private void FilterItems()
+    private async Task OpenModal()
     {
-        filteredItems = string.IsNullOrWhiteSpace(searchTerm)
-            ? Items.ToList()
-            : Items.Where(item => TextSelector(item).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        var currentValue = default(TItem);
+        if (Value is not null && ValueSelector is not null)
+            currentValue = Items.FirstOrDefault(item => EqualityComparer<TValue>.Default.Equals(ValueSelector(item), Value));
+        else if (SelectedItem is not null)
+            currentValue = SelectedItem;
 
-        highlightedIndex = (isDropdownOpen && filteredItems.Any()) ? 0 : -1;
-    }
+        var key = SearchableListRegistry.Register(
+            Items,
+            item => TextSelector((TItem)item),
+            currentValue
+        );
 
-    private void OnSearchInput(ChangeEventArgs e)
-    {
-        searchTerm = e.Value?.ToString() ?? string.Empty;
-        FilterItems();
-        if (!isDropdownOpen) OpenDropdown();
-        else StateHasChanged();
-    }
+        var result = await Modal.ShowAsync<string, SearchableListModal>(
+            Placeholder,
+            new Dictionary<string, object> { { "RegistryKey", key } },
+            modalSize: "modal-sm"
+        );
 
-    private async Task FocusInput()
-    {
-        try { await InputRef.FocusAsync(); OpenDropdown(); } catch { }
-    }
-
-    private void OpenDropdown()
-    {
-        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); }
-    }
-
-    private async Task OnBlurInput()
-    {
-        await Task.Delay(200);
-        isDropdownOpen = false;
-        shouldPreventDefault = false;
-        UpdateDisplayTextFromSelectedItem();
-        StateHasChanged();
-    }
-
-    private void OnKeyDown(KeyboardEventArgs e)
-    {
-        if (!isDropdownOpen && (e.Key == "ArrowDown" || e.Key == "ArrowUp" || e.Key == "Enter"))
+        if (!string.IsNullOrEmpty(result))
         {
-            shouldPreventDefault = true;
-            OpenDropdown();
-            return;
-        }
+            var matchedItem = Items.FirstOrDefault(item => TextSelector(item) == result);
+            if (matchedItem is not null)
+            {
+                SelectedItem = matchedItem;
+                displayText = TextSelector(matchedItem);
 
-        if (!isDropdownOpen) { shouldPreventDefault = false; return; }
+                if (SelectedItemChanged.HasDelegate)
+                    await SelectedItemChanged.InvokeAsync(SelectedItem);
 
-        switch (e.Key)
-        {
-            case "ArrowDown":
-                shouldPreventDefault = true;
-                highlightedIndex = (highlightedIndex + 1) % filteredItems.Count;
-                break;
-            case "ArrowUp":
-                shouldPreventDefault = true;
-                highlightedIndex = highlightedIndex <= 0 ? filteredItems.Count - 1 : highlightedIndex - 1;
-                break;
-            case "Enter":
-                if (highlightedIndex >= 0 && highlightedIndex < filteredItems.Count)
-                {
-                    shouldPreventDefault = true;
-                    _ = SelectItem(filteredItems[highlightedIndex]);
-                }
-                else shouldPreventDefault = false;
-                break;
-            case "Escape":
-            case "Tab":
-                shouldPreventDefault = e.Key == "Escape";
-                isDropdownOpen = false;
-                UpdateDisplayTextFromSelectedItem();
-                break;
-            default:
-                shouldPreventDefault = false;
-                break;
+                if (ValueChanged.HasDelegate && ValueSelector is not null)
+                    await ValueChanged.InvokeAsync(ValueSelector(matchedItem));
+            }
         }
     }
-
-    private async Task SelectItem(TItem item)
-    {
-        SelectedItem = item;
-        displayText = TextSelector(item);
-        searchTerm = string.Empty;
-        isDropdownOpen = false;
-        highlightedIndex = -1;
-        shouldPreventDefault = false;
-
-        if (SelectedItemChanged.HasDelegate)
-            await SelectedItemChanged.InvokeAsync(SelectedItem);
-
-        if (ValueChanged.HasDelegate && ValueSelector is not null)
-            await ValueChanged.InvokeAsync(ValueSelector(item));
-
-        try { await InputRef.FocusAsync(); } catch { }
-    }
-
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

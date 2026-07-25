@@ -1,0 +1,190 @@
+@using Pdd.ir.Client.Services
+@inject IModalService Modal
+
+<div class="slm">
+    <div class="slm-search">
+        <i class="bi bi-search slm-search-icon"></i>
+        <input type="text"
+               class="slm-search-input"
+               @bind="searchTerm"
+               @oninput="OnSearch"
+               placeholder="جستجو..."
+               @ref="SearchInputRef" />
+        @if (!string.IsNullOrEmpty(searchTerm))
+        {
+            <button class="slm-clear" @onclick="ClearSearch">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        }
+    </div>
+
+    <div class="slm-list">
+        @if (filtered.Any())
+        {
+            @foreach (var item in filtered)
+            {
+                var text = data!.TextSelector(item);
+                var isSelected = text == currentText;
+                <button class="slm-item @(isSelected ? "slm-item--selected" : "")"
+                        @onclick="() => SelectItem(text)">
+                    @if (isSelected)
+                    {
+                        <i class="bi bi-check2 slm-check"></i>
+                    }
+                    <span>@text</span>
+                </button>
+            }
+        }
+        else
+        {
+            <div class="slm-empty">
+                <i class="bi bi-search"></i>
+                <span>موردی یافت نشد</span>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .slm { min-width: 280px; }
+
+    .slm-search {
+        position: relative;
+        margin-bottom: 12px;
+    }
+    .slm-search-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: #9CA3AF; font-size: 0.9rem; pointer-events: none;
+    }
+    .slm-search-input {
+        width: 100%;
+        padding: 12px 40px 12px 40px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        color: #E5E7EB;
+        font-size: 0.875rem;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .slm-search-input:focus {
+        border-color: rgba(13,110,253,0.5);
+        box-shadow: 0 0 0 3px rgba(13,110,253,0.15);
+    }
+    .slm-search-input::placeholder { color: #9CA3AF; }
+    .slm-clear {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; color: #9CA3AF; cursor: pointer;
+        padding: 4px; border-radius: 6px; font-size: 0.7rem;
+        transition: all 0.15s ease;
+    }
+    .slm-clear:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+    .slm-list {
+        max-height: 260px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .slm-list::-webkit-scrollbar { width: 5px; }
+    .slm-list::-webkit-scrollbar-track { background: transparent; }
+    .slm-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+    .slm-item {
+        display: flex; align-items: center; gap: 10px;
+        width: 100%; padding: 11px 14px;
+        background: transparent; border: 1px solid transparent;
+        border-radius: 10px; color: #E5E7EB;
+        font-size: 0.875rem; font-weight: 500;
+        cursor: pointer; transition: all 0.15s ease;
+        text-align: right;
+    }
+    .slm-item:hover {
+        background: rgba(13,110,253,0.1);
+        border-color: rgba(13,110,253,0.2);
+    }
+    .slm-item--selected {
+        background: rgba(13,110,253,0.15);
+        border-color: rgba(13,110,253,0.3);
+        color: #fff;
+    }
+    .slm-check { color: #0d6efd; font-size: 1rem; }
+
+    .slm-empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 6px; padding: 28px 16px; color: #9CA3AF; font-size: 0.85rem;
+    }
+
+    [data-theme="light"] .slm-search-input {
+        background: rgba(0,0,0,0.03);
+        border-color: rgba(0,0,0,0.1);
+        color: #1a1a2e;
+    }
+    [data-theme="light"] .slm-item { color: #1a1a2e; }
+    [data-theme="light"] .slm-item:hover {
+        background: rgba(13,110,253,0.08);
+        border-color: rgba(13,110,253,0.15);
+    }
+    [data-theme="light"] .slm-item--selected {
+        background: rgba(13,110,253,0.1);
+        border-color: rgba(13,110,253,0.2);
+        color: #0d6efd;
+    }
+    [data-theme="light"] .slm-check { color: #0d6efd; }
+    [data-theme="light"] .slm-search-icon { color: #6c757d; }
+    [data-theme="light"] .slm-empty { color: #6c757d; }
+</style>
+
+@code {
+    [Parameter] public string RegistryKey { get; set; } = "";
+
+    private ElementReference SearchInputRef;
+    private SearchableListRegistry.ListData? data;
+    private List<object> allItems = new();
+    private List<object> filtered = new();
+    private string searchTerm = string.Empty;
+    private string currentText = "";
+
+    protected override void OnInitialized()
+    {
+        data = SearchableListRegistry.Get(RegistryKey);
+        if (data?.Items is System.Collections.IEnumerable enumerable)
+        {
+            foreach (var item in enumerable)
+                allItems.Add(item);
+        }
+
+        if (data?.CurrentValue != null)
+            currentText = data.TextSelector(data.CurrentValue);
+
+        filtered = allItems.ToList();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await SearchInputRef.FocusAsync(); } catch { }
+        }
+    }
+
+    private void OnSearch()
+    {
+        filtered = string.IsNullOrWhiteSpace(searchTerm)
+            ? allItems.ToList()
+            : allItems.Where(i => data!.TextSelector(i).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        filtered = allItems.ToList();
+    }
+
+    private void SelectItem(string text)
+    {
+        SearchableListRegistry.Remove(RegistryKey);
+        Modal.Close(text);
+    }
+}
