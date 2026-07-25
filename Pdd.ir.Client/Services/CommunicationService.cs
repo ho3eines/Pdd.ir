@@ -429,6 +429,12 @@ namespace Pdd.ir.Client.Services
                 var adminEntity = parts.FirstOrDefault(p => p != "api" && p != "admin") ?? entity;
                 return ($"{adminEntity}.admin", null);
             }
+
+            // PUT api/contact/{id}/read → contact.markread
+            if (method == "PUT" && parts.Any(p => p == "read"))
+            {
+                return ($"{entity}.markread", id);
+            }
             
             return ($"{entity}.list", null);
         }
@@ -438,7 +444,7 @@ namespace Pdd.ir.Client.Services
             var parts = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return null;
             var last = parts[^1];
-            if (last is "api" or "admin" or "unread" or "count" or "markread" or "password") return null;
+            if (last is "api" or "admin" or "unread" or "count" or "markread" or "password" or "read") return null;
             if (int.TryParse(last, out _)) return last;
             return null;
         }
