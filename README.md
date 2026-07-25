@@ -251,12 +251,13 @@ Pdd.ir/
 │   │       └── Settings.razor        # تنظیمات
 │   ├── Shared/
 │   │   ├── Components/
-│   │   │   ├── PddTable.razor        # جدول هوشمند
+│   │   │   ├── PddTable.razor        # جدول هوشمند با جستجو و صفحه‌بندی
 │   │   │   ├── Modal.razor           # مودال سراسری
-│   │   │   ├── SearchableList.razor  # لیست با جستجو
+│   │   │   ├── SearchableList.razor  # لیست dropdown با جستجو
 │   │   │   ├── PersianDatePicker.razor # تقویم شمسی
-│   │   │   ├── CKEditorBlazor.razor  # ویرایشگر متن
-│   │   │   ├── FileUpload.razor      # آپلود فایل
+│   │   │   ├── CKEditorBlazor.razor  # ویرایشگر متن غنی
+│   │   │   ├── FileUpload.razor      # آپلود فایل و تصویر
+│   │   │   ├── BootstrapNumericInput.razor # ورودی عدد فرمت‌دار
 │   │   │   └── Skeleton.razor        # اسکلت لودینگ
 │   │   └── Dialogs/                  # دیالوگ‌های CRUD
 │   │       ├── ProductDialog.razor
@@ -267,15 +268,32 @@ Pdd.ir/
 │   │       ├── HomeSlideDialog.razor
 │   │       ├── HomeProductDialog.razor
 │   │       ├── ContactMessageDialog.razor
+│   │       ├── MessageViewDialog.razor
+│   │       ├── PasswordDialog.razor
 │   │       ├── UserDialog.razor
 │   │       └── RoleDialog.razor
 │   ├── Services/
 │   │   ├── ICommunicationService.cs  # رابط ارتباط
 │   │   ├── CommunicationService.cs   # ارتباط WS + HTTP
-│   │   ├── AuthService.cs            # احراز هویت
+│   │   ├── SecurityService.cs        # Handshake + Session + Auth Header
 │   │   ├── EncryptionService.cs      # رمزنگاری AES
+│   │   ├── PddEncryptionService.cs   # رمزنگاری PDD
+│   │   ├── AuthService.cs            # احراز هویت
 │   │   ├── TranslateService.cs       # ترجمه
-│   │   └── FileUploadService.cs      # آپلود فایل
+│   │   ├── ITranslateService.cs      # رابط ترجمه
+│   │   ├── FileUploadService.cs      # آپلود فایل
+│   │   ├── ModalService.cs           # مدیریت مودال
+│   │   ├── IModalService.cs          # رابط مودال
+│   │   ├── AlertService.cs           # Toast notification
+│   │   ├── IAlertService.cs          # رابط Alert
+│   │   ├── AppStateService.cs        # وضعیت برنامه
+│   │   ├── IAppStateService.cs       # رابط AppState
+│   │   ├── ClientStorageService.cs   # LocalStorage/Session/Cookie
+│   │   ├── IClientStorageService.cs  # رابط Storage
+│   │   ├── IEncryptionService.cs     # رابط رمزنگاری
+│   │   ├── ConnectionService.cs      # مدیریت اتصال
+│   │   ├── AnimationService.cs       # انیمیشن‌ها
+│   │   └── ApiClient.cs              # کلاینت API
 │   ├── Models/                       # DTOهای کلاینت
 │   └── wwwroot/
 │       ├── css/app.css               # فایل CSS واحد
@@ -286,12 +304,35 @@ Pdd.ir/
 ├── Pdd.ir.Server/                    # سرور ASP.NET Core
 │   ├── Program.cs                    # نقطه شروع + ثبت سرویس‌ها
 │   ├── Controllers/                  # REST API Controllers
+│   │   ├── AuthController.cs         # احراز هویت (لاگین/لاگاوت)
+│   │   ├── UserController.cs         # مدیریت کاربران
+│   │   ├── RoleController.cs         # مدیریت نقش‌ها
+│   │   ├── PermissionController.cs   # مدیریت دسترسی‌ها
+│   │   ├── ProductController.cs      # محصولات
+│   │   ├── BlogController.cs         # وبلاگ
+│   │   ├── PortfolioController.cs    # نمونه‌کارها
+│   │   ├── ClientController.cs       # مشتریان
+│   │   ├── EventController.cs        # رویدادها
+│   │   ├── ContactController.cs      # پیام‌ها
+│   │   ├── PageController.cs         # صفحات
+│   │   ├── SettingsController.cs     # تنظیمات
+│   │   ├── HomeSlideController.cs    # اسلایدرها
+│   │   ├── HomeProductController.cs  # محصولات صفحه اصلی
+│   │   ├── UploadController.cs       # آپلود فایل
+│   │   ├── ImageController.cs        # مدیریت تصاویر
+│   │   ├── FileController.cs         # مدیریت فایل‌ها
+│   │   └── ClientImageController.cs  # تصاویر مشتریان
 │   ├── WebSocket/
 │   │   └── WebSocketHandler.cs       # مدیریت ارتباط WebSocket
 │   ├── Services/
 │   │   ├── SessionAuthAttribute.cs   # فیلتر احراز هویت
 │   │   ├── RequestDecryptionMiddleware.cs  # رمزگشایی درخواست‌ها
 │   │   ├── ResponseEncryptionMiddleware.cs # رمزنگاری پاسخ‌ها
+│   │   ├── JwtService.cs             # سرویس JWT
+│   │   ├── CryptoJsService.cs        # سرویس رمزنگاری
+│   │   ├── AesKeyStore.cs            # ذخیره کلید AES
+│   │   ├── ConnectionManager.cs      # مدیریت اتصالات WebSocket
+│   │   ├── AuthService.cs            # سرویس احراز هویت
 │   │   └── ScriptExecutor.cs         # اجرای خودکار اسکریپت‌ها
 │   └── wwwroot/resource/             # اسکریپت‌های SQL
 │
@@ -299,19 +340,42 @@ Pdd.ir/
 │   ├── Models/
 │   │   ├── Entities/                 # مدل‌های دیتابیس
 │   │   └── DTOs/                     # Data Transfer Objects
-│   └── Services/                     # سرویس‌های بیزینس
+│   └── Services/
+│       ├── AuthBusinessService.cs    # احراز هویت
+│       ├── UserBusinessService.cs    # کاربران
+│       ├── ProductBusinessService.cs # محصولات
+│       ├── BlogBusinessService.cs    # وبلاگ
+│       ├── PortfolioBusinessService.cs # نمونه‌کارها
+│       ├── ClientBusinessService.cs  # مشتریان
+│       ├── EventBusinessService.cs   # رویدادها
+│       ├── ContactBusinessService.cs # پیام‌ها
+│       ├── PageBusinessService.cs    # صفحات
+│       ├── SettingsBusinessService.cs # تنظیمات
+│       ├── RolePermissionBusinessService.cs # نقش و دسترسی
+│       ├── HomeSlideBusinessService.cs # اسلایدرها
+│       └── HomeProductBusinessService.cs # محصولات صفحه اصلی
 │
 ├── Pdd.ir.Data/                      # لایه دیتا (Dapper)
 │   ├── IDbService.cs                 # رابط دیتابیس
 │   ├── DbService.cs                  # پیاده‌سازی Dapper
-│   └── Queries/                      # کوئری‌های SQL
+│   └── Queries/
+│       ├── UserQueries.cs            # کوئری کاربران
+│       ├── ProductQueries.cs         # کوئری محصولات
+│       ├── BlogQueries.cs            # کوئری وبلاگ
+│       ├── PortfolioQueries.cs       # کوئری نمونه‌کارها
+│       ├── ClientQueries.cs          # کوئری مشتریان
+│       ├── EventQueries.cs           # کوئری رویدادها
+│       ├── ContactQueries.cs         # کوئری پیام‌ها
+│       ├── PageQueries.cs            # کوئری صفحات
+│       ├── RolePermissionQueries.cs  # کوئری نقش و دسترسی
+│       ├── HomeSlideQueries.cs       # کوئری اسلایدرها
+│       └── HomeProductQueries.cs     # کوئری محصولات صفحه اصلی
 │
-├── Pdd.ir.Shared/                    # کامپوننت‌های مشترک
-│   ├── Components/                   # کامپوننت‌های UI
-│   ├── Services/                     # سرویس‌های مشترک
-│   └── Helpers/                      # توابع کمکی (DateHelper)
+├── Pdd.ir.Tests/                     # تست‌ها
 │
-└── Pdd.ir.slnx                       # Solution فایل
+├── Pdd.ir.slnx                       # Solution فایل
+├── AGENTS.md                         # قوانین توسعه
+└── README.md                         # این فایل
 ```
 
 ---
@@ -939,6 +1003,16 @@ GO
 | `Page` | `PageDto` | `PageQueries` | `PageBusinessService` | `PageController` | — | — |
 | `Role` | `RoleDto` | `RoleQueries` | `RoleBusinessService` | `RoleController` | `Roles.razor` | `RoleDialog.razor` |
 | `Settings` | `SettingsDto` | `SettingsQueries` | `SettingsBusinessService` | `SettingsController` | `Settings.razor` | — |
+
+### سرویس‌های اضافی (غیر CRUD)
+
+| Controller | توضیح |
+|-----------|-------|
+| `AuthController` | لاگین، لاگاوت، Handshake |
+| `UploadController` | آپلود فایل و تصویر |
+| `ImageController` | دریافت و مدیریت تصاویر |
+| `FileController` | دانلود فایل |
+| `ClientImageController` | تصاویر اختصاصی مشتریان |
 
 ---
 
