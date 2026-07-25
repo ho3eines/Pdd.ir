@@ -3046,6 +3046,9 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── Skeleton ── */
 .table-skeleton { padding: 16px 24px; }
 
+/* ── Desktop: hide td-label (redundant with thead) ── */
+.table tbody td .td-label { display: none !important; }
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — Mobile Card Layout
    ═══════════════════════════════════════════════════════════ */
@@ -3083,7 +3086,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   }
 
   .table tbody td .td-label {
-    display: block;
+    display: block !important;
     font-size: 11px;
     font-weight: 600;
     color: rgba(255,255,255,0.35);

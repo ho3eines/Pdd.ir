@@ -372,6 +372,7 @@ namespace Pdd.ir.Server.WebSocket
             {
                 // Contact
                 ("contact", "submit") => await HandleContactSubmit(scope, request.Data),
+                ("contact", "create") => await HandleContactSubmit(scope, request.Data),
                 ("contact", "markread") => await HandleContactMarkRead(scope, request.Data),
                 ("contact", "unread") => await HandleContactUnread(scope),
                 ("contact", "count") => await HandleContactCount(scope),
