@@ -210,7 +210,7 @@ sqlcmd -S . -U sa -P 123456 -Q "CREATE DATABASE pdd;"
 
 ### نحوه کار
 
-1. **پروژه Client** (`Pdd.ir.Client`) یک Blazor WebAssembly独立 است که در مرورگر اجرا می‌شود
+1. **پروژه Client** (`Pdd.ir.Client`) یک Blazor WebAssembly است که در مرورگر اجرا می‌شود
 2. **پروژه Server** (`Pdd.ir.Server`) فایل‌های build شده Client را از `wwwroot` سرو می‌کند
 3. **ارتباط** از طریق WebSocket (اولویت) یا HTTP Fallback انجام می‌شود
 4. **دیتابیس** SQL Server با Dapper ORM متصل می‌شود
@@ -1147,7 +1147,6 @@ GO
 | Skeleton Loading | لودینگ با Skeleton (نه spinner) |
 | Glassmorphism | استایل شیشه‌ای |
 | RTL | راست به چپ فارسی |
-| Git | هر تغییر → commit + push |
 | `ICommunicationService` | تمام ارتباطات از این سرویس |
 | `PddTable` | تمام جدول‌ها با این کامپوننت |
 | `SearchableList` | لیست‌های dropdown با جستجو |
