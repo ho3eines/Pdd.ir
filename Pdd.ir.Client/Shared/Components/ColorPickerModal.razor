@@ -1,0 +1,175 @@
+@using Pdd.ir.Client.Services
+@inject IModalService Modal
+
+<div class="cpm">
+    <!-- Preset Colors -->
+    <div class="cpm-section">
+        <div class="cpm-label">رنگ‌های پیش‌فرض</div>
+        <div class="cpm-grid">
+            @foreach (var c in presetColors)
+            {
+                <button class="cpm-swatch @(CurrentValue == c.Value ? "cpm-swatch--selected" : "")"
+                        style="background:@c.Value;"
+                        @onclick="() => SelectColor(c.Value)"
+                        title="@c.Name">
+                    @if (CurrentValue == c.Value)
+                    {
+                        <i class="bi bi-check2"></i>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Opacity Presets (for background colors) -->
+    @if (ShowOpacity)
+    {
+        <div class="cpm-section">
+            <div class="cpm-label">نسخه شفاف</div>
+            <div class="cpm-grid">
+                @foreach (var c in opacityColors)
+                {
+                    <button class="cpm-swatch @(CurrentValue == c.Value ? "cpm-swatch--selected" : "")"
+                            style="background:@c.Value;"
+                            @onclick="() => SelectColor(c.Value)"
+                            title="@c.Name">
+                        @if (CurrentValue == c.Value)
+                        {
+                            <i class="bi bi-check2"></i>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Custom Color -->
+    <div class="cpm-section">
+        <div class="cpm-label">رنگ سفارشی</div>
+        <div class="cpm-custom">
+            <input type="color" class="cpm-color-input" value="@customHex" @oninput="OnColorInput" />
+            <input type="text" class="cpm-text-input" value="@customHex" @onchange="OnHexChange" placeholder="#000000" />
+        </div>
+    </div>
+</div>
+
+<style>
+    .cpm { min-width: 280px; }
+    .cpm-section { margin-bottom: 16px; }
+    .cpm-section:last-child { margin-bottom: 0; }
+    .cpm-label {
+        font-size: 0.75rem; font-weight: 600; color: #9CA3AF;
+        margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .cpm-grid {
+        display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
+    }
+    .cpm-swatch {
+        width: 100%; aspect-ratio: 1; border-radius: 10px;
+        border: 2px solid transparent; cursor: pointer;
+        transition: all 0.15s ease; position: relative;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 0.75rem; font-weight: 700;
+    }
+    .cpm-swatch:hover {
+        transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .cpm-swatch--selected {
+        border-color: #fff !important;
+        box-shadow: 0 0 0 2px #0d6efd, 0 4px 12px rgba(0,0,0,0.3);
+        transform: scale(1.1);
+    }
+
+    .cpm-custom {
+        display: flex; align-items: center; gap: 10px;
+    }
+    .cpm-color-input {
+        width: 42px; height: 42px; border: none; border-radius: 10px;
+        cursor: pointer; background: none; padding: 0;
+    }
+    .cpm-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+    .cpm-color-input::-webkit-color-swatch { border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+    .cpm-text-input {
+        flex: 1; padding: 10px 14px;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px; color: #E5E7EB; font-size: 0.85rem;
+        font-family: monospace; outline: none;
+    }
+    .cpm-text-input:focus {
+        border-color: rgba(13,110,253,0.5);
+    }
+
+    [data-theme="light"] .cpm-label { color: #6c757d; }
+    [data-theme="light"] .cpm-text-input { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #1a1a2e; }
+    [data-theme="light"] .cpm-color-input::-webkit-color-swatch { border-color: rgba(0,0,0,0.1); }
+</style>
+
+@code {
+    [Parameter] public string? CurrentValue { get; set; }
+    [Parameter] public bool ShowOpacity { get; set; } = false;
+
+    private string customHex = "#0D6EFD";
+
+    record ColorOption(string Name, string Value);
+
+    List<ColorOption> presetColors = new()
+    {
+        new("آبی", "#0D6EFD"),
+        new("-indigo", "#6610F2"),
+        new("بنفش", "#6F42C1"),
+        new("صورتی", "#D63384"),
+        new("قرمز", "#DC3545"),
+        new("نارنجی", "#FD7E14"),
+        new("زرد", "#FFC107"),
+        new("سبز", "#198754"),
+        new("تهال", "#20C997"),
+        new("فیروزه", "#0DCAF0"),
+        new("خاکستری", "#6C757D"),
+        new("تیره", "#212529"),
+        new("سفید", "#FFFFFF"),
+        new("_slate", "#475569"),
+        new("zinc", "#71717a"),
+        new("rose", "#f43f5e"),
+    };
+
+    List<ColorOption> opacityColors = new()
+    {
+        new("آبی ۱۵٪", "rgba(13,110,253,0.15)"),
+        new("بنفش ۱۵٪", "rgba(111,66,193,0.15)"),
+        new("صورتی ۱۵٪", "rgba(214,51,132,0.15)"),
+        new("قرمز ۱۵٪", "rgba(220,53,69,0.15)"),
+        new("نارنجی ۱۵٪", "rgba(253,126,20,0.15)"),
+        new("زرد ۱۵٪", "rgba(255,193,7,0.15)"),
+        new("سبز ۱۵٪", "rgba(25,135,84,0.15)"),
+        new("فیروزه ۱۵٪", "rgba(13,202,240,0.15)"),
+        new("آبی ۱۰٪", "rgba(13,110,253,0.10)"),
+        new("بنفش ۱۰٪", "rgba(111,66,193,0.10)"),
+        new("صورتی ۱۰٪", "rgba(214,51,132,0.10)"),
+        new("سبز ۱۰٪", "rgba(25,135,84,0.10)"),
+    };
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(CurrentValue))
+            customHex = CurrentValue.StartsWith("#") ? CurrentValue : "#0D6EFD";
+    }
+
+    private void OnColorInput(ChangeEventArgs e)
+    {
+        customHex = e.Value?.ToString() ?? "#000000";
+        Modal.Close(customHex);
+    }
+
+    private void OnHexChange(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString()?.Trim() ?? "";
+        if (!val.StartsWith("#")) val = "#" + val;
+        customHex = val;
+        Modal.Close(customHex);
+    }
+
+    private void SelectColor(string color)
+    {
+        Modal.Close(color);
+    }
+}

@@ -1,0 +1,68 @@
+@using Pdd.ir.Client.Services
+@inject IModalService Modal
+
+<div class="cp-wrapper" @onclick="OpenPicker">
+    <div class="cp-preview" style="background:@(Value ?? "#0D6EFD");">
+        @if (string.IsNullOrEmpty(Value))
+        {
+            <i class="bi bi-palette"></i>
+        }
+    </div>
+    <input type="text"
+           class="form-control cp-input"
+           value="@(Value ?? "")"
+           placeholder="انتخاب رنگ..."
+           readonly
+           style="cursor:pointer;" />
+</div>
+
+<style>
+    .cp-wrapper {
+        position: relative; width: 100%; cursor: pointer;
+        display: flex; align-items: center;
+    }
+    .cp-preview {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        width: 24px; height: 24px; border-radius: 8px;
+        border: 2px solid rgba(255,255,255,0.15);
+        pointer-events: none; z-index: 1;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.5); font-size: 0.7rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .cp-input {
+        padding-right: 44px !important; cursor: pointer;
+    }
+
+    [data-theme="light"] .cp-preview {
+        border-color: rgba(0,0,0,0.1);
+        color: rgba(0,0,0,0.4);
+    }
+</style>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public bool ShowOpacity { get; set; } = false;
+    [Parameter] public string Placeholder { get; set; } = "انتخاب رنگ...";
+
+    private async Task OpenPicker()
+    {
+        var result = await Modal.ShowAsync<string, ColorPickerModal>(
+            "انتخاب رنگ",
+            new Dictionary<string, object>
+            {
+                { "CurrentValue", Value ?? "" },
+                { "ShowOpacity", ShowOpacity }
+            },
+            closeButton: true,
+            modalSize: "modal-sm"
+        );
+
+        if (!string.IsNullOrEmpty(result))
+        {
+            Value = result;
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+}

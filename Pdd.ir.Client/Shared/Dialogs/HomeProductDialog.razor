@@ -43,11 +43,11 @@
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label">@T.Text("icon_bg")</label>
-                <input type="text" class="form-control" @bind="Model.IconBg" placeholder="rgba(13,110,253,0.15)" />
+                <ColorPicker @bind-Value="Model.IconBg" ShowOpacity="true" />
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label">@T.Text("icon_color")</label>
-                <input type="text" class="form-control" @bind="Model.IconColor" placeholder="#0D6EFD" />
+                <ColorPicker @bind-Value="Model.IconColor" />
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label">@T.Text("route")</label>
