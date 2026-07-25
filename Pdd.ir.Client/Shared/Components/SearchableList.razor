@@ -81,6 +81,14 @@
         FilterItems();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isDropdownOpen)
+        {
+            await PositionDropdown();
+        }
+    }
+
     private void UpdateDisplayTextFromSelectedItem()
     {
         TItem? itemToSync = default;
@@ -121,14 +129,13 @@
 
     private void OpenDropdown()
     {
-        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); _ = PositionDropdown(); }
+        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); }
     }
 
     private async Task PositionDropdown()
     {
         try
         {
-            await Task.Delay(20);
             var rect = await JS.InvokeAsync<DomRect>("getInputRect", InputRef);
             if (rect != null)
             {

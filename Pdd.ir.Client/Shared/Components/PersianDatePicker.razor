@@ -116,6 +116,11 @@
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/clickOutside.js");
             await _jsModule.InvokeVoidAsync("addClickListener", RootElement, DotNetObjectReference.Create(this));
         }
+
+        if (isDropdownOpen)
+        {
+            await PositionDropdown();
+        }
     }
 
     protected override void OnParametersSet()
@@ -133,14 +138,12 @@
     {
         isDropdownOpen = true;
         StateHasChanged();
-        _ = PositionDropdown();
     }
 
     private async Task PositionDropdown()
     {
         try
         {
-            await Task.Delay(20);
             var rect = await JS.InvokeAsync<DomRect>("getInputRect", InputRef);
             if (rect != null)
             {
