@@ -182,11 +182,46 @@ sqlcmd -S . -U sa -P 123456 -Q "CREATE DATABASE pdd;"
 
 ## اجرای پروژه
 
-### روش ۱: Visual Studio
+### معماری اجرا
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Pdd.ir.Server (port 5000)                │
+│  ┌─────────────────┐  ┌─────────────────────────────────┐  │
+│  │   REST API       │  │   WebSocket Handler (/ws)       │  │
+│  │   Controllers    │  │   ارتباط بلادرنگ                │  │
+│  └─────────────────┘  └─────────────────────────────────┘  │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              Static Files (wwwroot)                     ││
+│  │  ┌───────────────┐  ┌──────────────┐  ┌──────────────┐ ││
+│  │  │ Client WASM   │  │ SQL Scripts  │  │ Uploads      │ ││
+│  │  │ (index.html,  │  │ (resource/)  │  │ (uploads/)   │ ││
+│  │  │  css, js,     │  │              │  │              │ ││
+│  │  │  dll, wasm)   │  │              │  │              │ ││
+│  │  └───────────────┘  └──────────────┘  └──────────────┘ ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │   SQL Server      │
+                    │   (Dapper ORM)    │
+                    └───────────────────┘
+```
+
+### نحوه کار
+
+1. **پروژه Client** (`Pdd.ir.Client`) یک Blazor WebAssembly独立 است که در مرورگر اجرا می‌شود
+2. **پروژه Server** (`Pdd.ir.Server`) فایل‌های build شده Client را از `wwwroot` سرو می‌کند
+3. **ارتباط** از طریق WebSocket (اولویت) یا HTTP Fallback انجام می‌شود
+4. **دیتابیس** SQL Server با Dapper ORM متصل می‌شود
+
+### روش ۱: Visual Studio (توصیه شده)
 
 1. فایل `Pdd.ir.slnx` را با Visual Studio 2022 باز کنید
 2. پروژه `Pdd.ir.Server` را به عنوان پروژه Startup تنظیم کنید
 3. کلید `F5` را بزنید
+
+> **نکته:** Visual Studio خودکار Client را build کرده و فایل‌ها را به wwwroot Server کپی می‌کند.
 
 ### روش ۲: خط فرمان
 
@@ -195,23 +230,45 @@ sqlcmd -S . -U sa -P 123456 -Q "CREATE DATABASE pdd;"
 git clone https://github.com/ho3eines/Pdd.ir.git
 cd Pdd.ir
 
-# اجرای سرور (کلاینت خودکار build می‌شود)
+# مرحله ۱: build کلاینت
+dotnet build Pdd.ir.Client/Pdd.ir.Client.csproj
+
+# مرحله ۲: اجرای سرور (کلاینت از wwwroot سرو می‌شود)
 dotnet run --project Pdd.ir.Server
+```
+
+### روش ۳: Publish (برای Production)
+
+```powershell
+# publish کلاینت
+dotnet publish Pdd.ir.Client/Pdd.ir.Client.csproj -c Release -o ./publish/client
+
+# publish سرور
+dotnet publish Pdd.ir.Server/Pdd.ir.Server.csproj -c Release -o ./publish/server
+
+# کپی فایل‌های کلاینت به wwwroot سرور
+Copy-Item -Path "./publish/client/wwwroot/*" -Destination "./publish/server/wwwroot/" -Recurse
+
+# اجرا
+cd ./publish/server
+dotnet Pdd.ir.Server.dll
 ```
 
 ### دسترسی
 
-| سرویس | آدرس |
-|-------|------|
-| **وب‌سایت** | `http://localhost:5000` |
-| **پنل مدیریت** | `http://localhost:5000/admin` |
-| **ورود** | `http://localhost:5000/login` |
+| سرویس | آدرس | توضیح |
+|-------|------|-------|
+| **وب‌سایت** | `http://localhost:5000` | صفحه اصلی |
+| **پنل مدیریت** | `http://localhost:5000/admin` | نیاز به لاگین |
+| **ورود** | `http://localhost:5000/login` | فرم ورود |
+| **API** | `http://localhost:5000/api/` | REST API |
+| **WebSocket** | `ws://localhost:5000/ws` | ارتباط بلادرنگ |
 
 ### کاربر پیش‌فرض
 
-| نام کاربری | رمز عبور |
-|-----------|----------|
-| `admin` | `admin123` |
+| نام کاربری | رمز عبور | نقش |
+|-----------|----------|-----|
+| `admin` | `admin123` | Administrator |
 
 ---
 
@@ -219,7 +276,7 @@ dotnet run --project Pdd.ir.Server
 
 ```
 Pdd.ir/
-├── Pdd.ir.Client/                    # کلاینت Blazor WASM
+├── Pdd.ir.Client/                    # کلاینت Blazor WebAssembly (مستقل در مرورگر اجرا می‌شود)
 │   ├── Program.cs                    # ثبت سرویس‌ها
 │   ├── App.razor                     # ریشه برنامه
 │   ├── Layout/
@@ -425,15 +482,60 @@ Pdd.ir/
 ### روش ارتباط
 
 ```
-┌──────────────┐                    ┌──────────────┐
-│  Blazor WASM │  ◄── WebSocket ──► │  ASP.NET Core│
-│   (Client)   │  ◄── HTTP REST ──► │   (Server)   │
-└──────────────┘                    └──────────────┘
-                                             │
-                                      ┌──────┴──────┐
-                                      │  SQL Server  │
-                                      │   (Dapper)   │
-                                      └─────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    مرورگر کاربر                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │           Pdd.ir.Client (Blazor WASM)              │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐ │   │
+│  │  │ Razor Pages  │  │ Components   │  │ Services  │ │   │
+│  │  │ (HTML/C#)    │  │ (PddTable,   │  │ (Comm,    │ │   │
+│  │  │              │  │  Modal, etc) │  │  Auth,    │ │   │
+│  │  │              │  │              │  │  Translate)│ │   │
+│  │  └──────────────┘  └──────────────┘  └───────────┘ │   │
+│  │                      │                              │   │
+│  │              ICommunicationService                  │   │
+│  │                      │                              │   │
+│  │         ┌────────────┴────────────┐                 │   │
+│  │         │    WebSocket (ws://)    │                 │   │
+│  │         │    HTTP Fallback (http://)│                │   │
+│  │         └────────────┬────────────┘                 │   │
+│  └──────────────────────┼─────────────────────────────┘   │
+└─────────────────────────┼───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Pdd.ir.Server (ASP.NET Core)                   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Middleware Pipeline                     │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │   │
+│  │  │ CORS     │  │ Decrypt  │  │ Encrypt Response │  │   │
+│  │  └──────────┘  └──────────┘  └──────────────────┘  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Controllers (REST API)                 │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────────┐ │   │
+│  │  │ Auth    │  │ Product │  │ Blog    │  │ Event  │ │   │
+│  │  │ User    │  │ Client  │  │ Portfolio│ │ Contact│ │   │
+│  │  │ Role    │  │ Page    │  │ Settings│  │ Upload │ │   │
+│  │  └─────────┘  └─────────┘  └─────────┘  └────────┘ │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              WebSocket Handler (/ws)                │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │  Action Router (MapUrlToAction)             │   │   │
+│  │  │  event.list → EventBusinessService          │   │   │
+│  │  │  product.get → ProductBusinessService       │   │   │
+│  │  │  user.create → UserBusinessService          │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Business Services (Dapper)             │   │
+│  │  ┌──────────────┐  ┌──────────────┐                │   │
+│  │  │ IDbService   │  │ Queries      │                │   │
+│  │  │ (SQL Server) │  │ (SQL strings)│                │   │
+│  │  └──────────────┘  └──────────────┘                │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### اولویت ارتباط
