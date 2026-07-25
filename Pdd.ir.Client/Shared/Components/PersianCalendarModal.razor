@@ -1,0 +1,165 @@
+@using System.Globalization
+@using Pdd.ir.Client.Helpers
+@using Pdd.ir.Client.Services
+@inject IModalService Modal
+
+<div class="pdp-calendar-modal">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="GoToPreviousMonth">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        <h6 class="mb-0 fw-bold">@GetMonthName() @GetYear()</h6>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="GoToNextMonth">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    </div>
+
+    <table class="table table-sm table-borderless text-center mb-2">
+        <thead>
+            <tr>
+                <th class="pdp-day-header">شنبه</th>
+                <th class="pdp-day-header">۱شنبه</th>
+                <th class="pdp-day-header">۲شنبه</th>
+                <th class="pdp-day-header">۳شنبه</th>
+                <th class="pdp-day-header">۴شنبه</th>
+                <th class="pdp-day-header">۵شنبه</th>
+                <th class="pdp-day-header">جمعه</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var week in GetCalendarWeeks())
+            {
+                <tr>
+                    @foreach (var dayTimestamp in week)
+                    {
+                        <td>
+                            @if (dayTimestamp.HasValue)
+                            {
+                                var dt = DateHelper.ToMiladi(dayTimestamp.Value).ToLocalTime();
+                                var persianDay = _pc.GetDayOfMonth(dt);
+                                var isSelected = IsDateSelected(dayTimestamp.Value);
+                                var isToday = IsDateToday(dayTimestamp.Value);
+
+                                <button type="button"
+                                        class="btn btn-sm pdp-day-btn @(isSelected ? "pdp-day-selected" : "") @(isToday ? "pdp-day-today" : "")"
+                                        @onclick="() => SelectDate(dayTimestamp.Value)">
+                                    @persianDay
+                                </button>
+                            }
+                            else
+                            {
+                                <div style="width:36px;height:36px;"></div>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <hr class="my-2" style="border-color:rgba(255,255,255,0.08);" />
+    <button class="btn btn-sm btn-primary w-100" @onclick="SelectToday">
+        <i class="bi bi-calendar-event me-1"></i>امروز
+    </button>
+</div>
+
+<style>
+    .pdp-calendar-modal { padding: 4px; }
+    .pdp-day-header { font-size: 0.75rem; color: var(--text-secondary, #9CA3AF); font-weight: 600; padding: 4px 0; }
+    .pdp-day-btn {
+        width: 36px; height: 36px; padding: 0; border-radius: 10px;
+        font-size: 0.875rem; font-weight: 500;
+        color: var(--text-primary, #E5E7EB);
+        background: transparent; border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .pdp-day-btn:hover { background: rgba(13,110,253,0.15); border-color: rgba(13,110,253,0.3); }
+    .pdp-day-selected { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; font-weight: 700; }
+    .pdp-day-today { border: 1.5px solid #0dcaf0 !important; }
+</style>
+
+@code {
+    [Parameter] public long? InitialValue { get; set; }
+
+    private long currentViewTimestamp;
+    private long? selectedTimestamp;
+    private readonly PersianCalendar _pc = new();
+
+    protected override void OnInitialized()
+    {
+        currentViewTimestamp = InitialValue ?? DateHelper.Now();
+        selectedTimestamp = InitialValue;
+    }
+
+    private void SelectDate(long timestamp)
+    {
+        Modal.Close(timestamp);
+    }
+
+    private void SelectToday()
+    {
+        Modal.Close(DateHelper.Now());
+    }
+
+    private void GoToNextMonth()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        m++;
+        if (m > 12) { m = 1; y++; }
+        currentViewTimestamp = DateHelper.ToUnix(_pc.ToDateTime(y, m, 1, 0, 0, 0, 0));
+    }
+
+    private void GoToPreviousMonth()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        m--;
+        if (m < 1) { m = 12; y--; }
+        currentViewTimestamp = DateHelper.ToUnix(_pc.ToDateTime(y, m, 1, 0, 0, 0, 0));
+    }
+
+    private string GetMonthName()
+    {
+        string[] months = { "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند" };
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        return months[_pc.GetMonth(dt) - 1];
+    }
+
+    private int GetYear()
+    {
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        return _pc.GetYear(dt);
+    }
+
+    private List<List<long?>> GetCalendarWeeks()
+    {
+        var weeks = new List<List<long?>>();
+        var dt = DateHelper.ToMiladi(currentViewTimestamp).ToLocalTime();
+        int y = _pc.GetYear(dt), m = _pc.GetMonth(dt);
+        int daysInMonth = _pc.GetDaysInMonth(y, m);
+        var firstOfMonth = _pc.ToDateTime(y, m, 1, 0, 0, 0, 0);
+        var startDayOfWeek = ((int)firstOfMonth.DayOfWeek + 1) % 7;
+
+        var currentWeek = new List<long?>();
+        for (int i = 0; i < startDayOfWeek; i++) currentWeek.Add(null);
+
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            currentWeek.Add(DateHelper.ToUnix(_pc.ToDateTime(y, m, day, 0, 0, 0, 0)));
+            if (currentWeek.Count == 7) { weeks.Add(currentWeek); currentWeek = new List<long?>(); }
+        }
+
+        if (currentWeek.Any()) { while (currentWeek.Count < 7) currentWeek.Add(null); weeks.Add(currentWeek); }
+        return weeks;
+    }
+
+    private bool IsDateSelected(long timestamp)
+    {
+        if (!selectedTimestamp.HasValue) return false;
+        return DateHelper.ToMiladi(timestamp).ToLocalTime().Date == DateHelper.ToMiladi(selectedTimestamp.Value).ToLocalTime().Date;
+    }
+
+    private bool IsDateToday(long timestamp)
+        => DateHelper.ToMiladi(timestamp).ToLocalTime().Date == DateTime.Now.Date;
+}

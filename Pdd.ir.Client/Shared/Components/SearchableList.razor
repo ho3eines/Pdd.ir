@@ -9,10 +9,6 @@
     .searchable-list-wrapper { position: relative; width: 100%; }
     .searchable-list-wrapper .form-control { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .searchable-list-wrapper .form-control:focus { transform: translateY(-2px); }
-    .dropdown-list { position: fixed; z-index: 1070; display: flex; flex-direction: column; padding: 0.5rem 0; margin: 0; background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #dee2e6); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 200px; overflow-y: auto; }
-    .dropdown-item { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-primary, #2c3e50); text-align: inherit; text-decoration: none; white-space: nowrap; background-color: transparent; border: 0; border-radius: 8px; margin: 0.1rem 0.5rem; transition: all 0.2s ease; cursor: pointer; }
-    .dropdown-item:hover, .dropdown-item.highlighted { background: var(--bg-tertiary, #f0f0f0); color: var(--text-primary, #1a1a1a); transform: translateX(-5px); }
-    .no-results { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-secondary, #6c757d); text-align: center; white-space: nowrap; background-color: transparent; border: 0; }
 </style>
 
 <div class="searchable-list-wrapper" @onclick="FocusInput">
@@ -25,35 +21,64 @@
            @onkeydown="OnKeyDown"
            @onkeydown:preventDefault="@shouldPreventDefault"
            placeholder="@Placeholder" />
-
-    @if (isDropdownOpen)
-    {
-        <div @ref="DropdownRef" class="dropdown-list">
-            @if (filteredItems.Any())
-            {
-                @for (int i = 0; i < filteredItems.Count; i++)
-                {
-                    var item = filteredItems[i];
-                    var itemIndex = i;
-                    <div class="dropdown-item @(highlightedIndex == itemIndex ? "highlighted" : "")"
-                         @onclick:stopPropagation
-                         @onclick="@(() => SelectItem(item))"
-                         @onmouseenter="@(() => highlightedIndex = itemIndex)">
-                        @TextSelector(item)
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="no-results">موردی یافت نشد</div>
-            }
-        </div>
-    }
 </div>
 
-@code {
-    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Bottom { get; set; } public double Width { get; set; } public double Height { get; set; } }
+@* Dropdown rendered in body via JS *@
+@if (isDropdownOpen)
+{
+    <div @ref="DropdownRef" class="sl-portal-dropdown">
+        @if (filteredItems.Any())
+        {
+            @for (int i = 0; i < filteredItems.Count; i++)
+            {
+                var item = filteredItems[i];
+                var itemIndex = i;
+                <div class="sl-dropdown-item @(highlightedIndex == itemIndex ? "sl-highlighted" : "")"
+                     @onclick:stopPropagation
+                     @onclick="@(() => SelectItem(item))"
+                     @onmouseenter="@(() => highlightedIndex = itemIndex)">
+                    @TextSelector(item)
+                </div>
+            }
+        }
+        else
+        {
+            <div class="sl-no-results">موردی یافت نشد</div>
+        }
+    </div>
+}
 
+<style>
+    .sl-portal-dropdown {
+        position: fixed;
+        z-index: 99999;
+        background: var(--bg-secondary, #fff);
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0.5rem 0;
+    }
+    .sl-dropdown-item {
+        display: block; width: 100%; padding: 0.5rem 1rem;
+        font-weight: 400; color: var(--text-primary, #2c3e50);
+        text-align: inherit; text-decoration: none; white-space: nowrap;
+        background-color: transparent; border: 0; border-radius: 8px;
+        margin: 0.1rem 0.5rem; transition: all 0.2s ease; cursor: pointer;
+    }
+    .sl-dropdown-item:hover, .sl-highlighted {
+        background: var(--bg-tertiary, #f0f0f0);
+        color: var(--text-primary, #1a1a1a);
+    }
+    .sl-no-results {
+        display: block; width: 100%; padding: 0.5rem 1rem;
+        font-weight: 400; color: var(--text-secondary, #6c757d);
+        text-align: center; white-space: nowrap;
+    }
+</style>
+
+@code {
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public Func<TItem, string> TextSelector { get; set; } = item => item?.ToString() ?? string.Empty;
     [Parameter] public Func<TItem, TValue> ValueSelector { get; set; } = null!;
@@ -62,7 +87,6 @@
     [Parameter] public TItem? SelectedItem { get; set; }
     [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
     [Parameter] public string Placeholder { get; set; } = "جستجو...";
-    [Parameter] public int DebounceMilliseconds { get; set; } = 300;
 
     private ElementReference InputRef;
     private ElementReference DropdownRef;
@@ -72,7 +96,6 @@
     private bool isDropdownOpen = false;
     private int highlightedIndex = -1;
     private bool shouldPreventDefault = false;
-    private Timer? _debounceTimer;
 
     protected override void OnParametersSet()
     {
@@ -83,9 +106,9 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (isDropdownOpen)
+        if (isDropdownOpen && DropdownRef.Context != null)
         {
-            await PositionDropdown();
+            await JS.InvokeVoidAsync("slPositionDropdown", InputRef, DropdownRef);
         }
     }
 
@@ -109,17 +132,12 @@
         highlightedIndex = (isDropdownOpen && filteredItems.Any()) ? 0 : -1;
     }
 
-    private async void DebounceTimerCallback(object? state)
-    {
-        await InvokeAsync(() => { FilterItems(); StateHasChanged(); });
-    }
-
     private void OnSearchInput(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? string.Empty;
-        _debounceTimer?.Dispose();
-        _debounceTimer = new Timer(DebounceTimerCallback, null, TimeSpan.FromMilliseconds(DebounceMilliseconds), Timeout.InfiniteTimeSpan);
+        FilterItems();
         if (!isDropdownOpen) OpenDropdown();
+        else StateHasChanged();
     }
 
     private async Task FocusInput()
@@ -130,19 +148,6 @@
     private void OpenDropdown()
     {
         if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); }
-    }
-
-    private async Task PositionDropdown()
-    {
-        try
-        {
-            var rect = await JS.InvokeAsync<DomRect>("getInputRect", InputRef);
-            if (rect != null)
-            {
-                await JS.InvokeVoidAsync("positionDropdownBelow", DropdownRef, rect.Left, rect.Bottom + 4, rect.Width);
-            }
-        }
-        catch { }
     }
 
     private async Task OnBlurInput()
@@ -213,9 +218,5 @@
         try { await InputRef.FocusAsync(); } catch { }
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _debounceTimer?.Dispose();
-        _debounceTimer = null;
-    }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

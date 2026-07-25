@@ -324,6 +324,16 @@ window.dismissSplash = function () {
 
 // Customer Showcase — pure CSS marquee, no JS needed
 
+// ── SearchableList Portal Dropdown ──────────────────────
+window.slPositionDropdown = function (inputEl, dropdownEl) {
+    if (!inputEl || !dropdownEl) return;
+    var rect = inputEl.getBoundingClientRect();
+    dropdownEl.style.position = 'fixed';
+    dropdownEl.style.top = (rect.bottom + 4) + 'px';
+    dropdownEl.style.left = rect.left + 'px';
+    dropdownEl.style.width = rect.width + 'px';
+};
+
 // ── Dropdown Positioning (for modals) ──────────────────
 window.getInputRect = function (element) {
     if (!element) return null;
