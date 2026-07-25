@@ -3,79 +3,224 @@
 @using Pdd.ir.Client.Services
 @inject IModalService Modal
 
-<div class="pdp-calendar-modal">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <button class="btn btn-sm btn-outline-secondary" @onclick="GoToPreviousMonth">
+<div class="pdp-modal">
+    <!-- Month Navigator -->
+    <div class="pdp-nav">
+        <button class="pdp-nav-btn" @onclick="GoToPreviousMonth">
             <i class="bi bi-chevron-right"></i>
         </button>
-        <h6 class="mb-0 fw-bold">@GetMonthName() @GetYear()</h6>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="GoToNextMonth">
+        <div class="pdp-nav-title">
+            <span class="pdp-month-name">@GetMonthName()</span>
+            <span class="pdp-year">@GetYear()</span>
+        </div>
+        <button class="pdp-nav-btn" @onclick="GoToNextMonth">
             <i class="bi bi-chevron-left"></i>
         </button>
     </div>
 
-    <table class="table table-sm table-borderless text-center mb-2">
-        <thead>
-            <tr>
-                <th class="pdp-day-header">شنبه</th>
-                <th class="pdp-day-header">۱شنبه</th>
-                <th class="pdp-day-header">۲شنبه</th>
-                <th class="pdp-day-header">۳شنبه</th>
-                <th class="pdp-day-header">۴شنبه</th>
-                <th class="pdp-day-header">۵شنبه</th>
-                <th class="pdp-day-header">جمعه</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var week in GetCalendarWeeks())
+    <!-- Day Headers -->
+    <div class="pdp-week-header">
+        <span>شنبه</span><span>۱شنبه</span><span>۲شنبه</span><span>۳شنبه</span><span>۴شنبه</span><span>۵شنبه</span><span>جمعه</span>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="pdp-grid">
+        @foreach (var week in GetCalendarWeeks())
+        {
+            @foreach (var dayTimestamp in week)
             {
-                <tr>
-                    @foreach (var dayTimestamp in week)
-                    {
-                        <td>
-                            @if (dayTimestamp.HasValue)
-                            {
-                                var dt = DateHelper.ToMiladi(dayTimestamp.Value).ToLocalTime();
-                                var persianDay = _pc.GetDayOfMonth(dt);
-                                var isSelected = IsDateSelected(dayTimestamp.Value);
-                                var isToday = IsDateToday(dayTimestamp.Value);
+                @if (dayTimestamp.HasValue)
+                {
+                    var dt = DateHelper.ToMiladi(dayTimestamp.Value).ToLocalTime();
+                    var persianDay = _pc.GetDayOfMonth(dt);
+                    var isSelected = IsDateSelected(dayTimestamp.Value);
+                    var isToday = IsDateToday(dayTimestamp.Value);
 
-                                <button type="button"
-                                        class="btn btn-sm pdp-day-btn @(isSelected ? "pdp-day-selected" : "") @(isToday ? "pdp-day-today" : "")"
-                                        @onclick="() => SelectDate(dayTimestamp.Value)">
-                                    @persianDay
-                                </button>
-                            }
-                            else
-                            {
-                                <div style="width:36px;height:36px;"></div>
-                            }
-                        </td>
-                    }
-                </tr>
+                    <button type="button"
+                            class="pdp-day @(isSelected ? "pdp-day--selected" : "") @(isToday ? "pdp-day--today" : "")"
+                            @onclick="() => SelectDate(dayTimestamp.Value)">
+                        @persianDay
+                    </button>
+                }
+                else
+                {
+                    <div class="pdp-day pdp-day--empty"></div>
+                }
             }
-        </tbody>
-    </table>
+        }
+    </div>
 
-    <hr class="my-2" style="border-color:rgba(255,255,255,0.08);" />
-    <button class="btn btn-sm btn-primary w-100" @onclick="SelectToday">
-        <i class="bi bi-calendar-event me-1"></i>امروز
+    <!-- Today Button -->
+    <button class="pdp-today-btn" @onclick="SelectToday">
+        <i class="bi bi-calendar-event"></i>
+        <span>امروز</span>
     </button>
 </div>
 
 <style>
-    .pdp-calendar-modal { padding: 4px; }
-    .pdp-day-header { font-size: 0.75rem; color: var(--text-secondary, #9CA3AF); font-weight: 600; padding: 4px 0; }
-    .pdp-day-btn {
-        width: 36px; height: 36px; padding: 0; border-radius: 10px;
-        font-size: 0.875rem; font-weight: 500;
-        color: var(--text-primary, #E5E7EB);
-        background: transparent; border: 1px solid transparent;
-        transition: all 0.2s ease;
+    .pdp-modal {
+        padding: 8px;
+        min-width: 300px;
     }
-    .pdp-day-btn:hover { background: rgba(13,110,253,0.15); border-color: rgba(13,110,253,0.3); }
-    .pdp-day-selected { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; font-weight: 700; }
-    .pdp-day-today { border: 1.5px solid #0dcaf0 !important; }
+
+    /* ── Month Navigator ── */
+    .pdp-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding: 0 4px;
+    }
+    .pdp-nav-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--pdd-glass-border, rgba(255,255,255,0.08));
+        background: var(--pdd-glass, rgba(255,255,255,0.04));
+        color: var(--text-secondary, #9CA3AF);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+    .pdp-nav-btn:hover {
+        background: rgba(13,110,253,0.15);
+        border-color: rgba(13,110,253,0.3);
+        color: #0d6efd;
+    }
+    .pdp-nav-title {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    .pdp-month-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--pdd-text, #E5E7EB);
+        line-height: 1.2;
+    }
+    .pdp-year {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-secondary, #9CA3AF);
+    }
+
+    /* ── Day Headers ── */
+    .pdp-week-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        margin-bottom: 6px;
+    }
+    .pdp-week-header span {
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-secondary, #9CA3AF);
+        padding: 6px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Calendar Grid ── */
+    .pdp-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+    }
+
+    /* ── Day Button ── */
+    .pdp-day {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--pdd-text, #E5E7EB);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .pdp-day:hover:not(.pdp-day--empty):not(.pdp-day--selected) {
+        background: var(--pdd-glass, rgba(255,255,255,0.04));
+        border-color: var(--pdd-glass-border, rgba(255,255,255,0.08));
+    }
+    .pdp-day--empty {
+        cursor: default;
+    }
+    .pdp-day--selected {
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7) !important;
+        color: #fff !important;
+        border-color: transparent !important;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(13,110,253,0.35);
+    }
+    .pdp-day--today {
+        border: 1.5px solid #0dcaf0 !important;
+        color: #0dcaf0 !important;
+    }
+
+    /* ── Today Button ── */
+    .pdp-today-btn {
+        width: 100%;
+        margin-top: 14px;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid var(--pdd-glass-border, rgba(255,255,255,0.08));
+        background: var(--pdd-glass, rgba(255,255,255,0.04));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: var(--pdd-text, #E5E7EB);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .pdp-today-btn:hover {
+        background: rgba(13,110,253,0.15);
+        border-color: rgba(13,110,253,0.3);
+        color: #0d6efd;
+    }
+
+    /* ── Light Mode ── */
+    [data-theme="light"] .pdp-nav-btn {
+        background: rgba(0,0,0,0.03);
+        border-color: rgba(0,0,0,0.08);
+        color: #6c757d;
+    }
+    [data-theme="light"] .pdp-nav-btn:hover {
+        background: rgba(13,110,253,0.1);
+        color: #0d6efd;
+    }
+    [data-theme="light"] .pdp-month-name { color: #1a1a2e; }
+    [data-theme="light"] .pdp-year { color: #6c757d; }
+    [data-theme="light"] .pdp-week-header span { color: #6c757d; }
+    [data-theme="light"] .pdp-day { color: #1a1a2e; }
+    [data-theme="light"] .pdp-day:hover:not(.pdp-day--empty):not(.pdp-day--selected) {
+        background: rgba(0,0,0,0.04);
+        border-color: rgba(0,0,0,0.08);
+    }
+    [data-theme="light"] .pdp-day--today { color: #0dcaf0; border-color: #0dcaf0 !important; }
+    [data-theme="light"] .pdp-today-btn {
+        background: rgba(0,0,0,0.03);
+        border-color: rgba(0,0,0,0.08);
+        color: #1a1a2e;
+    }
+    [data-theme="light"] .pdp-today-btn:hover {
+        background: rgba(13,110,253,0.1);
+        color: #0d6efd;
+    }
 </style>
 
 @code {
@@ -91,15 +236,8 @@
         selectedTimestamp = InitialValue;
     }
 
-    private void SelectDate(long timestamp)
-    {
-        Modal.Close(timestamp);
-    }
-
-    private void SelectToday()
-    {
-        Modal.Close(DateHelper.Now());
-    }
+    private void SelectDate(long timestamp) => Modal.Close(timestamp);
+    private void SelectToday() => Modal.Close(DateHelper.Now());
 
     private void GoToNextMonth()
     {
