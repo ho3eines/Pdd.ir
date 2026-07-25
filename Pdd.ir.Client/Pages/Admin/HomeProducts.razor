@@ -53,8 +53,10 @@
         new() { Title = T.Text("icon"), Template = c => builder =>
         {
             builder.OpenElement(0, "div");
-            builder.AddAttribute(1, "style", $"display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:{c.IconBg};color:{c.IconColor};font-size:14px;");
-            builder.AddContent(2, c.Icon);
+            builder.AddAttribute(1, "style", $"display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:{c.IconBg ?? "rgba(13,110,253,0.15)"};color:{c.IconColor ?? "#0D6EFD"};");
+            builder.OpenElement(2, "i");
+            builder.AddAttribute(3, "class", $"bi {c.Icon}");
+            builder.CloseElement();
             builder.CloseElement();
         }},
         new() { Title = T.Text("sort_order"), GetValue = x => x.SortOrder.ToString() },
