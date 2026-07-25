@@ -1,6 +1,6 @@
 # PDD.ir — شرکت طراح داده پیشرو
 
-> پلتفرم مدیریت محتوا و محصولات شرکت نرم‌افزاری بیمارستانی
+> پلتفرم مدیریت محتوا و محصولات شرکت طراح داده پیشرو
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 ![Blazor](https://img.shields.io/badge/Blazor-WASM-512BD4)
