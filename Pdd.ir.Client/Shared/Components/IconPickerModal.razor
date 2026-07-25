@@ -1,4 +1,4 @@
-﻿@using Pdd.ir.Client.Services
+@using Pdd.ir.Client.Services
 @using Microsoft.JSInterop
 @inject IModalService Modal
 @inject IJSRuntime JS
@@ -12,7 +12,7 @@
                value="@searchTerm"
                @oninput="OnInput"
                @onkeydown="OnKeyDown"
-               placeholder="ط¬ط³طھط¬ظˆغŒ ط¢غŒع©ظˆظ†..."
+               placeholder="جستجوی آیکون..."
                @ref="SearchInputRef" />
         @if (!string.IsNullOrEmpty(searchTerm))
         {
@@ -45,7 +45,7 @@
         {
             <div class="ipm-empty">
                 <i class="bi bi-search"></i>
-                <span>ط¢غŒع©ظˆظ†غŒ غŒط§ظپطھ ظ†ط´ط¯</span>
+                <span>آیکونی یافت نشد</span>
             </div>
         }
     </div>
@@ -54,7 +54,7 @@
     @if (filtered.Count > pageSize)
     {
         <div class="ipm-footer">
-            <span class="ipm-count">@filtered.Count ط¢غŒع©ظˆظ†</span>
+            <span class="ipm-count">@filtered.Count آیکون</span>
             <div class="ipm-pages">
                 <button class="ipm-page-btn" disabled="@(currentPage == 0)" @onclick="PrevPage">
                     <i class="bi bi-chevron-right"></i>
@@ -69,7 +69,7 @@
     else if (filtered.Count > 0)
     {
         <div class="ipm-footer">
-            <span class="ipm-count">@filtered.Count ط¢غŒع©ظˆظ†</span>
+            <span class="ipm-count">@filtered.Count آیکون</span>
         </div>
     }
 </div>
