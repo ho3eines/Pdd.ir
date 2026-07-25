@@ -2883,7 +2883,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── Dialog Body & Footer ── */
 .aco-dialog-body {
   padding: 0;
-  overflow-y: auto;
+  overflow: visible;
 }
 .aco-dialog-footer {
   display: flex;
@@ -3212,7 +3212,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .modal-header {
@@ -3251,8 +3251,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .modal-body {
   padding: 20px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: clip;
   flex: 1;
   min-height: 0;
 }

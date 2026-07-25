@@ -1,20 +1,22 @@
-﻿@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @typeparam TItem
 @typeparam TValue
 @implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <style>
     .searchable-list-wrapper { position: relative; width: 100%; }
     .searchable-list-wrapper .form-control { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .searchable-list-wrapper .form-control:focus { transform: translateY(-2px); }
-    .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 9999; display: flex; flex-direction: column; padding: 0.5rem 0; margin: 0.25rem 0 0; background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #dee2e6); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 200px; overflow-y: auto; }
+    .dropdown-list { position: fixed; z-index: 1070; display: flex; flex-direction: column; padding: 0.5rem 0; margin: 0; background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #dee2e6); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 200px; overflow-y: auto; }
     .dropdown-item { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-primary, #2c3e50); text-align: inherit; text-decoration: none; white-space: nowrap; background-color: transparent; border: 0; border-radius: 8px; margin: 0.1rem 0.5rem; transition: all 0.2s ease; cursor: pointer; }
     .dropdown-item:hover, .dropdown-item.highlighted { background: var(--bg-tertiary, #f0f0f0); color: var(--text-primary, #1a1a1a); transform: translateX(-5px); }
     .no-results { display: block; width: 100%; padding: 0.375rem 1rem; font-weight: 400; color: var(--text-secondary, #6c757d); text-align: center; white-space: nowrap; background-color: transparent; border: 0; }
 </style>
 
 <div class="searchable-list-wrapper" @onclick="FocusInput">
-    <input type="text"
+    <input @ref="InputRef" type="text"
            class="form-control"
            @bind="displayText"
            @oninput="OnSearchInput"
@@ -22,12 +24,11 @@
            @onblur="OnBlurInput"
            @onkeydown="OnKeyDown"
            @onkeydown:preventDefault="@shouldPreventDefault"
-           placeholder="@Placeholder"
-           @ref="inputRef" />
+           placeholder="@Placeholder" />
 
     @if (isDropdownOpen)
     {
-        <div class="dropdown-list">
+        <div @ref="DropdownRef" class="dropdown-list">
             @if (filteredItems.Any())
             {
                 @for (int i = 0; i < filteredItems.Count; i++)
@@ -51,6 +52,8 @@
 </div>
 
 @code {
+    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Width { get; set; } public double Height { get; set; } }
+
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public Func<TItem, string> TextSelector { get; set; } = item => item?.ToString() ?? string.Empty;
     [Parameter] public Func<TItem, TValue> ValueSelector { get; set; } = null!;
@@ -61,7 +64,8 @@
     [Parameter] public string Placeholder { get; set; } = "جستجو...";
     [Parameter] public int DebounceMilliseconds { get; set; } = 300;
 
-    private ElementReference inputRef;
+    private ElementReference InputRef;
+    private ElementReference DropdownRef;
     private string searchTerm = string.Empty;
     private string displayText = string.Empty;
     private List<TItem> filteredItems = new();
@@ -112,12 +116,26 @@
 
     private async Task FocusInput()
     {
-        try { await inputRef.FocusAsync(); OpenDropdown(); } catch { }
+        try { await InputRef.FocusAsync(); OpenDropdown(); } catch { }
     }
 
     private void OpenDropdown()
     {
-        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); }
+        if (!isDropdownOpen) { isDropdownOpen = true; FilterItems(); StateHasChanged(); _ = PositionDropdown(); }
+    }
+
+    private async Task PositionDropdown()
+    {
+        try
+        {
+            await Task.Delay(10);
+            var rect = await JS.InvokeAsync<DomRect>("getPositionFromElement", InputRef);
+            if (rect != null)
+            {
+                await JS.InvokeVoidAsync("positionDropdown", DropdownRef, rect);
+            }
+        }
+        catch { }
     }
 
     private async Task OnBlurInput()
@@ -185,7 +203,7 @@
         if (ValueChanged.HasDelegate && ValueSelector is not null)
             await ValueChanged.InvokeAsync(ValueSelector(item));
 
-        try { await inputRef.FocusAsync(); } catch { }
+        try { await InputRef.FocusAsync(); } catch { }
     }
 
     public async ValueTask DisposeAsync()

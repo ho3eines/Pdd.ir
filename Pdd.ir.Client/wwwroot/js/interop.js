@@ -323,3 +323,21 @@ window.dismissSplash = function () {
 };
 
 // Customer Showcase — pure CSS marquee, no JS needed
+
+// ── Dropdown Positioning (for modals) ──────────────────
+window.getPositionFromElement = function (element) {
+    if (!element) return null;
+    var rect = element.getBoundingClientRect();
+    return { top: rect.bottom + 4, left: rect.left, width: rect.width, height: rect.height };
+};
+
+window.positionDropdown = function (dropdown, anchorRect) {
+    if (!dropdown || !anchorRect) return;
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = anchorRect.top + 'px';
+    dropdown.style.left = anchorRect.left + 'px';
+    dropdown.style.width = anchorRect.width + 'px';
+    dropdown.style.zIndex = '1070';
+    dropdown.style.maxHeight = '200px';
+    dropdown.style.overflowY = 'auto';
+};

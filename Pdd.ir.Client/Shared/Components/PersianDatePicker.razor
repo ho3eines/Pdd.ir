@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components.Web
 @using Pdd.ir.Client.Helpers
@@ -7,7 +7,7 @@
 @inject IJSRuntime JS
 
 <div @ref="RootElement" class="persian-date-picker-wrapper position-relative">
-    <input type="text"
+    <input @ref="InputRef" type="text"
            class="@CssClass"
            @bind="inputText"
            @onfocus="OpenDropdown"
@@ -17,7 +17,7 @@
 
     @if (isDropdownOpen)
     {
-        <div class="dropdown-menu d-block p-3 shadow" style="min-width: 280px;">
+        <div @ref="DropdownRef" class="dropdown-menu d-block p-3 shadow" style="min-width: 280px;">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <button class="btn btn-sm btn-outline-secondary" @onclick="GoToPreviousMonth">
                     <i class="bi bi-chevron-right"></i>
@@ -82,20 +82,24 @@
 
 <style>
     .persian-date-picker-wrapper .dropdown-menu {
-        z-index: 1050;
-        position: absolute;
+        z-index: 1070;
+        position: fixed;
         background: var(--bg-secondary, white);
         border: 1px solid var(--border-color, #dee2e6);
     }
 </style>
 
 @code {
+    public class DomRect { public double Top { get; set; } public double Left { get; set; } public double Width { get; set; } public double Height { get; set; } }
+
     [Parameter] public long? Value { get; set; }
     [Parameter] public EventCallback<long?> ValueChanged { get; set; }
     [Parameter] public string Placeholder { get; set; } = "انتخاب تاریخ";
     [Parameter] public string CssClass { get; set; } = "form-control";
 
     private ElementReference RootElement { get; set; }
+    private ElementReference InputRef { get; set; }
+    private ElementReference DropdownRef { get; set; }
     private bool isDropdownOpen = false;
     private long currentViewTimestamp;
     private string inputText = string.Empty;
@@ -125,7 +129,26 @@
         inputText = Value.HasValue ? DateHelper.ToShamsi(Value.Value) : string.Empty;
     }
 
-    private void OpenDropdown() => isDropdownOpen = true;
+    private void OpenDropdown()
+    {
+        isDropdownOpen = true;
+        StateHasChanged();
+        _ = PositionDropdown();
+    }
+
+    private async Task PositionDropdown()
+    {
+        try
+        {
+            await Task.Delay(10);
+            var rect = await JS.InvokeAsync<DomRect>("getPositionFromElement", InputRef);
+            if (rect != null)
+            {
+                await JS.InvokeVoidAsync("positionDropdown", DropdownRef, rect);
+            }
+        }
+        catch { }
+    }
 
     private async Task SelectDate(long timestamp)
     {
