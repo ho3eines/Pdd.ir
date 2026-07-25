@@ -1,13 +1,18 @@
 @using Pdd.ir.Client.Services
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @inject IModalService Modal
+@inject IJSRuntime JS
 
 <div class="slm">
+    <!-- Search Input -->
     <div class="slm-search">
         <i class="bi bi-search slm-search-icon"></i>
         <input type="text"
                class="slm-search-input"
-               @bind="searchTerm"
-               @oninput="OnSearch"
+               value="@searchTerm"
+               @oninput="OnInput"
+               @onkeydown="OnKeyDown"
                placeholder="جستجو..."
                @ref="SearchInputRef" />
         @if (!string.IsNullOrEmpty(searchTerm))
@@ -18,14 +23,24 @@
         }
     </div>
 
-    <div class="slm-list">
+    <!-- List -->
+    <div class="slm-list" @ref="ListRef">
         @if (filtered.Any())
         {
-            @foreach (var item in filtered)
+            var startIdx = currentPage * pageSize;
+            var pageItems = filtered.Skip(startIdx).Take(pageSize).ToList();
+
+            @for (int i = 0; i < pageItems.Count; i++)
             {
+                var item = pageItems[i];
                 var text = data!.TextSelector(item);
                 var isSelected = text == currentText;
-                <button class="slm-item @(isSelected ? "slm-item--selected" : "")"
+                var globalIdx = startIdx + i;
+                var idx = i;
+
+                <button class="slm-item @(isSelected ? "slm-item--selected" : "") @(highlightedIdx == idx ? "slm-item--active" : "")"
+                        data-slm-idx="@idx"
+                        @onclick:stopPropagation
                         @onclick="() => SelectItem(text)">
                     @if (isSelected)
                     {
@@ -43,49 +58,59 @@
             </div>
         }
     </div>
+
+    <!-- Footer: count + pagination -->
+    @if (filtered.Count > pageSize)
+    {
+        <div class="slm-footer">
+            <span class="slm-count">@filtered.Count نتیجه</span>
+            <div class="slm-pages">
+                <button class="slm-page-btn" disabled="@(currentPage == 0)" @onclick="PrevPage">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <span class="slm-page-info">@(currentPage + 1) / @totalPages</span>
+                <button class="slm-page-btn" disabled="@(currentPage >= totalPages - 1)" @onclick="NextPage">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+        </div>
+    }
+    else if (filtered.Count > 0)
+    {
+        <div class="slm-footer">
+            <span class="slm-count">@filtered.Count نتیجه</span>
+        </div>
+    }
 </div>
 
 <style>
-    .slm { min-width: 280px; }
+    .slm { min-width: 300px; }
 
-    .slm-search {
-        position: relative;
-        margin-bottom: 12px;
-    }
+    .slm-search { position: relative; margin-bottom: 10px; }
     .slm-search-icon {
         position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
         color: #9CA3AF; font-size: 0.9rem; pointer-events: none;
     }
     .slm-search-input {
-        width: 100%;
-        padding: 12px 40px 12px 40px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 12px;
-        color: #E5E7EB;
-        font-size: 0.875rem;
-        outline: none;
-        transition: all 0.2s ease;
+        width: 100%; padding: 11px 40px 11px 40px;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px; color: #E5E7EB; font-size: 0.875rem; outline: none;
+        transition: all 0.15s ease;
     }
     .slm-search-input:focus {
-        border-color: rgba(13,110,253,0.5);
-        box-shadow: 0 0 0 3px rgba(13,110,253,0.15);
+        border-color: rgba(13,110,253,0.5); box-shadow: 0 0 0 3px rgba(13,110,253,0.15);
     }
     .slm-search-input::placeholder { color: #9CA3AF; }
     .slm-clear {
         position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
         background: none; border: none; color: #9CA3AF; cursor: pointer;
         padding: 4px; border-radius: 6px; font-size: 0.7rem;
-        transition: all 0.15s ease;
     }
     .slm-clear:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
 
     .slm-list {
-        max-height: 260px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
+        max-height: 280px; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 2px;
     }
     .slm-list::-webkit-scrollbar { width: 5px; }
     .slm-list::-webkit-scrollbar-track { background: transparent; }
@@ -93,58 +118,68 @@
 
     .slm-item {
         display: flex; align-items: center; gap: 10px;
-        width: 100%; padding: 11px 14px;
-        background: transparent; border: 1px solid transparent;
-        border-radius: 10px; color: #E5E7EB;
-        font-size: 0.875rem; font-weight: 500;
-        cursor: pointer; transition: all 0.15s ease;
-        text-align: right;
+        width: 100%; padding: 10px 14px; background: transparent;
+        border: 1px solid transparent; border-radius: 10px;
+        color: #E5E7EB; font-size: 0.875rem; font-weight: 500;
+        cursor: pointer; transition: all 0.12s ease; text-align: right;
     }
-    .slm-item:hover {
-        background: rgba(13,110,253,0.1);
-        border-color: rgba(13,110,253,0.2);
+    .slm-item:hover, .slm-item--active {
+        background: rgba(13,110,253,0.1); border-color: rgba(13,110,253,0.2);
     }
     .slm-item--selected {
-        background: rgba(13,110,253,0.15);
-        border-color: rgba(13,110,253,0.3);
-        color: #fff;
+        background: rgba(13,110,253,0.15) !important;
+        border-color: rgba(13,110,253,0.3) !important; color: #fff;
     }
     .slm-check { color: #0d6efd; font-size: 1rem; }
+
+    .slm-footer {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 4px 2px; border-top: 1px solid rgba(255,255,255,0.06);
+        margin-top: 8px;
+    }
+    .slm-count { font-size: 0.75rem; color: #9CA3AF; }
+    .slm-pages { display: flex; align-items: center; gap: 8px; }
+    .slm-page-btn {
+        width: 28px; height: 28px; border-radius: 8px;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        color: #9CA3AF; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 0.75rem; transition: all 0.15s ease;
+    }
+    .slm-page-btn:hover:not(:disabled) {
+        background: rgba(13,110,253,0.15); color: #0d6efd;
+    }
+    .slm-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .slm-page-info { font-size: 0.75rem; color: #9CA3AF; min-width: 40px; text-align: center; }
 
     .slm-empty {
         display: flex; flex-direction: column; align-items: center;
         gap: 6px; padding: 28px 16px; color: #9CA3AF; font-size: 0.85rem;
     }
 
-    [data-theme="light"] .slm-search-input {
-        background: rgba(0,0,0,0.03);
-        border-color: rgba(0,0,0,0.1);
-        color: #1a1a2e;
-    }
+    [data-theme="light"] .slm-search-input { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #1a1a2e; }
     [data-theme="light"] .slm-item { color: #1a1a2e; }
-    [data-theme="light"] .slm-item:hover {
-        background: rgba(13,110,253,0.08);
-        border-color: rgba(13,110,253,0.15);
-    }
-    [data-theme="light"] .slm-item--selected {
-        background: rgba(13,110,253,0.1);
-        border-color: rgba(13,110,253,0.2);
-        color: #0d6efd;
-    }
-    [data-theme="light"] .slm-check { color: #0d6efd; }
-    [data-theme="light"] .slm-search-icon { color: #6c757d; }
-    [data-theme="light"] .slm-empty { color: #6c757d; }
+    [data-theme="light"] .slm-item:hover, [data-theme="light"] .slm-item--active { background: rgba(13,110,253,0.08); border-color: rgba(13,110,253,0.15); }
+    [data-theme="light"] .slm-item--selected { background: rgba(13,110,253,0.1) !important; color: #0d6efd; }
+    [data-theme="light"] .slm-footer { border-top-color: rgba(0,0,0,0.06); }
+    [data-theme="light"] .slm-count { color: #6c757d; }
+    [data-theme="light"] .slm-page-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); color: #6c757d; }
+    [data-theme="light"] .slm-page-info { color: #6c757d; }
 </style>
 
 @code {
     [Parameter] public string RegistryKey { get; set; } = "";
 
     private ElementReference SearchInputRef;
+    private ElementReference ListRef;
     private SearchableListRegistry.ListData? data;
     private List<object> allItems = new();
     private List<object> filtered = new();
     private string searchTerm = string.Empty;
     private string currentText = "";
+    private int currentPage = 0;
+    private int pageSize = 20;
+    private int totalPages = 1;
+    private int highlightedIdx = -1;
 
     protected override void OnInitialized()
     {
@@ -154,11 +189,10 @@
             foreach (var item in enumerable)
                 allItems.Add(item);
         }
-
         if (data?.CurrentValue != null)
             currentText = data.TextSelector(data.CurrentValue);
 
-        filtered = allItems.ToList();
+        ApplyFilter();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -167,19 +201,79 @@
         {
             try { await SearchInputRef.FocusAsync(); } catch { }
         }
+        if (highlightedIdx >= 0)
+        {
+            await JS.InvokeVoidAsync("slmScrollToItem", highlightedIdx);
+        }
     }
 
-    private void OnSearch()
+    private void ApplyFilter()
     {
         filtered = string.IsNullOrWhiteSpace(searchTerm)
             ? allItems.ToList()
             : allItems.Where(i => data!.TextSelector(i).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        totalPages = Math.Max(1, (int)Math.Ceiling((double)filtered.Count / pageSize));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        if (currentPage < 0) currentPage = 0;
+        highlightedIdx = -1;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        currentPage = 0;
+        ApplyFilter();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        var pageItems = filtered.Skip(currentPage * pageSize).Take(pageSize).ToList();
+        int count = pageItems.Count;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                highlightedIdx = Math.Min(highlightedIdx + 1, count - 1);
+                StateHasChanged();
+                break;
+            case "ArrowUp":
+                highlightedIdx = Math.Max(highlightedIdx - 1, 0);
+                StateHasChanged();
+                break;
+            case "Enter":
+                if (highlightedIdx >= 0 && highlightedIdx < count)
+                {
+                    var text = data!.TextSelector(pageItems[highlightedIdx]);
+                    SelectItem(text);
+                }
+                else if (count > 0)
+                {
+                    highlightedIdx = 0;
+                    StateHasChanged();
+                }
+                break;
+            case "Escape":
+                Modal.Close(null);
+                break;
+        }
     }
 
     private void ClearSearch()
     {
         searchTerm = string.Empty;
-        filtered = allItems.ToList();
+        currentPage = 0;
+        ApplyFilter();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages - 1) { currentPage++; highlightedIdx = -1; }
+    }
+
+    private void PrevPage()
+    {
+        if (currentPage > 0) { currentPage--; highlightedIdx = -1; }
     }
 
     private void SelectItem(string text)

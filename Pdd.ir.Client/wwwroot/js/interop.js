@@ -368,3 +368,9 @@ window.positionDropdown = function (dropdown, anchorRect) {
     dropdown.style.maxHeight = '200px';
     dropdown.style.overflowY = 'auto';
 };
+
+// ── SearchableList Modal scroll to highlighted item ────
+window.slmScrollToItem = function (idx) {
+    var el = document.querySelector('[data-slm-idx="' + idx + '"]');
+    if (el) el.scrollIntoView({ block: 'nearest' });
+};
