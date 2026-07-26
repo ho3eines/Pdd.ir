@@ -70,7 +70,6 @@ builder.Services.AddCors(options =>
                 "http://localhost:80",
                 "http://pdd.ir",
                 "https://pdd.ir")
-            .SetIsOriginAllowed(_ => true)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -90,17 +89,29 @@ using (var scope = app.Services.CreateScope())
 // ── Middleware Pipeline ───────────────────────────────────
 app.UseCors();
 
-// Request Decryption (decrypts encrypted request bodies before controllers)
-app.UseMiddleware<RequestDecryptionMiddleware>();
-
-// Response Encryption (captures API responses and encrypts them)
-app.UseMiddleware<ResponseEncryptionMiddleware>();
+// Request/Response Encryption — only for API endpoints
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.UseMiddleware<RequestDecryptionMiddleware>();
+    appBuilder.UseMiddleware<ResponseEncryptionMiddleware>();
+});
 
 // WebSocket
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
-    AllowedOrigins = { "*" }
+    AllowedOrigins =
+    {
+        "http://localhost:5000",
+        "http://localhost:5001",
+        "https://localhost:7001",
+        "https://localhost:7125",
+        "http://localhost:5183",
+        "http://localhost:8080",
+        "http://localhost:80",
+        "http://pdd.ir",
+        "https://pdd.ir"
+    }
 });
 
 app.MapControllers();
